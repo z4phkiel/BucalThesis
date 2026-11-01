@@ -1,1 +1,157 @@
-/* PUT STYLE HERE FOR ENROLLED PAGE */
+
+:root {
+    --en-green-900: #243d28;
+    --en-green-700: #2f5233;
+    --en-green-600: #3f6b3a;
+    --en-green-500: #4f7d45;
+    --en-khaki-500: #c9b98f;
+    --en-khaki-300: #e3d9b8;
+    --en-khaki-100: #f6f2e4;
+    --en-white: #fdfcf7;
+    --en-text: #26312a;
+    --en-muted: #7a8272;
+    --en-border: #e8e3cf;
+}
+
+/* ---------- Page heading ---------- */
+.d-flex.align-items-center.justify-content-between.mb-4 > h3.fw-bold {
+    position: relative;
+    padding-left: 16px;
+    font-size: 1.55rem;
+    letter-spacing: -0.01em;
+    color: var(--en-green-700);
+}
+
+/* khaki-to-green accent bar beside the title */
+.d-flex.align-items-center.justify-content-between.mb-4 > h3.fw-bold::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 6px;
+    height: 70%;
+    transform: translateY(-50%);
+    border-radius: 6px;
+    background: linear-gradient(180deg, var(--en-khaki-500), var(--en-green-500));
+}
+
+/* ---------- Table card ---------- */
+.table-responsive {
+    background: var(--en-white);
+    border: 1px solid var(--en-border);
+    border-top: 5px solid var(--en-khaki-500);
+    border-radius: 16px;
+    box-shadow: 0 12px 30px -12px rgba(36, 61, 40, 0.28);
+    animation: enrolled-in 0.45s ease-out;
+}
+
+@keyframes enrolled-in {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.table-responsive > .table {
+    margin-bottom: 0;
+    color: var(--en-text);
+
+    /* Bootstrap table variables, re-themed */
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--en-text);
+    --bs-table-striped-bg: var(--en-khaki-100);
+    --bs-table-striped-color: var(--en-text);
+    --bs-table-hover-bg: var(--en-khaki-300);
+    --bs-table-hover-color: var(--en-text);
+    --bs-table-border-color: var(--en-border);
+}
+
+/* ---------- Header row ---------- */
+.table-responsive > .table > thead.table-light {
+    --bs-table-bg: var(--en-green-700);
+    --bs-table-color: #fff;
+    --bs-table-border-color: var(--en-green-700);
+}
+
+.table-responsive > .table > thead.table-light th {
+    padding: 16px 18px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: #fff;
+    background: linear-gradient(135deg, var(--en-green-600), var(--en-green-700));
+    border-bottom: 3px solid var(--en-khaki-500);
+}
+
+/* ---------- Body rows ---------- */
+.table-responsive > .table > tbody > tr > td {
+    padding: 15px 18px;
+    font-size: 0.93rem;
+    border-bottom: 1px solid var(--en-border);
+    transition: background-color 0.18s ease;
+}
+
+.table-responsive > .table > tbody > tr:last-child > td {
+    border-bottom: 0;
+}
+
+/* row number column */
+.table-responsive > .table > tbody > tr > td:first-child {
+    width: 56px;
+    font-weight: 600;
+    color: var(--en-muted);
+}
+
+/* green accent on the left edge when hovering a row */
+.table-responsive > .table > tbody > tr:hover > td:first-child {
+    box-shadow: inset 4px 0 0 var(--en-green-500);
+}
+
+/* ---------- Student name links ---------- */
+.table-responsive > .table td a {
+    font-weight: 600;
+    color: var(--en-green-700);
+    text-decoration: none;
+    background-image: linear-gradient(var(--en-khaki-500), var(--en-khaki-500));
+    background-size: 0% 2px;
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    transition: color 0.18s ease, background-size 0.25s ease;
+}
+
+.table-responsive > .table td a:hover,
+.table-responsive > .table td a:focus-visible {
+    color: var(--en-green-500);
+    background-size: 100% 2px;
+    outline: none;
+}
+
+/* ---------- LRN: monospace feel ---------- */
+.table-responsive > .table > tbody > tr > td:nth-child(3) {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.03em;
+}
+
+/* ---------- Empty state ---------- */
+.table-responsive > .table td.text-muted {
+    padding: 36px 18px;
+    font-style: italic;
+    color: var(--en-muted) !important;
+    background: var(--en-khaki-100);
+}
+
+/* ---------- Small screens ---------- */
+@media (max-width: 576px) {
+    .d-flex.align-items-center.justify-content-between.mb-4 > h3.fw-bold {
+        font-size: 1.3rem;
+    }
+
+    .table-responsive {
+        border-radius: 12px;
+    }
+
+    .table-responsive > .table > thead.table-light th,
+    .table-responsive > .table > tbody > tr > td {
+        padding: 12px 14px;
+    }
+}

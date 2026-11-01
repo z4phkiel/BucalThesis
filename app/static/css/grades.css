@@ -1,1 +1,229 @@
-/* PUT GRADE STYLE HERE */
+
+:root {
+    --gr-green-900: #243d28;
+    --gr-green-700: #2f5233;
+    --gr-green-600: #3f6b3a;
+    --gr-green-500: #4f7d45;
+    --gr-khaki-500: #c9b98f;
+    --gr-khaki-400: #d6c9a3;
+    --gr-khaki-300: #e3d9b8;
+    --gr-khaki-100: #f6f2e4;
+    --gr-white: #fdfcf7;
+    --gr-text: #26312a;
+    --gr-muted: #7a8272;
+    --gr-border: #e8e3cf;
+}
+
+/* ---------- Page heading ---------- */
+div.mb-4 > h3.fw-bold.mb-1 {
+    position: relative;
+    padding-left: 16px;
+    font-size: 1.55rem;
+    letter-spacing: -0.01em;
+    color: var(--gr-green-700);
+}
+
+div.mb-4 > h3.fw-bold.mb-1::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 6px;
+    height: 70%;
+    transform: translateY(-50%);
+    border-radius: 6px;
+    background: linear-gradient(180deg, var(--gr-khaki-500), var(--gr-green-500));
+}
+
+div.mb-4 > h3.fw-bold.mb-1 + p.text-muted {
+    padding-left: 16px;
+    font-size: 0.92rem;
+    color: var(--gr-muted) !important;
+}
+
+/* ---------- Cards (search card and table card) ---------- */
+.card.border-0:has(#studentSearch),
+.card.border-0:has(> .table-responsive) {
+    background: var(--gr-white);
+    border: 1px solid var(--gr-border) !important;
+    border-top: 5px solid var(--gr-khaki-500) !important;
+    border-radius: 16px;
+    box-shadow: 0 12px 30px -12px rgba(36, 61, 40, 0.28) !important;
+    animation: gr-in 0.45s ease-out;
+}
+
+.card.border-0:has(> .table-responsive) {
+    overflow: hidden;
+    animation-delay: 0.08s;
+    animation-fill-mode: backwards;
+}
+
+@keyframes gr-in {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------- Search ---------- */
+.card.border-0 label[for="studentSearch"] {
+    margin-bottom: 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gr-green-700);
+}
+
+.card.border-0 #studentSearch {
+    padding: 12px 16px 12px 46px;
+    font-size: 0.95rem;
+    color: var(--gr-text);
+    background-color: #faf8ef;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%232f5233' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M21 21l-4.3-4.3'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 16px center;
+    border: 1.5px solid var(--gr-border);
+    border-radius: 999px;
+    transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+}
+
+.card.border-0 #studentSearch::placeholder {
+    color: #a3a998;
+}
+
+.card.border-0 #studentSearch:hover {
+    border-color: var(--gr-khaki-500);
+}
+
+.card.border-0 #studentSearch:focus {
+    background-color: #fff;
+    border-color: var(--gr-green-500);
+    box-shadow: 0 0 0 4px rgba(79, 125, 69, 0.18);
+}
+
+/* ---------- Table ---------- */
+.card.border-0 > .table-responsive {
+    border: 0;
+    border-radius: 0;
+}
+
+.card.border-0 .table {
+    margin-bottom: 0;
+    color: var(--gr-text);
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--gr-text);
+    --bs-table-striped-bg: var(--gr-khaki-100);
+    --bs-table-hover-bg: var(--gr-khaki-300);
+    --bs-table-hover-color: var(--gr-text);
+    --bs-table-border-color: var(--gr-border);
+}
+
+/* header row */
+.card.border-0 .table > thead.table-light {
+    --bs-table-bg: var(--gr-green-700);
+    --bs-table-color: #fff;
+    --bs-table-border-color: var(--gr-green-700);
+}
+
+.card.border-0 .table > thead.table-light th {
+    padding: 16px 18px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: #fff;
+    background: linear-gradient(135deg, var(--gr-green-600), var(--gr-green-700));
+    border-bottom: 3px solid var(--gr-khaki-500);
+}
+
+.card.border-0 .table > thead.table-light th.ps-3 {
+    padding-left: 1.25rem !important;
+}
+
+/* body rows */
+.card.border-0 .table > tbody > tr > td {
+    padding: 15px 18px;
+    font-size: 0.93rem;
+    border-bottom: 1px solid var(--gr-border);
+    transition: background-color 0.18s ease;
+}
+
+.card.border-0 .table > tbody > tr:last-child > td {
+    border-bottom: 0;
+}
+
+/* row number */
+.card.border-0 .table > tbody > tr > td.ps-3 {
+    width: 64px;
+    padding-left: 1.25rem !important;
+    font-weight: 600;
+    color: var(--gr-muted);
+}
+
+/* green accent on the left edge of a hovered row */
+.card.border-0 .table > tbody > tr.student-row:hover > td:first-child {
+    box-shadow: inset 4px 0 0 var(--gr-green-500);
+}
+
+/* student name and LRN */
+.card.border-0 .table td.student-name {
+    font-weight: 600;
+    color: var(--gr-green-700);
+}
+
+.card.border-0 .table td.student-lrn {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.03em;
+}
+
+/* ---------- Open Grades button ---------- */
+.card.border-0 .table td .btn.btn-primary {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: var(--gr-green-600);
+    --bs-btn-border-color: var(--gr-green-600);
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: var(--gr-green-700);
+    --bs-btn-hover-border-color: var(--gr-green-700);
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: var(--gr-green-900);
+    --bs-btn-active-border-color: var(--gr-green-900);
+    --bs-btn-focus-shadow-rgb: 201, 185, 143;
+    min-width: 8.5rem;
+    padding: 7px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    border-radius: 999px;
+    box-shadow: 0 6px 14px rgba(47, 82, 51, 0.25);
+    transition: transform 0.15s, box-shadow 0.2s, background-color 0.2s;
+}
+
+.card.border-0 .table td .btn.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(47, 82, 51, 0.35);
+}
+
+/* ---------- Empty / no-result messages ---------- */
+.card.border-0 .table td.text-muted {
+    font-style: italic;
+    color: var(--gr-muted) !important;
+    background: var(--gr-khaki-100);
+}
+
+/* ---------- Small screens ---------- */
+@media (max-width: 576px) {
+    div.mb-4 > h3.fw-bold.mb-1 {
+        font-size: 1.3rem;
+    }
+
+    .card.border-0:has(#studentSearch),
+    .card.border-0:has(> .table-responsive) {
+        border-radius: 12px;
+    }
+
+    .card.border-0 .table > thead.table-light th,
+    .card.border-0 .table > tbody > tr > td {
+        padding: 12px 14px;
+    }
+}

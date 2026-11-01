@@ -6,21 +6,321 @@
     width: 85%;
     margin-left: 15%;
 }
-.sidebar .nav-link {
-    color: rgba(255, 255, 255, 0.75);
-    border-radius: 0.5rem;
-    padding: 0.75rem 1rem;
-    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
-}
-.sidebar .nav-link:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
-}
-.sidebar .nav-link.active {
-    background-color: #0d6efd;
-    color: #ffffff;
+
+/* ---------- Palette ---------- */
+:root {
+    --ix-green-900: #243d28;
+    --ix-green-700: #2f5233;
+    --ix-green-600: #3f6b3a;
+    --ix-green-500: #4f7d45;
+    --ix-khaki-500: #c9b98f;
+    --ix-khaki-400: #d6c9a3;
+    --ix-khaki-300: #e3d9b8;
+    --ix-khaki-100: #f6f2e4;
+    --ix-white: #fdfcf7;
+    --ix-page: #f4f1e6;
+    --ix-text: #26312a;
+    --ix-muted: #7a8272;
+    --ix-border: #e8e3cf;
+    --ix-brick: #a3392a;
 }
 
+/* ==========================================================
+   Sidebar
+   ========================================================== */
+.sidebar.bg-dark {
+    background: linear-gradient(180deg, var(--ix-green-900) 0%, var(--ix-green-700) 100%) !important;
+    box-shadow: 4px 0 24px rgba(20, 40, 25, 0.25);
+    border-right: 3px solid var(--ix-khaki-500);
+    overflow-y: auto;
+}
+
+/* brand area */
+.sidebar .border-secondary {
+    border-color: rgba(201, 185, 143, 0.45) !important;
+}
+
+.sidebar > div:first-child {
+    padding: 22px 16px 18px !important;
+}
+
+/* school badge drawn by CSS above the title */
+.sidebar > div:first-child::before {
+    content: "";
+    display: block;
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 10px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%234f7d45'/%3E%3Cstop offset='1' stop-color='%232f5233'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='60' cy='60' r='56' fill='url(%23g)' stroke='%23c9b98f' stroke-width='5'/%3E%3Ccircle cx='60' cy='60' r='47' fill='none' stroke='%23fdfcf7' stroke-width='1.5' stroke-dasharray='2 4'/%3E%3Cpath d='M32 66 Q46 60 60 68 Q74 60 88 66 V88 Q74 82 60 90 Q46 82 32 88 Z' fill='%23fdfcf7'/%3E%3Cpath d='M60 68 V90' stroke='%23c9b98f' stroke-width='2'/%3E%3Cpath d='M60 62 V42' stroke='%23e3d9b8' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M60 48 Q46 46 44 34 Q58 34 60 48 Z' fill='%23c9b98f'/%3E%3Cpath d='M60 44 Q74 42 76 30 Q62 30 60 44 Z' fill='%23a9c28f'/%3E%3C/svg%3E") no-repeat center / contain;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.35));
+}
+
+.sidebar > div:first-child .fs-5 {
+    font-size: 1.05rem !important;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ix-khaki-300) !important;
+}
+
+/* nav list */
+.sidebar .nav {
+    padding: 14px 12px 8px;
+}
+
+.sidebar .nav-link {
+    position: relative;
+    color: rgba(253, 252, 247, 0.78);
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out, transform 0.15s ease-in-out;
+}
+
+.sidebar .nav-link:hover,
+.sidebar .nav-link:focus-visible {
+    background-color: rgba(227, 217, 184, 0.16);
+    color: #ffffff;
+    transform: translateX(3px);
+    outline: none;
+}
+
+.sidebar .nav-link.active {
+    background-color: var(--ix-khaki-500);
+    color: var(--ix-green-900);
+    font-weight: 700;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+}
+
+/* logout button */
+.sidebar .btn-danger {
+    --bs-btn-color: var(--ix-khaki-300);
+    --bs-btn-bg: transparent;
+    --bs-btn-border-color: var(--ix-khaki-500);
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: var(--ix-brick);
+    --bs-btn-hover-border-color: var(--ix-brick);
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #8c2f22;
+    --bs-btn-active-border-color: #8c2f22;
+    --bs-btn-focus-shadow-rgb: 201, 185, 143;
+    border-width: 1.5px;
+    border-radius: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+}
+
+/* ==========================================================
+   Page area
+   ========================================================== */
+.main-content.bg-light {
+    background: var(--ix-page) !important;
+    color: var(--ix-text);
+}
+
+/* page title with accent bar */
+.main-content h2.text-dark {
+    position: relative;
+    margin-bottom: 0;
+    padding-left: 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--ix-green-700) !important;
+}
+
+.main-content h2.text-dark::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 6px;
+    height: 72%;
+    transform: translateY(-50%);
+    border-radius: 6px;
+    background: linear-gradient(180deg, var(--ix-khaki-500), var(--ix-green-500));
+}
+
+/* ==========================================================
+   Cards
+   ========================================================== */
+.main-content .card {
+    background: var(--ix-white);
+    border: 1px solid var(--ix-border);
+    border-top: 5px solid var(--ix-khaki-500);
+    border-radius: 16px;
+    box-shadow: 0 12px 30px -12px rgba(36, 61, 40, 0.28) !important;
+    animation: ix-card-in 0.45s ease-out;
+}
+
+@keyframes ix-card-in {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.main-content .card-body {
+    padding: 1.5rem;
+}
+
+.main-content .card-title {
+    font-weight: 700;
+    color: var(--ix-green-700) !important;
+}
+
+.main-content .card .text-muted {
+    color: var(--ix-muted) !important;
+}
+
+/* ==========================================================
+   Tables (inside cards)
+   ========================================================== */
+.card .table {
+    margin-bottom: 0;
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--ix-text);
+    --bs-table-striped-bg: var(--ix-khaki-100);
+    --bs-table-striped-color: var(--ix-text);
+    --bs-table-hover-bg: var(--ix-khaki-300);
+    --bs-table-hover-color: var(--ix-text);
+    --bs-table-border-color: var(--ix-border);
+}
+
+.card .table-responsive {
+    border: 1px solid var(--ix-border);
+    border-radius: 12px;
+}
+
+.card .table > thead.table-dark {
+    --bs-table-bg: var(--ix-green-700);
+    --bs-table-color: #fff;
+    --bs-table-border-color: var(--ix-green-700);
+}
+
+.card .table > thead.table-dark th {
+    padding: 14px 16px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: #fff;
+    background: linear-gradient(135deg, var(--ix-green-600), var(--ix-green-700));
+    border-bottom: 3px solid var(--ix-khaki-500);
+}
+
+.card .table > tbody > tr > td {
+    padding: 12px 16px;
+    font-size: 0.92rem;
+}
+
+.card .table > tbody > tr:hover > td:first-child {
+    box-shadow: inset 4px 0 0 var(--ix-green-500);
+}
+
+.card .table td.text-muted {
+    padding: 32px 16px;
+    font-style: italic;
+    background: var(--ix-khaki-100);
+}
+
+/* ==========================================================
+   Forms inside the metrics table
+   ========================================================== */
+.main-content .form-control {
+    border: 1.5px solid var(--ix-border);
+    border-radius: 8px;
+    background-color: #fff;
+    color: var(--ix-text);
+    min-width: 76px;
+}
+
+.main-content .form-control:focus {
+    border-color: var(--ix-green-500);
+    box-shadow: 0 0 0 4px rgba(79, 125, 69, 0.18);
+}
+
+.main-content .input-group-text {
+    border: 1.5px solid var(--ix-border);
+    background: var(--ix-khaki-100);
+    color: var(--ix-green-700);
+    font-weight: 600;
+}
+
+/* ==========================================================
+   Buttons
+   ========================================================== */
+.main-content .btn-primary {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: var(--ix-green-600);
+    --bs-btn-border-color: var(--ix-green-600);
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: var(--ix-green-700);
+    --bs-btn-hover-border-color: var(--ix-green-700);
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: var(--ix-green-900);
+    --bs-btn-active-border-color: var(--ix-green-900);
+    --bs-btn-focus-shadow-rgb: 79, 125, 69;
+    --bs-btn-disabled-bg: var(--ix-green-600);
+    --bs-btn-disabled-border-color: var(--ix-green-600);
+    border-radius: 10px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    box-shadow: 0 8px 18px rgba(47, 82, 51, 0.28);
+    transition: transform 0.15s, box-shadow 0.2s, background-color 0.2s;
+}
+
+.main-content .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 24px rgba(47, 82, 51, 0.38);
+}
+
+.main-content .btn-success {
+    --bs-btn-color: var(--ix-green-900);
+    --bs-btn-bg: var(--ix-khaki-500);
+    --bs-btn-border-color: var(--ix-khaki-500);
+    --bs-btn-hover-color: var(--ix-green-900);
+    --bs-btn-hover-bg: var(--ix-khaki-400);
+    --bs-btn-hover-border-color: var(--ix-khaki-400);
+    --bs-btn-active-color: var(--ix-green-900);
+    --bs-btn-active-bg: #b9a878;
+    --bs-btn-active-border-color: #b9a878;
+    --bs-btn-focus-shadow-rgb: 201, 185, 143;
+    border-radius: 8px;
+    font-weight: 700;
+}
+
+/* ==========================================================
+   Badges and alerts
+   ========================================================== */
+.main-content .badge.bg-secondary {
+    background-color: var(--ix-khaki-300) !important;
+    color: var(--ix-green-700) !important;
+    padding: 0.45em 0.8em;
+    border-radius: 999px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.main-content .alert {
+    border-radius: 12px;
+    border-width: 1px;
+    border-left-width: 5px;
+}
+
+.main-content .alert-info {
+    --bs-alert-color: var(--ix-green-900);
+    --bs-alert-bg: var(--ix-khaki-100);
+    --bs-alert-border-color: var(--ix-khaki-500);
+}
+
+.main-content .alert-secondary {
+    --bs-alert-color: var(--ix-green-900);
+    --bs-alert-bg: #e8efe3;
+    --bs-alert-border-color: var(--ix-green-500);
+}
+
+.main-content .alert .text-dark {
+    color: var(--ix-green-700) !important;
+}
 
 @media (max-width: 768px) {
 
@@ -36,4 +336,193 @@
     margin-left: 0;
 }
 
+/* Bootstrap's position-fixed and vh-100 are !important, so the
+   original rules above could not take effect on their own */
+.sidebar.position-fixed {
+    position: relative !important;
+}
+
+.sidebar.vh-100 {
+    height: auto !important;
+}
+
+.sidebar.bg-dark {
+    border-right: 0;
+    border-bottom: 3px solid var(--ix-khaki-500);
+}
+
+.main-content .card-body {
+    padding: 1rem;
+}
+
+}
+
+/* headers and cells of the numeric columns */
+#metricsCard .table > thead th:nth-child(n+2):nth-child(-n+9),
+#metricsCard .table > tbody > tr > td:nth-child(n+2):nth-child(-n+9) {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* editable cell: fixed width, pinned to the right edge */
+#metricsCard .metric-edit-group {
+    flex-wrap: nowrap;
+    width: calc(var(--ix-field-w) + var(--ix-addon-w));
+    margin-left: auto;
+}
+
+#metricsCard .metric-edit-group .metric-input {
+    flex: 0 0 var(--ix-field-w);
+    width: var(--ix-field-w);
+    min-width: 0;
+    padding-left: 0.35rem;
+    padding-right: 0.35rem;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+/* hide the up/down spinners so they do not push the digits around */
+#metricsCard .metric-input::-webkit-outer-spin-button,
+#metricsCard .metric-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* compact % box, centered text */
+#metricsCard .metric-edit-group .input-group-text {
+    justify-content: center;
+    flex: 0 0 var(--ix-addon-w);
+    min-width: 0;
+    padding: 0;
+}
+
+#metricsCard .metric-display {
+    display: block;
+    width: calc(var(--ix-field-w) + var(--ix-addon-w));
+    margin-left: auto;
+    padding-right: 0.6rem;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+#metricsCard .metric-display.d-none {
+    display: none !important;
+}
+
+#metricsCard {
+    --ix-field-w: 3.5rem;   /* input: fits 4 digits, or 97.80 */
+    --ix-addon-w: 1.9rem;   /* the % box */
+}
+
+
+#metricsCard .table > tbody > tr > td:nth-child(2) .metric-edit-group {
+    width: var(--ix-field-w);
+}
+
+#metricsCard .table > tbody > tr > td:nth-child(2) .metric-display {
+    width: var(--ix-field-w);
+    padding-right: 0.35rem;
+}
+
+#metricsCard .table > thead th:last-child,
+#metricsCard .table > tbody > tr > td:last-child {
+    text-align: center;
+    vertical-align: middle;
+}
+
+#metricsCard .table > tbody > tr > td:last-child .btn {
+    min-width: 3.5rem;
+}
+
+/* pressed state: shows the moment a link is clicked */
+.sidebar .nav-link:active {
+    background-color: var(--ix-khaki-500);
+    color: var(--ix-green-900);
+    transform: scale(0.97);
+}
+
+/* current page */
+body:has(#metricsCard) .sidebar .nav-item:nth-child(1) .nav-link,
+body:has(link[href*="enrollment.css"]) .sidebar .nav-item:nth-child(2) .nav-link,
+body:has(link[href*="enrolled.css"]) .sidebar .nav-item:nth-child(3) .nav-link,
+body:has(link[href*="grades.css"]) .sidebar .nav-item:nth-child(4) .nav-link,
+body:has(link[href*="calendar.css"]) .sidebar .nav-item:nth-child(5) .nav-link,
+body:has(link[href*="linkage"]) .sidebar .nav-item:nth-child(6) .nav-link,
+body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(6) .nav-link {
+    background-color: var(--ix-khaki-500);
+    color: var(--ix-green-900);
+    font-weight: 700;
+    box-shadow: inset 4px 0 0 var(--ix-green-600), 0 6px 14px rgba(0, 0, 0, 0.25);
+}
+
+/* ==========================================================
+   Sidebar: Logout pinned to the bottom
+   ========================================================== */
+.sidebar .nav > li:last-child {
+    margin-top: auto;
+    padding: 1rem 0.25rem 0.75rem !important;
+    border-top: 1px solid rgba(201, 185, 143, 0.35);
+}
+
+/* ==========================================================
+   Sidebar: full-width
+   ========================================================== */
+.sidebar .nav {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.sidebar .nav-link {
+    border-radius: 0;
+}
+
+/* no sliding or shrinking, so the bar stays flush with the edges */
+.sidebar .nav-link:hover,
+.sidebar .nav-link:focus-visible,
+.sidebar .nav-link:active {
+    transform: none;
+}
+
+/* flat highlight: just the green marker on the left edge */
+body:has(#metricsCard) .sidebar .nav-item:nth-child(1) .nav-link,
+body:has(link[href*="enrollment.css"]) .sidebar .nav-item:nth-child(2) .nav-link,
+body:has(link[href*="enrolled.css"]) .sidebar .nav-item:nth-child(3) .nav-link,
+body:has(link[href*="grades.css"]) .sidebar .nav-item:nth-child(4) .nav-link,
+body:has(link[href*="calendar.css"]) .sidebar .nav-item:nth-child(5) .nav-link,
+body:has(link[href*="linkage"]) .sidebar .nav-item:nth-child(6) .nav-link,
+body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(6) .nav-link {
+    box-shadow: inset 5px 0 0 var(--ix-green-600);
+}
+
+/* keep the Logout button inset from the edges */
+.sidebar .nav > li:last-child {
+    padding: 1rem 1rem 0.75rem !important;
+}
+
+.sidebar {
+    --ix-nav-marker: 9px;
+}
+
+body:has(#metricsCard) .sidebar .nav-item:nth-child(1) .nav-link,
+body:has(link[href*="enrollment.css"]) .sidebar .nav-item:nth-child(2) .nav-link,
+body:has(link[href*="enrolled.css"]) .sidebar .nav-item:nth-child(3) .nav-link,
+body:has(link[href*="grades.css"]) .sidebar .nav-item:nth-child(4) .nav-link,
+body:has(link[href*="calendar.css"]) .sidebar .nav-item:nth-child(5) .nav-link,
+body:has(link[href*="linkage"]) .sidebar .nav-item:nth-child(6) .nav-link,
+body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(6) .nav-link {
+    box-shadow: inset var(--ix-nav-marker) 0 0 var(--ix-green-600);
+}
+
+body:has(#metricsCard) .sidebar .nav-item:nth-child(1) .nav-link,
+body:has(link[href*="enrollment.css"]) .sidebar .nav-item:nth-child(2) .nav-link,
+body:has(link[href*="enrolled.css"]) .sidebar .nav-item:nth-child(3) .nav-link,
+body:has(link[href*="grades.css"]) .sidebar .nav-item:nth-child(4) .nav-link,
+body:has(link[href*="calendar.css"]) .sidebar .nav-item:nth-child(5) .nav-link,
+body:has(link[href*="linkage"]) .sidebar .nav-item:nth-child(6) .nav-link,
+body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(6) .nav-link,
+.sidebar .nav-link.active {
+    box-shadow: none;
 }
