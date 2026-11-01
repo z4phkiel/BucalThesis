@@ -75,6 +75,9 @@
     font-weight: 500;
     letter-spacing: 0.02em;
     transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out, transform 0.15s ease-in-out;
+    text-align: left !important;
+    justify-content: flex-start !important;
+    font-size: 13px;
 }
 
 .sidebar .nav-link:hover,

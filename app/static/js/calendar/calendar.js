@@ -26,18 +26,33 @@ document.addEventListener('DOMContentLoaded', function(){
         const $ = id => document.getElementById(id);
         
         async function api(url, method, body) {
-            const r = await fetch(url, {
+            const csrfToken = document.querySelector(
+            'meta[name="csrf-token"]'
+        ).content;
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        };
+
+        const r = await fetch(url, {
             method: method,
-            headers: { 'Content-Type': 'application/json' },
+            headers: headers,
             body: body ? JSON.stringify(body) : undefined
-            });
-            if (!r.ok) {
+        });
+
+        if (!r.ok) {
             let msg = 'Request failed';
-            try { msg = (await r.json()).error || msg; } catch (e) {}
-            throw new Error(msg);
-            }
-            return r.json();
+
+        try {
+            msg = (await r.json()).error || msg;
+        } catch (e) {}
+
+        throw new Error(msg);
         }
+
+        return r.json();
+    }
         
         async function load() {
             events = await api(API, 'GET');
@@ -86,11 +101,25 @@ document.addEventListener('DOMContentLoaded', function(){
         }
         
         function sideItem(e, extra) {
-            return `<div class="side-item ${esc(e.tag)}">
-                    <div class="meta">${esc(TAG_LABEL[e.tag] || e.tag)}${extra ? ' &middot; ' + extra : ''}</div>
-                    <div class="desc">${e.description ? esc(e.description) : '<em>No description</em>'}</div>
-                    </div>`;
-        }
+    return `<div class="side-item ${esc(e.tag)}">
+        <div class="meta">
+            ${esc(TAG_LABEL[e.tag] || e.tag)}
+            ${extra ? ' &middot; ' + extra : ''}
+        </div>
+
+        <div class="desc">
+            ${e.description ? esc(e.description) : '<em>No description</em>'}
+        </div>
+
+        ${e.link_url ? `
+            <a href="${esc(e.link_url)}"
+               target="_blank"
+               rel="noopener noreferrer">
+                <i class="bi bi-link-45deg"></i> Open link
+            </a>
+        ` : ''}
+    </div>`;
+}
         
         function renderSide() {
             const today = todayKey();
@@ -134,6 +163,7 @@ document.addEventListener('DOMContentLoaded', function(){
             editingId = null;
             $('fTag').value = 'event';
             $('fDesc').value = '';
+            $('fLink').value = '';
             $('formError').textContent = '';
             $('btnSave').textContent = 'Add';
             $('btnCancelEdit').style.display = 'none';
@@ -142,23 +172,44 @@ document.addEventListener('DOMContentLoaded', function(){
         function renderEntries() {
             const list = events.filter(e => e.date === selectedDate);
             $('modalEntries').innerHTML = list.length
-            ? list.map(e => `
-                <div class="entry">
-                    <div class="txt">
-                    <span class="chip ${esc(e.tag)}" style="display:inline-block;margin:0 6px 0 0">${esc(TAG_LABEL[e.tag] || e.tag)}</span>
-                    ${e.description ? esc(e.description) : '<em>No description</em>'}
-                    </div>
-                    <div class="acts">
-                    <button type="button" class="cal-btn" data-edit="${e.id}">Edit</button>
-                    <button type="button" class="cal-btn danger" data-del="${e.id}">Delete</button>
-                    </div>
-                </div>`).join('')
-            : '<div class="side-empty">No tags on this day yet</div>';
+        ? list.map(e => `
+            <div class="entry">
+                <div class="txt">
+                    <span class="chip ${esc(e.tag)}"
+                        style="display:inline-block;margin:0 6px 0 0">
+                        ${esc(TAG_LABEL[e.tag] || e.tag)}
+                    </span>
+
+                    ${e.description
+                        ? esc(e.description)
+                        : '<em>No description</em>'}
+
+                    ${e.link_url ? `
+                        <div style="margin-top:6px;">
+                            <a href="${esc(e.link_url)}"
+                               target="_blank"
+                               rel="noopener noreferrer">
+                                <i class="bi bi-link-45deg"></i> Open link
+                            </a>
+                        </div>
+                    ` : ''}
+                </div>
+
+                <div class="acts">
+                    <button type="button" class="cal-btn"
+                        data-edit="${e.id}">Edit</button>
+
+                    <button type="button" class="cal-btn danger"
+                        data-del="${e.id}">Delete</button>
+                </div>
+            </div>
+        `).join('')
+        : '<div class="side-empty">No tags on this day yet</div>';
         }
         
         async function save() {
             $('formError').textContent = '';
-            const body = { date: selectedDate, tag: $('fTag').value, description: $('fDesc').value.trim() };
+            const body = { date: selectedDate, tag: $('fTag').value, description: $('fDesc').value.trim(), link_url: $('fLink').value.trim() };
             try {
             if (editingId) {
                 const updated = await api(`${API}/${editingId}`, 'PUT', body);
@@ -202,6 +253,7 @@ document.addEventListener('DOMContentLoaded', function(){
             editingId = ev.id;
             $('fTag').value = ev.tag;
             $('fDesc').value = ev.description || '';
+            $('fLink').value = ev.link_url || '';
             $('btnSave').textContent = 'Save changes';
             $('btnCancelEdit').style.display = '';
             } else if (del) {
