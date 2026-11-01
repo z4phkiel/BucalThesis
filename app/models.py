@@ -150,6 +150,7 @@ class CalendarEvent(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     event_date = db.Column(db.Date, nullable=False, index=True)
     tag = db.Column(db.String(20), nullable=False)          # holiday / event / exam
+    link_url = db.Column(db.String(2048), nullable=True)
     description = db.Column(db.Text, default='')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
  
@@ -158,6 +159,7 @@ class CalendarEvent(db.Model):
             'id': self.id,
             'date': self.event_date.strftime('%Y-%m-%d'),
             'tag': self.tag,
+            'link_url': self.link_url,
             'description': self.description or '',
         }
 
@@ -188,3 +190,28 @@ class FileItem(db.Model):
  
     def __repr__(self):
         return f'<FileItem {self.title}>'
+
+
+class PictureItem(db.Model):
+    __tablename__ = 'picture_item'
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    title = db.Column(db.String(150), nullable=False)
+    filename = db.Column(db.String(255), nullable=False)
+
+    content_type = db.Column(db.String(100), nullable=False)
+    size = db.Column(db.Integer, nullable=False)
+
+    # Store the actual image inside MySQL
+    data = deferred(
+        db.Column(
+            db.LargeBinary().with_variant(MEDIUMBLOB(), 'mysql'),
+            nullable=False
+        )
+    )
+
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<PictureItem {self.title}>'

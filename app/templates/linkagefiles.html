@@ -136,6 +136,143 @@
     </div>
 </div>
 
+<!-- Important Pictures: upload, preview, delete -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h2 class="h5 mb-3">Important Pictures</h2>
+
+        <!-- Upload Picture Form -->
+        <form action="{{ url_for('main.upload_picture') }}"
+              method="POST"
+              enctype="multipart/form-data"
+              class="row g-2 mb-2">
+
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="col-md-4">
+                <input type="text"
+                       name="title"
+                       class="form-control"
+                       placeholder="Picture title"
+                       maxlength="150"
+                       required>
+            </div>
+
+            <div class="col-md-6">
+                <input type="file"
+                       name="picture"
+                       id="pictureInput"
+                       class="form-control"
+                       accept=".png,.jpg,.jpeg,.webp"
+                       required>
+            </div>
+
+            <div class="col-md-2 d-grid">
+                <button type="submit" class="btn btn-primary">Upload Picture</button>
+            </div>
+        </form>
+
+        <p class="text-muted small mb-3">
+            PNG, JPG, JPEG, or WEBP images only. Maximum file size: 5 MB.
+        </p>
+
+        <!-- Image Preview Before Upload -->
+        <div id="picturePreviewContainer" class="mb-4" style="display: none;">
+            <p class="fw-semibold mb-2">Preview:</p>
+            <img id="picturePreview"
+                 src=""
+                 alt="Picture preview"
+                 class="img-thumbnail"
+                 style="max-width: 250px; max-height: 200px; object-fit: contain;">
+        </div>
+
+<!-- Uploaded Pictures -->
+<div class="row g-3">
+    {% for picture in pictures %}
+    <div class="col-6 col-md-4 col-lg-3">
+        <div class="card h-100 shadow-sm border-0">
+
+            <!-- Picture Preview -->
+            <a href="{{ url_for('main.view_picture', picture_id=picture.id) }}"
+               target="_blank"
+               class="d-block bg-light text-center"
+               style="height: 190px; overflow: hidden;">
+
+                <img src="{{ url_for('main.view_picture', picture_id=picture.id) }}"
+                     class="w-100 h-100"
+                     alt="{{ picture.title }}"
+                     loading="lazy"
+                     style="object-fit: contain;">
+            </a>
+
+            <!-- Picture Details -->
+            <div class="card-body d-flex flex-column">
+
+                <h6 class="card-title fw-semibold text-truncate mb-1"
+                    title="{{ picture.title }}">
+                    {{ picture.title }}
+                </h6>
+
+                <p class="text-muted small text-truncate mb-2"
+                   title="{{ picture.filename }}">
+                    <i class="bi bi-image me-1"></i>
+                    {{ picture.filename }}
+                </p>
+
+                <div class="text-muted small mb-3">
+                    {% if picture.size >= 1048576 %}
+                        {{ (picture.size / 1048576) | round(2) }} MB
+                    {% else %}
+                        {{ (picture.size / 1024) | round(1) }} KB
+                    {% endif %}
+
+                    <span class="mx-1">•</span>
+
+                    {{ picture.uploaded_at.strftime('%b %d, %Y') if picture.uploaded_at else '—' }}
+                </div>
+
+                <!-- Actions -->
+                <div class="mt-auto">
+                    <div class="d-flex gap-2">
+
+                        <a href="{{ url_for('main.view_picture', picture_id=picture.id) }}"
+                           target="_blank"
+                           class="btn btn-sm btn-outline-success flex-fill">
+                            <i class="bi bi-eye me-1"></i> View
+                        </a>
+
+                        <form action="{{ url_for('main.delete_picture', picture_id=picture.id) }}"
+                              method="POST"
+                              class="flex-fill"
+                              onsubmit="return confirm('Are you sure you want to delete this picture?');">
+
+                            <input type="hidden"
+                                   name="csrf_token"
+                                   value="{{ csrf_token() }}">
+
+                            <button type="submit"
+                                    class="btn btn-sm btn-outline-danger w-100">
+                                <i class="bi bi-trash me-1"></i> Delete
+                            </button>
+                        </form>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <div class="col-12">
+        <div class="text-center text-muted py-5">
+            <i class="bi bi-images fs-1 d-block mb-2"></i>
+            <p class="mb-0">No pictures uploaded yet.</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
 <!-- Edit link (one shared popup, filled in by the script below) -->
 <div class="modal fade" id="editLinkModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">

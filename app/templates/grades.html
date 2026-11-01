@@ -19,7 +19,7 @@
 <td class="student-name">{{ item.last_name }}, {{ item.first_name }} {{ item.middle_name or '' }}{% if item.extension_name %} {{ item.extension_name }}{% endif %}</td>
 <td class="student-lrn">{{ item.lrn_no or '—' }}</td>
 <td>{{ item.grade_level.replace('_', ' ') if item.grade_level else '—' }}</td>
-<td class="text-center"><a href="{{ url_for('main.student_grades', student_id=item.id) }}" class="btn btn-sm btn-primary"><i class="bi bi-folder2-open me-1"></i> Open Grades</a></td>
+<td class="text-center"><a href="{{ url_for('main.student_grades', student_id=item.id) }}" class="btn btn-sm btn-primary"><i class="bi bi-folder2-open me-1"></i> Open SF</a></td>
 </tr>
 {% else %}
 <tr><td colspan="5" class="text-center text-muted py-5">No enrolled students found.</td></tr>

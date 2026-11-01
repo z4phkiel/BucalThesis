@@ -3,10 +3,12 @@ from urllib.parse import quote_plus
 
 from dotenv import load_dotenv
 
-from flask import Flask
+from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
 
 from flask_wtf.csrf import CSRFProtect
+
+
 
 load_dotenv()
 csrf = CSRFProtect()
@@ -41,10 +43,18 @@ def create_app():
     db.init_app(app)
     csrf.init_app(app)
 
-    from app.routes import main_bp
+    from app.routes import main_bp, restrict_mobile_access
+    app.before_request(restrict_mobile_access)
     app.register_blueprint(main_bp)
 
+    @app.errorhandler(403)
+    def forbidden(error):
+        return render_template('error_pages/403.html'), 403
+            
     with app.app_context():
         db.create_all()
         
     return app
+
+
+    

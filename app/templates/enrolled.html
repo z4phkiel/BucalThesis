@@ -1,9 +1,26 @@
 {% extends 'dashboard.html' %}
 
 {% block content %}
-<link rel="stylesheet" href="../static/css/enrolled.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/enrolled.css') }}">
+
 <div class="d-flex align-items-center justify-content-between mb-4">
     <h3 class="fw-bold mb-0">Enrolled Students</h3>
+</div>
+
+<!-- Search Bar -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <label for="studentSearch" class="form-label fw-semibold">
+            Search Students
+        </label>
+        <input
+            type="text"
+            id="studentSearch"
+            class="form-control"
+            placeholder="Search by student name or LRN..."
+            autocomplete="off"
+        >
+    </div>
 </div>
 
 
@@ -20,23 +37,32 @@
         </thead>
         <tbody>
             {% for student in students %}
-            <tr>
+            <tr class="student-row">
                 <td>{{ loop.index }}</td>
                 <td>
-                    <a href="{{ url_for('main.student_detail', student_id=student.id) }}">
+                    <a class="student-name" href="{{ url_for('main.student_detail', student_id=student.id) }}">
                         {{ student.last_name }}, {{ student.first_name }} {{ student.middle_name }}
-                    {%- if student.extension_name %} {{ student.extension_name }}{% endif %}
+                        {%- if student.extension_name %} {{ student.extension_name }}{% endif %}
                     </a>
                 </td>
-                <td>{{ student.lrn_no or '—' }}</td>
+                <td class="student-lrn">{{ student.lrn_no or '—' }}</td>
                 <td>{{ student.grade_level.replace('_', ' ') if student.grade_level else '—' }}</td>
                 <td>{{ student.date_signed.strftime('%B %d, %Y') if student.date_signed else '—' }}</td>
             </tr>
             {% else %}
             <tr>
-                <td colspan="5" class="text-center text-muted py-4">No enrolled students found.</td>
+                <td colspan="5" class="text-center text-muted py-4">
+                    No enrolled students found.
+                </td>
             </tr>
             {% endfor %}
+
+            <!-- Search Results Message -->
+            <tr id="noSearchResults" style="display: none;">
+                <td colspan="5" class="text-center text-muted py-4">
+                    No matching students found.
+                </td>
+            </tr>
         </tbody>
     </table>
 </div>
@@ -44,4 +70,5 @@
 
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/enrolled/enrolled.js') }}"></script>
 {% endblock %}

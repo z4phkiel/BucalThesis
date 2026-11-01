@@ -1,5 +1,5 @@
-from flask import Blueprint, render_template, redirect, request, url_for, session, flash, current_app, send_file, jsonify
-from app.models import User, Enrollment, YearlyMetric, Grades, CalendarEvent, LinkItem, FileItem # Make sure to import your User model instead of or alongside myTask
+from flask import Blueprint, render_template, redirect, request, url_for, session, flash, current_app, send_file, jsonify, abort
+from app.models import User, Enrollment, YearlyMetric, Grades, CalendarEvent, LinkItem, FileItem, PictureItem # Make sure to import your User model instead of or alongside myTask
 from app import db
 from datetime import datetime 
 import pandas as pd
@@ -20,7 +20,27 @@ main_bp = Blueprint('main', __name__)
 
 
 
+# RESTRICT MOBILE ACCESS
 
+def is_mobile_device():
+    user_agent = request.headers.get('User-Agent', '').lower()
+
+    mobile_keywords = [
+        'android',
+        'iphone',
+        'ipod',
+        'blackberry',
+        'windows phone',
+        'mobile',
+        'opera mini'
+    ]
+
+    return any(keyword in user_agent for keyword in mobile_keywords)
+
+
+def restrict_mobile_access():
+    if is_mobile_device():
+        abort(403)
 
 
 @main_bp.route("/login", methods=['GET', 'POST'])
@@ -557,14 +577,20 @@ def _parse_calendar_payload(data):
     tag = (data.get('tag') or '').strip().lower()
     if tag not in CALENDAR_TAGS:
         return None, 'Invalid tag.'
- 
+
+    link_url = (data.get('link_url') or '').strip()
+    if link_url:
+        parsed_url = urlparse(link_url)
+
+        if parsed_url.scheme not in ('http', 'https') or not parsed_url.netloc:
+            raise ValueError("Enter a valid URL beginning with http:// or https://")
     try:
         event_date = datetime.strptime(data.get('date', ''), '%Y-%m-%d').date()
     except ValueError:
         return None, 'Invalid date.'
  
     description = (data.get('description') or '').strip()[:500]
-    return {'event_date': event_date, 'tag': tag, 'description': description}, None
+    return {'event_date': event_date, 'tag': tag, 'description': description, 'link_url': link_url}, None
  
  
 @main_bp.route("/calendar/events", methods=['GET', 'POST'])
@@ -611,7 +637,7 @@ def calendar_event_detail(event_id):
 
 # LINKAGES
 
-ALLOWED_EXTENSIONS = {'pdf', 'docx', 'xlsx'}
+ALLOWED_EXTENSIONS = {'pdf', 'docx', 'xlsx', 'pptx'}
  
  
 def get_extension(filename):
@@ -659,11 +685,13 @@ def linkagefiles():
 
     links = LinkItem.query.order_by(LinkItem.created_at.desc()).all()
     files = FileItem.query.order_by(FileItem.uploaded_at.desc()).all()
+    pictures = PictureItem.query.order_by(PictureItem.uploaded_at.desc()).all()
 
     return render_template(
         'linkagefiles.html',
         links=links,
-        files=files
+        files=files,
+        pictures=pictures
     )
  
  
@@ -791,3 +819,144 @@ def download_file(file_id):
         download_name=item.filename,
         mimetype=item.content_type or 'application/octet-stream',
     )
+
+# ----- Pictures -----
+
+ALLOWED_PICTURE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
+
+PICTURE_MIME_TYPES = {
+    'png': 'image/png',
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'webp': 'image/webp'
+}
+
+MAX_PICTURE_SIZE = 5 * 1024 * 1024  # 5 MB
+
+
+def read_picture(upload):
+    """Validate an image and return its filename, data, MIME type, and error."""
+
+    if not upload or not upload.filename:
+        return None, None, None, 'Please choose an image.'
+
+    filename = secure_filename(upload.filename)
+
+    if not filename or '.' not in filename:
+        return None, None, None, 'Invalid image filename.'
+
+    extension = filename.rsplit('.', 1)[1].lower()
+
+    if extension not in ALLOWED_PICTURE_EXTENSIONS:
+        return None, None, None, 'Only PNG, JPG, JPEG, and WEBP images are allowed.'
+
+    data = upload.read()
+
+    if not data:
+        return None, None, None, 'The selected image is empty.'
+
+    if len(data) > MAX_PICTURE_SIZE:
+        return None, None, None, 'Image size must not exceed 5 MB.'
+
+    # Basic file signature validation
+    valid_signatures = {
+        'png': data.startswith(b'\x89PNG\r\n\x1a\n'),
+        'jpg': data.startswith(b'\xff\xd8\xff'),
+        'jpeg': data.startswith(b'\xff\xd8\xff'),
+        'webp': (
+            len(data) >= 12
+            and data[:4] == b'RIFF'
+            and data[8:12] == b'WEBP'
+        )
+    }
+
+    if not valid_signatures[extension]:
+        return None, None, None, 'The uploaded file is not a valid image.'
+
+    return filename, data, PICTURE_MIME_TYPES[extension], None
+
+
+@main_bp.route("/linkage/pictures/upload", methods=['POST'])
+def upload_picture():
+    if 'user_id' not in session:
+        return redirect(url_for('main.login'))
+
+    filename, data, content_type, error = read_picture(
+        request.files.get('picture')
+    )
+
+    if error:
+        flash(error, 'danger')
+        return redirect(url_for('main.linkagefiles'))
+
+    title = request.form.get('title', '').strip()
+
+    if not title:
+        flash('Please enter a picture title.', 'danger')
+        return redirect(url_for('main.linkagefiles'))
+
+    try:
+        picture = PictureItem(
+            title=title,
+            filename=filename,
+            content_type=content_type,
+            size=len(data),
+            data=data
+        )
+
+        db.session.add(picture)
+        db.session.commit()
+
+        flash('Picture uploaded successfully.', 'success')
+
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception(
+            "Failed to upload picture to the database."
+        )
+        flash('Could not upload the picture. Please try again.', 'danger')
+
+    return redirect(url_for('main.linkagefiles'))
+
+
+@main_bp.route("/linkage/pictures/<int:picture_id>/view")
+def view_picture(picture_id):
+    if 'user_id' not in session:
+        return redirect(url_for('main.login'))
+
+    picture = PictureItem.query.get_or_404(picture_id)
+
+    if not picture.data:
+        abort(404)
+
+    return send_file(
+        BytesIO(picture.data),
+        mimetype=picture.content_type or 'application/octet-stream',
+        as_attachment=False
+    )
+
+
+@main_bp.route(
+    "/linkage/pictures/<int:picture_id>/delete",
+    methods=['POST']
+)
+def delete_picture(picture_id):
+    if 'user_id' not in session:
+        return redirect(url_for('main.login'))
+
+    picture = PictureItem.query.get_or_404(picture_id)
+
+    try:
+        db.session.delete(picture)
+        db.session.commit()
+
+        flash('Picture deleted successfully.', 'success')
+
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception(
+            "Failed to delete picture from the database."
+        )
+        flash('Could not delete the picture. Please try again.', 'danger')
+
+    return redirect(url_for('main.linkagefiles'))
