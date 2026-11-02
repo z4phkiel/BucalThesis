@@ -59,7 +59,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     fetch(updateUrl, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                         },
+                        
                         body: JSON.stringify(payload)
                     })
                         .then(res => res.json().then(data => ({ status: res.status, body: data })))

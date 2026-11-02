@@ -406,7 +406,7 @@
     display: block;
     width: calc(var(--ix-field-w) + var(--ix-addon-w));
     margin-left: auto;
-    padding-right: 0.6rem;
+    padding-right: 0rem;
     text-align: right;
     font-variant-numeric: tabular-nums;
 }
@@ -427,7 +427,7 @@
 
 #metricsCard .table > tbody > tr > td:nth-child(2) .metric-display {
     width: var(--ix-field-w);
-    padding-right: 0.35rem;
+    padding-right: 0rem;
 }
 
 #metricsCard .table > thead th:last-child,
