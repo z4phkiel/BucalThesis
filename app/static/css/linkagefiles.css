@@ -1,1 +1,317 @@
-/* PUT LINKAGEFILES STYLE HERE */
+
+:root {
+    --lf-green-900: #243d28;
+    --lf-green-700: #2f5233;
+    --lf-green-600: #3f6b3a;
+    --lf-green-500: #4f7d45;
+    --lf-khaki-500: #c9b98f;
+    --lf-khaki-400: #d6c9a3;
+    --lf-khaki-300: #e3d9b8;
+    --lf-khaki-100: #f6f2e4;
+    --lf-white: #fdfcf7;
+    --lf-text: #26312a;
+    --lf-muted: #7a8272;
+    --lf-border: #e8e3cf;
+    --lf-brick: #a3392a;
+}
+
+/* ---------- Page title ---------- */
+.main-content h1.h3.mb-4 {
+    position: relative;
+    padding-left: 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--lf-green-700);
+}
+
+.main-content h1.h3.mb-4::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 6px;
+    height: 70%;
+    transform: translateY(-50%);
+    border-radius: 6px;
+    background: linear-gradient(180deg, var(--lf-khaki-500), var(--lf-green-500));
+}
+
+/* ---------- Flash messages ---------- */
+.main-content .alert-dismissible {
+    padding: 14px 48px 14px 18px;
+    font-weight: 500;
+}
+
+.main-content .alert-success {
+    --bs-alert-color: var(--lf-green-900);
+    --bs-alert-bg: #e8efe3;
+    --bs-alert-border-color: var(--lf-green-500);
+}
+
+.main-content .alert-danger {
+    --bs-alert-color: var(--lf-brick);
+    --bs-alert-bg: #fbeeea;
+    --bs-alert-border-color: var(--lf-brick);
+}
+
+.main-content .alert-warning {
+    --bs-alert-color: #6e5f2a;
+    --bs-alert-bg: var(--lf-khaki-100);
+    --bs-alert-border-color: var(--lf-khaki-500);
+}
+
+/* ---------- Section headings inside the cards ---------- */
+.card-body > h2.h5 {
+    margin-bottom: 1.1rem !important;
+    padding-bottom: 12px;
+    font-weight: 700;
+    color: var(--lf-green-700);
+    border-bottom: 1px dashed var(--lf-khaki-500);
+}
+
+/* ---------- Add / upload forms ---------- */
+.card-body > form.row .form-control {
+    padding: 10px 14px;
+    font-size: 0.92rem;
+}
+
+.card-body > form.row .form-control::placeholder {
+    color: #a3a998;
+}
+
+/* file picker button */
+.main-content .form-control[type="file"]::file-selector-button {
+    margin: -10px 14px -10px -14px;
+    padding: 10px 16px;
+    font-weight: 600;
+    color: var(--lf-green-700);
+    background: var(--lf-khaki-300);
+    border: 0;
+    border-right: 1.5px solid var(--lf-khaki-500);
+    transition: background-color 0.15s;
+}
+
+.main-content .form-control[type="file"]:hover::file-selector-button {
+    background: var(--lf-khaki-400);
+}
+
+.card-body > form.row .btn-primary {
+    padding: 10px 12px;
+}
+
+.card-body > p.text-muted.small {
+    padding-left: 2px;
+    color: var(--lf-muted) !important;
+}
+
+/* ---------- Tables ---------- */
+.card .table > thead.table-light {
+    --bs-table-bg: var(--lf-green-700);
+    --bs-table-color: #fff;
+    --bs-table-border-color: var(--lf-green-700);
+}
+
+.card .table > thead.table-light th {
+    padding: 14px 16px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: #fff;
+    background: linear-gradient(135deg, var(--lf-green-600), var(--lf-green-700));
+    border-bottom: 3px solid var(--lf-khaki-500);
+}
+
+/* titles */
+.card .table > tbody > tr > td:first-child {
+    font-weight: 600;
+    color: var(--lf-green-700);
+}
+
+/* link addresses */
+.card .table td a:not(.btn) {
+    color: var(--lf-green-600);
+    text-decoration: none;
+    word-break: break-all;
+    background-image: linear-gradient(var(--lf-khaki-500), var(--lf-khaki-500));
+    background-size: 0% 2px;
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    transition: color 0.18s ease, background-size 0.25s ease;
+}
+
+.card .table td a:not(.btn):hover,
+.card .table td a:not(.btn):focus-visible {
+    color: var(--lf-green-500);
+    background-size: 100% 2px;
+    outline: none;
+}
+
+/* empty rows */
+.card .table td.text-muted {
+    font-style: italic;
+    color: var(--lf-muted) !important;
+    background: var(--lf-khaki-100);
+}
+
+/* ---------- Row action buttons (Download / Edit / Delete) ---------- */
+.card .table td.text-end .btn {
+    min-width: 5.25rem;
+    padding: 4px 14px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    border-width: 1.5px;
+    border-radius: 999px;
+    transition: transform 0.15s, background-color 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.card .table td.text-end > .btn,
+.card .table td.text-end > form {
+    margin-left: 6px;
+}
+
+.card .table td.text-end > form {
+    vertical-align: middle;
+}
+
+.card .table td.text-end .btn:hover {
+    transform: translateY(-1px);
+}
+
+/* Edit: green outline */
+.card .table .btn-outline-primary {
+    --bs-btn-color: var(--lf-green-700);
+    --bs-btn-border-color: var(--lf-green-500);
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: var(--lf-green-600);
+    --bs-btn-hover-border-color: var(--lf-green-600);
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: var(--lf-green-900);
+    --bs-btn-active-border-color: var(--lf-green-900);
+    --bs-btn-focus-shadow-rgb: 79, 125, 69;
+}
+
+/* Delete: brick outline */
+.card .table .btn-outline-danger {
+    --bs-btn-color: var(--lf-brick);
+    --bs-btn-border-color: #d9a79e;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: var(--lf-brick);
+    --bs-btn-hover-border-color: var(--lf-brick);
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #8c2f22;
+    --bs-btn-active-border-color: #8c2f22;
+    --bs-btn-focus-shadow-rgb: 163, 57, 42;
+}
+
+/* ---------- Edit popups ---------- */
+.modal-backdrop {
+    --bs-backdrop-bg: var(--lf-green-900);
+    --bs-backdrop-opacity: 0.55;
+}
+
+.modal .modal-content {
+    background: var(--lf-white);
+    border: 0;
+    border-top: 6px solid var(--lf-khaki-500);
+    border-radius: 18px;
+    box-shadow: 0 30px 60px -15px rgba(20, 40, 25, 0.55);
+}
+
+.modal .modal-header {
+    padding: 22px 28px 14px;
+    border-bottom: 1px dashed var(--lf-khaki-500);
+}
+
+.modal .modal-title {
+    font-weight: 700;
+    color: var(--lf-green-700);
+}
+
+.modal .modal-body {
+    padding: 20px 28px 8px;
+}
+
+.modal .form-label {
+    margin-bottom: 6px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--lf-green-700);
+}
+
+.modal .form-control {
+    padding: 10px 14px;
+    background-color: #faf8ef;
+    border: 1.5px solid var(--lf-border);
+    border-radius: 10px;
+}
+
+.modal .form-control:focus {
+    background-color: #fff;
+    border-color: var(--lf-green-500);
+    box-shadow: 0 0 0 4px rgba(79, 125, 69, 0.18);
+}
+
+.modal .form-text {
+    color: var(--lf-muted);
+}
+
+.modal .modal-footer {
+    padding: 14px 28px 22px;
+    gap: 10px;
+    border-top: 0;
+}
+
+.modal .modal-footer .btn {
+    padding: 9px 20px;
+    font-weight: 600;
+    border-radius: 10px;
+}
+
+/* Cancel: khaki */
+.modal .btn-secondary {
+    --bs-btn-color: var(--lf-green-700);
+    --bs-btn-bg: var(--lf-khaki-100);
+    --bs-btn-border-color: var(--lf-khaki-500);
+    --bs-btn-hover-color: var(--lf-green-700);
+    --bs-btn-hover-bg: var(--lf-khaki-300);
+    --bs-btn-hover-border-color: var(--lf-khaki-500);
+    --bs-btn-active-color: var(--lf-green-900);
+    --bs-btn-active-bg: var(--lf-khaki-400);
+    --bs-btn-active-border-color: var(--lf-khaki-500);
+    --bs-btn-focus-shadow-rgb: 201, 185, 143;
+}
+
+/* Save changes: green (also covers the popup, which sits outside index.css's page area) */
+.modal .btn-primary {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: var(--lf-green-600);
+    --bs-btn-border-color: var(--lf-green-600);
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: var(--lf-green-700);
+    --bs-btn-hover-border-color: var(--lf-green-700);
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: var(--lf-green-900);
+    --bs-btn-active-border-color: var(--lf-green-900);
+    --bs-btn-focus-shadow-rgb: 79, 125, 69;
+    box-shadow: 0 8px 18px rgba(47, 82, 51, 0.28);
+}
+
+/* ---------- Small screens ---------- */
+@media (max-width: 576px) {
+    .card .table td.text-end .btn {
+        min-width: 4.5rem;
+        padding: 4px 10px;
+    }
+
+    .modal .modal-header,
+    .modal .modal-body,
+    .modal .modal-footer {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+}

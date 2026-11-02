@@ -2,6 +2,7 @@
 
 
 {% block content %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <link rel="stylesheet" href="../static/css/calendar.css">
  
 <h1>Calendar</h1>
@@ -42,7 +43,12 @@
             <option value="event">Event</option>
             <option value="exam">Exam</option>
         </select>
- 
+        <label for="fLink">Event Link (Optional)</label>
+        <input
+        type="url"
+        id="fLink"
+        placeholder="https://example.com"
+        >
         <label for="fDesc">Description</label>
         <textarea id="fDesc" maxlength="500" placeholder="Add a description..."></textarea>
  

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" class="overflow-y-scroll">
 <head>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
@@ -10,7 +11,7 @@
 <body>
     <div class="d-flex flex-column bg-dark vh-100 position-fixed top-0 start-0 sidebar">
         <div class="p-3 border-bottom border-secondary text-center">
-            <span class="fs-5 fw-semibold text-white">Bucal Portal</span>
+            <span class="fs-5 fw-semibold text-white">Bucal II Elementary 108039</span>
         </div>
 
         <ul class="nav flex-column gap-1 flex-grow-1 text-center">
@@ -21,17 +22,17 @@
             </li>
             <li class="nav-item">
                 <a href="{{ url_for('main.enrollment') }}" class="nav-link">
-                    Enrollment
+                    Enrollment Form
                 </a>
             </li>
             <li class="nav-item">
                 <a href="{{ url_for('main.enrolled') }}" class="nav-link">
-                    Enrolled
+                    Masterlist
                 </a>
             </li>
             <li class="nav-item">
                 <a href="{{ url_for('main.grades') }}" class="nav-link">
-                    Grades
+                    School Forms
                 </a>
             </li>
             <li class="nav-item">
@@ -83,6 +84,7 @@
                                 {% for m in metrics %}
                                 {% set start_year = m.school_year.split('-')[0] | trim | int(-1) %}
                                 {% set locked = start_year != -1 and start_year <= 2024 %}
+                                {% set saved = (not locked) and (m.enrollee_count is not none) %}
                                 <tr data-metric-id="{{ m.id }}" data-update-url="{{ url_for('main.update_metric', metric_id=m.id) }}">
                                     <td><strong>{{ m.school_year }}</strong></td>
 
@@ -93,8 +95,8 @@
                                         {% if locked %}
                                             {{ m[field] if m[field] is not none else '—' }}{{ '%' if field != 'enrollee_count' and m[field] is not none }}
                                         {% else %}
-                                            <span class="metric-display d-none" data-field="{{ field }}"></span>
-                                            <div class="input-group input-group-sm metric-edit-group">
+                                            <span class="metric-display {{ '' if saved else 'd-none' }}" data-field="{{ field }}">{% if m[field] is none %}—{% elif field == 'enrollee_count' %}{{ m[field] }}{% else %}{{ m[field] }}%{% endif %}</span>
+                                            <div class="input-group input-group-sm metric-edit-group {{ 'd-none' if saved else '' }}">
                                                 <input type="number" step="0.01"
                                                        class="form-control metric-input"
                                                        data-field="{{ field }}"
@@ -111,7 +113,7 @@
                                         {% if locked %}
                                             <span class="badge bg-secondary">Locked</span>
                                         {% else %}
-                                            <button class="btn btn-sm btn-success save-row-btn" data-mode="save">Save</button>
+                                            <button class="btn btn-sm {{ 'btn-outline-success' if saved else 'btn-success' }} save-row-btn" data-mode="{{ 'edit' if saved else 'save' }}">{{ 'Edit' if saved else 'Save' }}</button>
                                         {% endif %}
                                     </td>
                                 </tr>

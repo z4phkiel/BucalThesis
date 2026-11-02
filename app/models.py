@@ -1,6 +1,8 @@
 from app import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+from sqlalchemy.dialects.mysql import MEDIUMBLOB
+from sqlalchemy.orm import deferred
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -114,12 +116,41 @@ class YearlyMetric(db.Model):
     def __repr__(self):
         return f'<YearlyMetric {self.school_year}>'
 
+class Grades(db.Model):
+    __tablename__ = 'student_grades'
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    student_id = db.Column(
+        db.Integer,
+        db.ForeignKey("enrollment.id"),
+        nullable=False
+    )
+
+    grade_level = db.Column(db.String(30), nullable=False)
+    original_filename = db.Column(db.String(255), nullable=False)
+    stored_filename = db.Column(db.String(255), nullable=False)
+    
+
+    file_data = db.Column(db.LargeBinary, nullable=True)
+    mime_type = db.Column(db.String(100), nullable=True)
+
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            'student_id',
+            'grade_level',
+            name="unique_student_grade_level"
+        ),
+    )
 class CalendarEvent(db.Model):
     __tablename__ = 'calendar_events'
  
     id = db.Column(db.Integer, primary_key=True)
     event_date = db.Column(db.Date, nullable=False, index=True)
     tag = db.Column(db.String(20), nullable=False)          # holiday / event / exam
+    link_url = db.Column(db.String(2048), nullable=True)
     description = db.Column(db.Text, default='')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
  
@@ -128,5 +159,59 @@ class CalendarEvent(db.Model):
             'id': self.id,
             'date': self.event_date.strftime('%Y-%m-%d'),
             'tag': self.tag,
+            'link_url': self.link_url,
             'description': self.description or '',
         }
+
+
+class LinkItem(db.Model):
+    __tablename__ = 'link_item'
+ 
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(150), nullable=False)
+    url = db.Column(db.String(500), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+ 
+    def __repr__(self):
+        return f'<LinkItem {self.title}>'
+ 
+ 
+class FileItem(db.Model):
+    __tablename__ = 'file_item'
+ 
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(150), nullable=False)
+    filename = db.Column(db.String(255), nullable=False)
+    content_type = db.Column(db.String(150))
+    size = db.Column(db.Integer)
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+ 
+    data = deferred(db.Column(db.LargeBinary().with_variant(MEDIUMBLOB(), 'mysql'), nullable=False))
+ 
+    def __repr__(self):
+        return f'<FileItem {self.title}>'
+
+
+class PictureItem(db.Model):
+    __tablename__ = 'picture_item'
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    title = db.Column(db.String(150), nullable=False)
+    filename = db.Column(db.String(255), nullable=False)
+
+    content_type = db.Column(db.String(100), nullable=False)
+    size = db.Column(db.Integer, nullable=False)
+
+    # Store the actual image inside MySQL
+    data = deferred(
+        db.Column(
+            db.LargeBinary().with_variant(MEDIUMBLOB(), 'mysql'),
+            nullable=False
+        )
+    )
+
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<PictureItem {self.title}>'

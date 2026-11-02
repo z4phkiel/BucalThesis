@@ -2,7 +2,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const toggleBtn = document.getElementById('toggleMetricBtn');
             const metricsCard = document.getElementById('metricsCard');
 
-            toggleBtn.addEventListener('click', function () {
+
+            if (toggleBtn && metricsCard ) {
+                toggleBtn.addEventListener('click', function () {
                 // Toggle the 'd-none' Bootstrap class to show/hide
                 metricsCard.classList.toggle('d-none');
 
@@ -13,6 +15,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     toggleBtn.textContent = 'Hide Yearly Metric';
                 }
             });
+            }
+            
 
             function setRowMode(row, mode) {
                 // mode is either 'edit' or 'display'
@@ -55,7 +59,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     fetch(updateUrl, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                         },
+                        
                         body: JSON.stringify(payload)
                     })
                         .then(res => res.json().then(data => ({ status: res.status, body: data })))

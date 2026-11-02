@@ -2,27 +2,33 @@
 
 {% block content %}
 <link rel="stylesheet" href="../static/css/grades.css">
-<h1>Grades</h1>
-<div>
-    <input type="text" placeholder="Student Name">
-    <input type="text" placeholder="Learner Reference Number">
-    <button>+</button>
+<div class="mb-4">
+  <h3 class="fw-bold mb-1">Student Grades</h3>
 </div>
-
-<div>
-    <h3>No Student Grade Stored</h3>
-    <!-- Student Name & LRN
-    Insert Kindergarten Grade Upload Delete
-    Insert Grade 1 Grade Upload Delete
-    Insert Grade 2 Grade Upload Delete
-    Insert Grade 3 Grade Upload Delete
-    Insert Grade 4 Grade Upload Delete
-    Insert Grade 5 Grade Upload Delete
-    Insert Grade 6 Grade Upload Delete -->
-</div>
-
+<div class="card border-0 shadow-sm mb-4"><div class="card-body">
+  <label for="studentSearch" class="form-label fw-semibold">Search Students</label>
+  <input type="text" id="studentSearch" class="form-control" placeholder="Search by student name or LRN...">
+</div></div>
+<div class="card border-0 shadow-sm"><div class="table-responsive">
+<table class="table table-hover align-middle mb-0">
+<thead class="table-light"><tr><th class="ps-3">#</th><th>Student Name</th><th>LRN</th><th>Enrolled Grade Level</th><th class="text-center">Action</th></tr></thead>
+<tbody>
+{% for item in students %}
+<tr class="student-row">
+<td class="ps-3">{{ loop.index }}</td>
+<td class="student-name">{{ item.last_name }}, {{ item.first_name }} {{ item.middle_name or '' }}{% if item.extension_name %} {{ item.extension_name }}{% endif %}</td>
+<td class="student-lrn">{{ item.lrn_no or '—' }}</td>
+<td>{{ item.grade_level.replace('_', ' ') if item.grade_level else '—' }}</td>
+<td class="text-center"><a href="{{ url_for('main.student_grades', student_id=item.id) }}" class="btn btn-sm btn-primary"><i class="bi bi-folder2-open me-1"></i> Open SF</a></td>
+</tr>
+{% else %}
+<tr><td colspan="5" class="text-center text-muted py-5">No enrolled students found.</td></tr>
+{% endfor %}
+<tr id="noSearchResults" style="display:none"><td colspan="5" class="text-center text-muted py-4">No matching students found.</td></tr>
+</tbody></table></div></div>
 {% endblock %}
 
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/grades/grade.js') }}"></script>
 {% endblock %}

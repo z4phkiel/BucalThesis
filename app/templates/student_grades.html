@@ -1,0 +1,43 @@
+{% extends 'dashboard.html' %}
+{% block content %}
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+  <div>
+    <a href="{{ url_for('main.grades') }}" class="text-decoration-none small"><i class="bi bi-arrow-left"></i> Back to Students</a>
+    <h3 class="fw-bold mt-2 mb-1">Student Grade Files</h3>
+    <p class="text-muted mb-1">{{ student.last_name }}, {{ student.first_name }} {{ student.middle_name or '' }}{% if student.extension_name %} {{ student.extension_name }}{% endif %}</p>
+    <small class="text-muted">LRN: {{ student.lrn_no or '—' }}</small>
+  </div>
+</div>
+<div class="alert alert-info border-0"><i class="bi bi-info-circle me-2"></i>Each school level has one Excel (.xlsx) file. Upload a file to store it, or replace, download, or delete an existing file.</div>
+<div class="row g-3">
+{% for level in grade_levels %}
+{% set report = reports.get(level) %}
+<div class="col-12 col-md-6 col-xl-4"><div class="card h-100 border-0 shadow-sm"><div class="card-body d-flex flex-column">
+  <div class="d-flex align-items-center gap-3 mb-3"><div class="rounded-3 bg-primary bg-opacity-10 text-primary p-3"><i class="bi bi-file-earmark-excel fs-3"></i></div><div><h5 class="fw-bold mb-1">{{ level }}</h5>
+  {% if report %}<span class="badge bg-success">Excel file stored</span>{% else %}<span class="badge bg-secondary">No file uploaded</span>{% endif %}
+  </div></div>
+  {% if report %}
+  <div class="border rounded p-3 mb-3"><div class="d-flex align-items-center gap-2"><i class="bi bi-file-earmark-excel fs-4 text-success"></i><div class="text-truncate"><div class="fw-semibold text-truncate">{{ report.original_filename }}</div><small class="text-muted">Stored in the database</small></div></div>
+  <a href="{{ url_for('main.download_report_card', report_id=report.id) }}" class="btn btn-outline-secondary btn-sm w-100 mt-3"><i class="bi bi-download me-1"></i> Download Excel File</a></div>
+  <div class="mt-auto d-flex gap-2">
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for('main.upload_report_card', student_id=student.id, level=level) }}" class="flex-grow-1">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="file" name="report_card" id="replace-file-{{ loop.index }}" class="d-none" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required onchange="this.form.submit()">
+      <label for="replace-file-{{ loop.index }}" class="btn btn-primary btn-sm w-100"><i class="bi bi-arrow-repeat me-1"></i> Replace</label>
+    </form>
+    <form method="POST" action="{{ url_for('main.delete_report_card', report_id=report.id) }}" onsubmit="return confirm('Delete this Excel file permanently?');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i> Delete</button>
+    </form>
+  </div>
+  {% else %}
+  <form method="POST" enctype="multipart/form-data" action="{{ url_for('main.upload_report_card', student_id=student.id, level=level) }}" class="mt-auto">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="file" name="report_card" class="form-control form-control-sm mb-3" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-upload me-1"></i> Upload Excel File</button>
+  </form>
+  {% endif %}
+</div></div></div>
+{% endfor %}
+</div>
+{% endblock %}
