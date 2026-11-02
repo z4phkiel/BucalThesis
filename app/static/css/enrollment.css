@@ -141,34 +141,23 @@
     scroll-margin-top: 120px;
 }
 
-/* Mobile adjustments */
-@media (max-width: 576px) {
-    .stepper-wrap {
-        padding: 10px 8px;
-        margin-bottom: 24px;
-    }
-
-    .stepper {
-        max-width: 100%;
-        padding: 0;
-    }
-
-    .step-dot {
-        width: 36px;
-        height: 36px;
-        font-size: 13px;
-    }
-
-    .stepper-track {
-        top: 17px;
-        left: 17%;
-        right: 17%;
-    }
-
-    .step-label {
-        font-size: 11px;
-        max-width: 105px;
-    }
+/* Fixed Modal Overlay */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
+/* Signature preview */
+.signature-preview-box img {
+    max-height: 50px;
+    object-fit: contain;
+}
 
