@@ -151,6 +151,13 @@
                             </div>
                         </div>
                     </div>
+                    {% if pred_next_year is not none and mape is not none %}
+                        <p class="text-muted small mt-3 mb-0">
+                            Based on {{ based_on_year }} data. On past years, predictions were off by about {{ mape }}% on average,
+                            so expect roughly {{ (pred_next_year * (1 - mape / 100)) | round | int }}
+                            to {{ (pred_next_year * (1 + mape / 100)) | round | int }} enrollees.
+                        </p>
+                    {% endif %}
                 </div>
             </div>
             {% endblock %}

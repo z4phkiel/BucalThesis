@@ -3,7 +3,11 @@ from app.models import User, Enrollment, YearlyMetric, Grades, CalendarEvent, Li
 from app import db
 from datetime import datetime 
 import pandas as pd
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, Ridge
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import LeaveOneOut, cross_val_predict
+from sklearn.metrics import mean_absolute_percentage_error
 import os
 import io
 from io import BytesIO
@@ -131,61 +135,54 @@ def index():
 
     ensure_current_school_year_metric()
     metrics = YearlyMetric.query.order_by(YearlyMetric.school_year.desc()).all()
-        
+
     all_metrics_asc = YearlyMetric.query.order_by(YearlyMetric.school_year.asc()).all()
-    data = []
-    for m in all_metrics_asc:
-        data.append({
-            'school_year': m.school_year,
-            'enrollee_count': m.enrollee_count,
-            'promotion_rate': m.promotion_rate,
-            'cohort_survival_rate': m.cohort_survival_rate,
-            'completion_rate': m.completion_rate,
-            'transition_rate': m.transition_rate,
-            'dropout_rate': m.dropout_rate,
-            'graduation_rate': m.graduation_rate,
-            'retention_rate': m.retention_rate
-        })
-    
-    df = pd.DataFrame(data)
+    data = [{
+        'school_year': m.school_year,
+        'enrollee_count': m.enrollee_count,
+        'promotion_rate': m.promotion_rate,
+        'dropout_rate': m.dropout_rate,
+    } for m in all_metrics_asc]
+
     pred_next_year = None
     r2_score_val = None
-    
-    if not df.empty:
-        df_clean = df[(df['enrollee_count'] > 0) & (df['promotion_rate'] > 0)].copy()
-        
-        df_clean['next_enrollee_count'] = df_clean['enrollee_count'].shift(-1)
-        train_df = df_clean.dropna(subset=['next_enrollee_count'])
-        
-        features = [
-            'enrollee_count', 'promotion_rate', 'cohort_survival_rate', 'completion_rate',
-            'transition_rate', 'dropout_rate', 'graduation_rate', 'retention_rate'
-        ]
-        
-        if len(train_df) > 0:
-            X = train_df[features]
-            y = train_df['next_enrollee_count']
-            
-            model = LinearRegression()
+    mape = None
+    based_on_year = None
+
+    features = ['enrollee_count', 'promotion_rate', 'dropout_rate']
+
+    if data:
+        df = pd.DataFrame(data).sort_values('school_year').reset_index(drop=True)
+        df['next_enrollee_count'] = df['enrollee_count'].shift(-1)
+
+        complete = (df['enrollee_count'] > 0) & (df['promotion_rate'] > 0)
+        train_df = df[complete & (df['next_enrollee_count'] > 0)]
+
+        if len(train_df) >= 5:
+            X = train_df[features].astype(float)
+            y = train_df['next_enrollee_count'].astype(float)
+
+            model = make_pipeline(StandardScaler(), Ridge(alpha=1.0))
+
+            # honest error estimate
+            cv_pred = cross_val_predict(model, X, y, cv=LeaveOneOut())
+            mape = round(float(mean_absolute_percentage_error(y, cv_pred)) * 100, 2)
+
             model.fit(X, y)
-            
             r2_score_val = round(float(model.score(X, y)), 4)
-            
-            latest_record = df.iloc[-1]
-            if latest_record['promotion_rate'] == 0 and len(df) > 1:
-                latest_features = df.iloc[-2][features].values.reshape(1, -1)
-            else:
-                latest_features = latest_record[features].values.reshape(1, -1)
-                
-            prediction = model.predict(latest_features)[0]
-            pred_next_year = round(float(prediction))
+
+            latest = df[complete].iloc[[-1]]
+            pred_next_year = round(float(model.predict(latest[features].astype(float))[0]))
+            based_on_year = latest['school_year'].iloc[0]
 
     return render_template(
-        'dashboard.html', 
-        username=session['username'], 
-        metrics=metrics, 
+        'dashboard.html',
+        username=session['username'],
+        metrics=metrics,
         pred_next_year=pred_next_year,
-        r2_score=r2_score_val
+        r2_score=r2_score_val,
+        mape=mape,
+        based_on_year=based_on_year,
     )
 
 @main_bp.route("/test_signatures")
