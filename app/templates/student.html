@@ -91,7 +91,7 @@
             <label for="psa_birth_cert_no" class="form-label small mb-1">PSA Birth Certificate No. (if available upon registration)</label>
             <input type="text" name="psa_birth_cert_no" id="psa_birth_cert_no"
                    class="form-control border-0 border-bottom rounded-0"
-                   value="{{student.psa_birth_cert_no}}" readonly>
+                   value="{{student.psa_birth_cert_no if student.psa_birth_cert_no else 'N/A'}}" readonly>
         </div>
         <div class="col-md-5">
             <!-- Learner Reference NO. -->

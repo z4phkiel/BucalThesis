@@ -36,28 +36,41 @@
     background: linear-gradient(180deg, var(--lf-khaki-500), var(--lf-green-500));
 }
 
-/* ---------- Flash messages ---------- */
-.main-content .alert-dismissible {
-    padding: 14px 48px 14px 18px;
-    font-weight: 500;
+/* ---------- Search bar (same look as the School Forms search) ---------- */
+.card-body > label[for="linkageSearch"] {
+    margin-bottom: 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--lf-green-700);
 }
 
-.main-content .alert-success {
-    --bs-alert-color: var(--lf-green-900);
-    --bs-alert-bg: #e8efe3;
-    --bs-alert-border-color: var(--lf-green-500);
+.main-content #linkageSearch {
+    padding: 12px 16px 12px 46px;
+    font-size: 0.95rem;
+    color: var(--lf-text);
+    background-color: #faf8ef;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%232f5233' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M21 21l-4.3-4.3'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 16px center;
+    border: 1.5px solid var(--lf-border);
+    border-radius: 999px;
+    transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
 }
 
-.main-content .alert-danger {
-    --bs-alert-color: var(--lf-brick);
-    --bs-alert-bg: #fbeeea;
-    --bs-alert-border-color: var(--lf-brick);
+.main-content #linkageSearch::placeholder {
+    color: #a3a998;
 }
 
-.main-content .alert-warning {
-    --bs-alert-color: #6e5f2a;
-    --bs-alert-bg: var(--lf-khaki-100);
-    --bs-alert-border-color: var(--lf-khaki-500);
+.main-content #linkageSearch:hover {
+    border-color: var(--lf-khaki-500);
+}
+
+.main-content #linkageSearch:focus {
+    background-color: #fff;
+    border-color: var(--lf-green-500);
+    box-shadow: 0 0 0 4px rgba(79, 125, 69, 0.18);
 }
 
 /* ---------- Section headings inside the cards ---------- */

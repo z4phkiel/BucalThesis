@@ -1,4 +1,20 @@
     document.addEventListener('DOMContentLoaded', function () {
+        // Search filters the links, files and pictures already on the page
+        const sections = document.querySelectorAll('[data-search-section]');
+        document.getElementById('linkageSearch').addEventListener('input', function () {
+            const term = this.value.trim().toLowerCase();
+            sections.forEach(function (section) {
+                const items = section.querySelectorAll('.search-item');
+                let count = 0;
+                items.forEach(function (item) {
+                    const match = item.dataset.search.toLowerCase().includes(term);
+                    item.classList.toggle('d-none', !match);
+                    if (match) count++;
+                });
+                section.querySelector('.search-empty').classList.toggle('d-none', items.length === 0 || count > 0);
+            });
+        });
+
         // Fill the shared "Edit Link" popup with the row that was clicked
         const linkModal = document.getElementById('editLinkModal');
         linkModal.addEventListener('show.bs.modal', function (event) {

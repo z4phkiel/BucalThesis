@@ -15,9 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Fields that may stay empty (matched by input name)
     const OPTIONAL_NAMES = [
         // Learner's information
-        'extension_name',
-        // Returning learner / transfer-in
-        'last_grade_completed', 'last_school_year_completed', 'last_school_attended', 'school_id',
+        'psa_birth_cert_no', 'extension_name',
         // Senior high school
         'semester', 'track', 'strand',
     ];

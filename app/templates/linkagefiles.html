@@ -5,17 +5,15 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/linkagefiles.css') }}">
 <h1 class="h3 mb-4">Linkage/Files</h1>
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% for category, message in messages %}
-    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <label for="linkageSearch" class="form-label fw-semibold">Search Linkages</label>
+        <input type="search" id="linkageSearch" class="form-control" placeholder="Search links, files and pictures..." autocomplete="off">
     </div>
-    {% endfor %}
-{% endwith %}
+</div>
 
 <!-- Important links: add, edit, delete -->
-<div class="card shadow-sm mb-4">
+<div class="card shadow-sm mb-4" data-search-section>
     <div class="card-body">
         <h2 class="h5 mb-3">Important Links</h2>
 
@@ -43,7 +41,7 @@
                 </thead>
                 <tbody>
                     {% for link in links %}
-                    <tr>
+                    <tr class="search-item" data-search="{{ link.title }} {{ link.url }}">
                         <td>{{ link.title }}</td>
                         <td><a href="{{ link.url }}" target="_blank" rel="noopener noreferrer">{{ link.url }}</a></td>
                         <td class="text-end text-nowrap">
@@ -64,6 +62,9 @@
                         <td colspan="3" class="text-center text-muted py-4">No links yet. Add one above.</td>
                     </tr>
                     {% endfor %}
+                    <tr class="search-empty d-none">
+                        <td colspan="3" class="text-center text-muted py-4">No matching links.</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -71,7 +72,7 @@
 </div>
 
 <!-- Important files (PDF, DOCX, XLSX): upload, download, edit, delete -->
-<div class="card shadow-sm mb-4">
+<div class="card shadow-sm mb-4" data-search-section>
     <div class="card-body">
         <h2 class="h5 mb-3">Important Files</h2>
 
@@ -102,7 +103,7 @@
                 </thead>
                 <tbody>
                     {% for f in files %}
-                    <tr>
+                    <tr class="search-item" data-search="{{ f.title }} {{ f.filename }}">
                         <td>{{ f.title }}</td>
                         <td>{{ f.filename }}</td>
                         <td>
@@ -130,6 +131,9 @@
                         <td colspan="5" class="text-center text-muted py-4">No files yet. Upload one above.</td>
                     </tr>
                     {% endfor %}
+                    <tr class="search-empty d-none">
+                        <td colspan="5" class="text-center text-muted py-4">No matching files.</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -137,7 +141,7 @@
 </div>
 
 <!-- Important Pictures: upload, preview, delete -->
-<div class="card shadow-sm mb-4">
+<div class="card shadow-sm mb-4" data-search-section>
     <div class="card-body">
         <h2 class="h5 mb-3">Important Pictures</h2>
 
@@ -189,7 +193,7 @@
 <!-- Uploaded Pictures -->
 <div class="row g-3">
     {% for picture in pictures %}
-    <div class="col-6 col-md-4 col-lg-3">
+    <div class="col-6 col-md-4 col-lg-3 search-item" data-search="{{ picture.title }} {{ picture.filename }}">
         <div class="card h-100 shadow-sm border-0">
 
             <!-- Picture Preview -->
@@ -271,6 +275,11 @@
         </div>
     </div>
     {% endfor %}
+    <div class="col-12 search-empty d-none">
+        <div class="text-center text-muted py-5">
+            <p class="mb-0">No matching pictures.</p>
+        </div>
+    </div>
 </div>
 
 <!-- Edit link (one shared popup, filled in by the script below) -->

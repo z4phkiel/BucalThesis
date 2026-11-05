@@ -723,7 +723,11 @@
 
 <!-- the following script below is the script exclusive only for the enrollment page -->
 {% block scripts %}
+{% if form_data %}
+<script id="enrollment_form_data" type="application/json">{{ form_data | tojson }}</script>
+{% endif %}
 <script src="{{ url_for('static', filename='js/enrollment/form-init.js') }}"></script>
+<script src="{{ url_for('static', filename='js/enrollment/restore-form.js') }}"></script>
 <script src="{{ url_for('static', filename='js/enrollment/conditional-fields.js') }}"></script>
 <script src="{{ url_for('static', filename='js/enrollment/address-sync.js') }}"></script>
 <script src="{{ url_for('static', filename='js/enrollment/phone-formatter.js') }}"></script>

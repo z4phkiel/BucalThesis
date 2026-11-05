@@ -1,8 +1,13 @@
 from flask import Blueprint, render_template, redirect, request, url_for, session, flash, current_app, send_file, jsonify, abort
 from app.models import User, Enrollment, YearlyMetric, Grades, CalendarEvent, LinkItem, FileItem, PictureItem # Make sure to import your User model instead of or alongside myTask
 from app import db
-from datetime import datetime 
+from datetime import datetime, timedelta
+import base64
+import math
+import re
+import zipfile
 import pandas as pd
+from PIL import Image
 from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
@@ -54,8 +59,8 @@ def login():
         return redirect(url_for('main.index'))
 
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
+        username = request.form.get('username', '')
+        password = request.form.get('password', '')
 
         # Query the database for the user
         user = User.query.filter_by(username=username).first()
@@ -108,6 +113,36 @@ def ensure_current_school_year_metric():
  
     db.session.commit()
 
+
+MAX_ENROLLEE_COUNT = 2147483647     # largest value the INT column holds
+
+
+def _parse_metric_payload(data):
+    """Validate the JSON body of a metric update. Returns (values, error)."""
+    if not isinstance(data, dict):
+        return None, 'Invalid data.'
+
+    values = {}
+    for field in METRIC_FIELDS:
+        if field not in data:
+            continue
+
+        value = data[field]
+        label = field.replace('_', ' ').capitalize()
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+            return None, f'{label} must be a number.'
+
+        if field == 'enrollee_count':
+            if value != int(value) or not 0 <= value <= MAX_ENROLLEE_COUNT:
+                return None, f'{label} must be a whole number that is not negative.'
+            value = int(value)
+        elif not 0 <= value <= 100:
+            return None, f'{label} must be between 0 and 100.'
+
+        values[field] = value
+    return values, None
+
+
 @main_bp.route("/metrics/<int:metric_id>/update", methods=['POST'])
 def update_metric(metric_id):
     if 'user_id' not in session:
@@ -120,11 +155,13 @@ def update_metric(metric_id):
     if start_year <= LOCK_BOUNDARY_YEAR:
         return {'error': 'This school year is locked and cannot be edited.'}, 403
  
-    data = request.get_json(silent=True) or {}
-    for field in METRIC_FIELDS:
-        if field in data:
-            setattr(metric, field, data[field])
- 
+    values, error = _parse_metric_payload(request.get_json(silent=True) or {})
+    if error:
+        return {'error': error}, 400
+
+    for field, value in values.items():
+        setattr(metric, field, value)
+
     db.session.commit()
     return {'success': True}
 
@@ -193,6 +230,288 @@ def test_signatures():
     enrollments = Enrollment.query.order_by(Enrollment.id.desc()).all()
     return render_template('test_signatures.html', enrollments=enrollments)
 
+# Enrollment rules (the page's JavaScript is only a convenience, these are what count)
+ENROLLMENT_LABELS = {
+    'grade_level': 'Grade level to enroll',
+    'has_lrn': 'With LRN',
+    'is_returning': 'Returning (Balik-Aral)',
+    'psa_birth_cert_no': 'PSA Birth Certificate No.',
+    'lrn_no': 'Learner Reference No.',
+    'last_name': 'Last name',
+    'first_name': 'First name',
+    'middle_name': 'Middle name',
+    'extension_name': 'Extension name',
+    'birth_place': 'Place of birth',
+    'sex': 'Sex',
+    'mother_tongue': 'Mother tongue',
+    'is_ip': 'Indigenous Peoples community',
+    'ip_community': 'Indigenous Peoples community name',
+    'is_4ps': '4Ps beneficiary',
+    'four_ps_id_no': '4Ps Household ID',
+    'is_lwd': 'Learner with disability',
+    'current_house_no': 'Current house no.',
+    'current_street_name': 'Current street name',
+    'current_barangay': 'Current barangay',
+    'current_municipality_city': 'Current municipality/city',
+    'current_province': 'Current province',
+    'current_country': 'Current country',
+    'current_zip_code': 'Current zip code',
+    'same_address': 'Same address',
+    'perm_house_no': 'Permanent house no.',
+    'perm_street_name': 'Permanent street name',
+    'perm_barangay': 'Permanent barangay',
+    'perm_municipality_city': 'Permanent municipality/city',
+    'perm_province': 'Permanent province',
+    'perm_country': 'Permanent country',
+    'perm_zip_code': 'Permanent zip code',
+    'father_last_name': "Father's last name",
+    'father_first_name': "Father's first name",
+    'father_middle_name': "Father's middle name",
+    'father_contact_number': "Father's contact number",
+    'mother_maiden_last_name': "Mother's last name",
+    'mother_maiden_first_name': "Mother's first name",
+    'mother_maiden_middle_name': "Mother's middle name",
+    'mother_maiden_contact_number': "Mother's contact number",
+    'legal_guardian_last_name': "Guardian's last name",
+    'legal_guardian_first_name': "Guardian's first name",
+    'legal_guardian_middle_name': "Guardian's middle name",
+    'legal_guardian_contact_number': "Guardian's contact number",
+    'last_grade_completed': 'Last grade level completed',
+    'last_school_year_completed': 'Last school year completed',
+    'last_school_attended': 'Last school attended',
+    'school_id': 'School ID',
+    'semester': 'Semester',
+    'track': 'Track',
+    'strand': 'Strand',
+    'parent_guardian_name': 'Printed name of parent/guardian',
+}
+
+ENROLLMENT_CHOICES = {
+    'grade_level': {'Kindergarten', 'Grade_1', 'Grade_2', 'Grade_3', 'Grade_4', 'Grade_5', 'Grade_6'},
+    'has_lrn': {'yes', 'no'},
+    'is_returning': {'yes', 'no'},
+    'sex': {'male', 'female'},
+    'is_ip': {'yes', 'no'},
+    'is_4ps': {'yes', 'no'},
+    'is_lwd': {'yes', 'no'},
+    'same_address': {'yes', 'no'},
+}
+
+ENROLLMENT_REQUIRED_TEXT = [
+    'last_name', 'first_name', 'middle_name', 'birth_place', 'mother_tongue',
+    'current_house_no', 'current_street_name', 'current_barangay', 'current_municipality_city',
+    'current_province', 'current_country',
+    'legal_guardian_last_name', 'legal_guardian_first_name', 'legal_guardian_middle_name',
+    'parent_guardian_name',
+]
+
+ENROLLMENT_OPTIONAL_TEXT = [
+    'extension_name', 'father_last_name', 'father_first_name', 'father_middle_name',
+    'mother_maiden_last_name', 'mother_maiden_first_name', 'mother_maiden_middle_name',
+    'track', 'strand',
+]
+
+PERMANENT_ADDRESS_FIELDS = ['house_no', 'street_name', 'barangay', 'municipality_city', 'province', 'country']
+
+DISABILITY_OPTIONS = {
+    'Visual Impairment', 'Visual Impairment - Blind', 'Visual Impairment - Low Vision', 'Multiple Disorder',
+    'Hearing Impairment', 'Autism Spectrum Disorder', 'Speech/Language Disorder', 'Learning Disability',
+    'Emotional-Behavioral Disorder', 'Cerebral Palsy', 'Intellectual Disability',
+    'Orthopedic/Physical Handicap', 'Special Health Problem/Chronic Disease', 'Special Health Problem - Cancer',
+}
+
+MODALITY_OPTIONS = {
+    'Modular (Print)', 'Modular (Digital)', 'Online', 'Educational Television',
+    'Radio-Based Instruction', 'Homeschooling', 'Blended',
+}
+
+PHONE_PATTERN = re.compile(r'[0-9]{4}-[0-9]{3}-[0-9]{4}')
+SIGNATURE_PREFIX = 'data:image/png;base64,'
+MAX_SIGNATURE_LENGTH = 65000    # signature_data is a TEXT column on MySQL
+MAX_SIGNATURE_SIDE = 2000       # the signature canvas is 400 x 180
+EARLIEST_BIRTH_YEAR = 1900
+EARLIEST_LAST_SCHOOL_YEAR_END = 2002
+
+
+def school_today():
+    """Today's date at the school (Philippine time), whatever timezone the server uses."""
+    return (datetime.utcnow() + timedelta(hours=8)).date()
+
+
+def signature_problem(signature):
+    """Return what is wrong with a signature, or None if it is a real drawn PNG."""
+    if not signature:
+        return 'Please add a signature.'
+    if len(signature) > MAX_SIGNATURE_LENGTH:
+        return 'The signature is too large. Please draw it again.'
+    if not signature.startswith(SIGNATURE_PREFIX):
+        return 'The signature is not valid. Please draw it again.'
+    try:
+        image = Image.open(BytesIO(base64.b64decode(signature[len(SIGNATURE_PREFIX):], validate=True)))
+        if image.format != 'PNG' or max(image.size) > MAX_SIGNATURE_SIDE:
+            return 'The signature is not valid. Please draw it again.'
+        # Nothing drawn: every pixel of the canvas is still transparent
+        if image.convert('RGBA').getchannel('A').getbbox() is None:
+            return 'Please add a signature.'
+    except Exception:   # a damaged image can fail in many ways, none of them are a valid signature
+        return 'The signature is not valid. Please draw it again.'
+    return None
+
+
+def validate_enrollment(form):
+    """Check a submitted enrollment. Returns (values for the Enrollment model, list of errors)."""
+    errors = []
+    values = {}
+    today = school_today()
+
+    def text(name):
+        return form.get(name, '').strip()
+
+    def require(name):
+        value = text(name)
+        if not value:
+            errors.append(f'{ENROLLMENT_LABELS[name]} is required.')
+        return value
+
+    def require_zip(name):
+        value = require(name)
+        if value and not re.fullmatch(r'[0-9]{4}', value):
+            errors.append(f'{ENROLLMENT_LABELS[name]} must be exactly 4 digits.')
+        return value
+
+    def contact_number(name, required):
+        value = require(name) if required else text(name)
+        if value and not PHONE_PATTERN.fullmatch(value):
+            errors.append(f'{ENROLLMENT_LABELS[name]} must look like 0912-345-6789.')
+        return value
+
+    def chosen(name, options):
+        picked = form.getlist(name)
+        if not set(picked) <= options:
+            errors.append(f'{name.replace("_", " ").capitalize()} has an invalid option.')
+        return picked
+
+    for name, options in ENROLLMENT_CHOICES.items():
+        values[name] = text(name)
+        if values[name] not in options:
+            errors.append(f'{ENROLLMENT_LABELS[name]}: please select a valid option.')
+
+    for name in ENROLLMENT_REQUIRED_TEXT:
+        values[name] = require(name)
+    for name in ENROLLMENT_OPTIONAL_TEXT:
+        values[name] = text(name)
+    values['psa_birth_cert_no'] = text('psa_birth_cert_no') or None
+
+    # The server works these out itself, so what the browser sends for them is ignored
+    values['school_year'] = f'{today.year}-{today.year + 1}'
+    values['date_signed'] = today
+    values['age'] = None
+    values['birthdate'] = None
+
+    birthdate_text = text('birthdate')
+    if not birthdate_text:
+        errors.append('Birthdate is required.')
+    else:
+        try:
+            birthdate = datetime.strptime(birthdate_text, '%Y-%m-%d').date()
+            if birthdate > today or birthdate.year < EARLIEST_BIRTH_YEAR:
+                errors.append('Birthdate must be a real date that is not in the future.')
+            else:
+                values['birthdate'] = birthdate
+                values['age'] = today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthdate.day))
+        except ValueError:
+            errors.append('Birthdate is not a valid date.')
+
+    # With LRN?
+    values['lrn_no'] = ''
+    if values['has_lrn'] == 'yes':
+        values['lrn_no'] = require('lrn_no')
+        if values['lrn_no'] and not re.fullmatch(r'[0-9]{12}', values['lrn_no']):
+            errors.append('Learner Reference No. must be exactly 12 digits.')
+
+    # If Yes, specify: these are only kept when the answer is Yes
+    values['ip_community'] = require('ip_community') if values['is_ip'] == 'yes' else None
+    values['four_ps_id_no'] = require('four_ps_id_no') if values['is_4ps'] == 'yes' else None
+
+    disabilities = chosen('disabilities', DISABILITY_OPTIONS)
+    if values['is_lwd'] == 'yes':
+        if not disabilities:
+            errors.append('Please specify the type of disability.')
+        if 'Visual Impairment' in disabilities and not {'Visual Impairment - Blind', 'Visual Impairment - Low Vision'} & set(disabilities):
+            errors.append('Please choose blind or low vision.')
+    else:
+        disabilities = []
+    values['disabilities'] = ', '.join(disabilities)
+
+    # Addresses: "same as current" copies the current address here, not in the browser
+    values['current_zip_code'] = require_zip('current_zip_code')
+    if values['same_address'] == 'yes':
+        for field in PERMANENT_ADDRESS_FIELDS:
+            values[f'perm_{field}'] = values[f'current_{field}']
+        values['perm_zip_code'] = values['current_zip_code']
+    else:
+        for field in PERMANENT_ADDRESS_FIELDS:
+            values[f'perm_{field}'] = require(f'perm_{field}')
+        values['perm_zip_code'] = require_zip('perm_zip_code')
+
+    values['father_contact_number'] = contact_number('father_contact_number', required=False)
+    values['mother_maiden_contact_number'] = contact_number('mother_maiden_contact_number', required=False)
+    values['legal_guardian_contact_number'] = contact_number('legal_guardian_contact_number', required=True)
+
+    # Returning learners must give their last school details; everyone else's are cleared
+    values['last_grade_completed'] = ''
+    values['last_school_year_completed'] = None
+    values['last_school_attended'] = ''
+    values['school_id'] = ''
+    if values['is_returning'] == 'yes':
+        values['last_grade_completed'] = require('last_grade_completed')
+        if values['last_grade_completed'] and not re.fullmatch(r'[0-9]', values['last_grade_completed']):
+            errors.append('Last grade level completed must be a single digit.')
+
+        last_year = require('last_school_year_completed')
+        if last_year:
+            match = re.fullmatch(r'([0-9]{4})-([0-9]{4})', last_year)
+            if not match or int(match[2]) != int(match[1]) + 1 or not EARLIEST_LAST_SCHOOL_YEAR_END <= int(match[2]) <= today.year - 1:
+                errors.append('Last school year completed is not a valid school year.')
+        values['last_school_year_completed'] = last_year or None
+
+        values['last_school_attended'] = require('last_school_attended')
+        values['school_id'] = require('school_id')
+        if values['school_id'] and not re.fullmatch(r'[0-9]{1,6}', values['school_id']):
+            errors.append('School ID must be up to 6 digits.')
+
+    values['semester'] = text('semester') or None
+    if values['semester'] not in (None, 'first_semester', 'second_semester'):
+        errors.append('Semester: please select a valid option.')
+
+    modalities = chosen('distance_learning_modalities', MODALITY_OPTIONS)
+    if not modalities:
+        errors.append('Please choose at least one distance learning modality.')
+    values['distance_learning_modalities'] = ', '.join(modalities)
+
+    values['signature_data'] = form.get('signature_data', '')
+    problem = signature_problem(values['signature_data'])
+    if problem:
+        errors.append(problem)
+
+    # Nothing may be longer than its database column
+    for name, value in values.items():
+        limit = getattr(Enrollment.__table__.c[name].type, 'length', None)
+        if limit and isinstance(value, str) and len(value) > limit:
+            errors.append(f'{ENROLLMENT_LABELS.get(name, name)} must be {limit} characters or fewer.')
+
+    return values, errors
+
+
+def enrollment_form_data(form):
+    """What was typed, so a rejected form can be shown again instead of coming back empty."""
+    data = {name: form.getlist(name) for name in form if name != 'csrf_token'}
+    if signature_problem(form.get('signature_data', '')):
+        data.pop('signature_data', None)
+        data.pop('date_signed', None)
+    return data
+
+
 # Enrollment View
 @main_bp.route("/enrollment", methods=['GET', 'POST'])
 def enrollment():
@@ -200,97 +519,23 @@ def enrollment():
         return redirect(url_for('main.login'))
 
     if request.method == 'POST':
+        values, errors = validate_enrollment(request.form)
+        if errors:
+            flash('Please correct the following: ' + ' '.join(errors), 'danger')
+            return render_template('enrollment.html', form_data=enrollment_form_data(request.form)), 400
+
         try:
-            # Handle list inputs (checkboxes)
-            disabilities_list = request.form.getlist('disabilities')
-            modalities_list = request.form.getlist('distance_learning_modalities')
-
-            # Parse birthdate
-            birthdate_str = request.form.get('birthdate')
-            birthdate_val = datetime.strptime(birthdate_str, '%Y-%m-%d').date() if birthdate_str else None
-
-            # Parse date signed
-            date_signed_str = request.form.get('date_signed')
-            date_signed_val = None
-            if date_signed_str:
-                try:
-                    date_signed_val = datetime.strptime(date_signed_str, '%Y-%m-%d').date()
-                except ValueError:
-                    # Alternative format fallback (e.g., MM/DD/YYYY)
-                    date_signed_val = datetime.strptime(date_signed_str, '%m/%d/%Y').date()
-
-            # Create new record
-            new_enrollment = Enrollment(
-                school_year=request.form.get('school_year'),
-                grade_level=request.form.get('grade_level'),
-                has_lrn=request.form.get('has_lrn'),
-                is_returning=request.form.get('is_returning'),
-                psa_birth_cert_no=request.form.get('psa_birth_cert_no'),
-                lrn_no=request.form.get('lrn_no'),
-                last_name=request.form.get('last_name'),
-                first_name=request.form.get('first_name'),
-                middle_name=request.form.get('middle_name'),
-                extension_name=request.form.get('extension_name'),
-                birthdate=birthdate_val,
-                birth_place=request.form.get('birth_place'),
-                sex=request.form.get('sex'),
-                age=request.form.get('age'),
-                mother_tongue=request.form.get('mother_tongue'),
-                is_ip=request.form.get('is_ip'),
-                ip_community=request.form.get('ip_community'),
-                is_4ps=request.form.get('is_4ps'),
-                four_ps_id_no=request.form.get('four_ps_id_no'),
-                is_lwd=request.form.get('is_lwd'),
-                disabilities=", ".join(disabilities_list),
-                current_house_no=request.form.get('current_house_no'),
-                current_street_name=request.form.get('current_street_name'),
-                current_barangay=request.form.get('current_barangay'),
-                current_municipality_city=request.form.get('current_municipality_city'),
-                current_province=request.form.get('current_province'),
-                current_country=request.form.get('current_country'),
-                current_zip_code=request.form.get('current_zip_code'),
-                same_address=request.form.get('same_address'),
-                perm_house_no=request.form.get('perm_house_no'),
-                perm_street_name=request.form.get('perm_street_name'),
-                perm_barangay=request.form.get('perm_barangay'),
-                perm_municipality_city=request.form.get('perm_municipality_city'),
-                perm_province=request.form.get('perm_province'),
-                perm_country=request.form.get('perm_country'),
-                perm_zip_code=request.form.get('perm_zip_code'),
-                father_last_name=request.form.get('father_last_name'),
-                father_first_name=request.form.get('father_first_name'),
-                father_middle_name=request.form.get('father_middle_name'),
-                father_contact_number=request.form.get('father_contact_number'),
-                mother_maiden_last_name=request.form.get('mother_maiden_last_name'),
-                mother_maiden_first_name=request.form.get('mother_maiden_first_name'),
-                mother_maiden_middle_name=request.form.get('mother_maiden_middle_name'),
-                mother_maiden_contact_number=request.form.get('mother_maiden_contact_number'),
-                legal_guardian_last_name=request.form.get('legal_guardian_last_name'),
-                legal_guardian_first_name=request.form.get('legal_guardian_first_name'),
-                legal_guardian_middle_name=request.form.get('legal_guardian_middle_name'),
-                legal_guardian_contact_number=request.form.get('legal_guardian_contact_number'),
-                last_grade_completed=request.form.get('last_grade_completed'),
-                last_school_year_completed=request.form.get('last_school_year_completed'),
-                last_school_attended=request.form.get('last_school_attended'),
-                school_id=request.form.get('school_id'),
-                semester=request.form.get('semester'),
-                track=request.form.get('track'),
-                strand=request.form.get('strand'),
-                distance_learning_modalities=", ".join(modalities_list),
-                signature_data=request.form.get('signature_data'),
-                parent_guardian_name=request.form.get('parent_guardian_name'),
-                date_signed=date_signed_val
-            )
-
-            db.session.add(new_enrollment)
+            db.session.add(Enrollment(**values))
             db.session.commit()
 
             flash('Enrollment application submitted successfully!', 'success')
             return redirect(url_for('main.enrollment'))
 
-        except Exception as e:
+        except Exception:
             db.session.rollback()
-            flash(f'An error occurred while saving the data: {str(e)}', 'danger')
+            current_app.logger.exception("Failed to save the enrollment.")
+            flash('Could not save the enrollment. Please try again.', 'danger')
+            return render_template('enrollment.html', form_data=enrollment_form_data(request.form)), 500
     return render_template('enrollment.html')
 
 # Enrolled Student View
@@ -335,7 +580,25 @@ REPORT_MIME_TYPES = {
     "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 }
 
-MAX_REPORT_SIZE = 16 * 1024 * 1024
+MAX_REPORT_SIZE = 10 * 1024 * 1024
+MAX_FILENAME_LENGTH = 255
+
+
+def is_real_document(extension, data):
+    """Check the file's contents match its extension, so a renamed file can't get through."""
+    if extension == 'pdf':
+        return data.startswith(b'%PDF-')
+
+    folders = {'docx': 'word/', 'xlsx': 'xl/'}
+    if extension not in folders:
+        return False
+    try:
+        with zipfile.ZipFile(BytesIO(data)) as document:
+            names = document.namelist()
+    except zipfile.BadZipFile:
+        return False
+    return '[Content_Types].xml' in names and any(name.startswith(folders[extension]) for name in names)
+
 
 @main_bp.route("/grades")
 def grades():
@@ -404,7 +667,7 @@ def upload_report_card(student_id, level):
 
     filename = secure_filename(uploaded_file.filename)
 
-    if not filename or "." not in filename:
+    if not filename or "." not in filename or len(filename) > MAX_FILENAME_LENGTH:
         flash("Invalid filename.", "danger")
         return redirect(
             url_for("main.student_grades", student_id=student.id)
@@ -430,7 +693,13 @@ def upload_report_card(student_id, level):
         )
 
     if len(file_data) > MAX_REPORT_SIZE:
-        flash("The file must be 16 MB or smaller.", "danger")
+        flash("The file must be 10 MB or smaller.", "danger")
+        return redirect(
+            url_for("main.student_grades", student_id=student.id)
+        )
+
+    if not is_real_document(extension, file_data):
+        flash("That file is not a valid Excel (.xlsx) file.", "danger")
         return redirect(
             url_for("main.student_grades", student_id=student.id)
         )
@@ -567,27 +836,52 @@ def calendar():
 
 
 CALENDAR_TAGS = {'holiday', 'event', 'exam'}
+CALENDAR_MIN_YEAR = 1000   # catches typos like 0026 (same limit as calendar.js)
+CALENDAR_MAX_DESCRIPTION = 500
  
  
+def is_valid_http_url(url):
+    """True for a complete http/https link (blocks things like javascript: links)."""
+    try:
+        parsed = urlparse(url)
+        parsed.port                     # raises on a non-numeric port
+    except ValueError:                  # e.g. "http://[bad"
+        return False
+    return parsed.scheme in ('http', 'https') and bool(parsed.netloc) and not any(c.isspace() for c in url)
+
+
 def _parse_calendar_payload(data):
     """Validate and clean the JSON body. Returns (values, error)."""
-    tag = (data.get('tag') or '').strip().lower()
+    if not isinstance(data, dict):
+        return None, 'Invalid data.'
+
+    def text(name):
+        value = data.get(name)
+        return value.strip() if isinstance(value, str) else ''
+
+    tag = text('tag').lower()
     if tag not in CALENDAR_TAGS:
         return None, 'Invalid tag.'
 
-    link_url = (data.get('link_url') or '').strip()
-    if link_url:
-        parsed_url = urlparse(link_url)
-
-        if parsed_url.scheme not in ('http', 'https') or not parsed_url.netloc:
-            raise ValueError("Enter a valid URL beginning with http:// or https://")
+    link_url = text('link_url')
+    if link_url and (len(link_url) > 2048 or not is_valid_http_url(link_url)):
+        return None, 'Enter a valid link beginning with http:// or https://'
     try:
-        event_date = datetime.strptime(data.get('date', ''), '%Y-%m-%d').date()
+        event_date = datetime.strptime(text('date'), '%Y-%m-%d').date()
+        # A missing end date means a single-day event
+        end_date = datetime.strptime(text('end_date') or text('date'), '%Y-%m-%d').date()
     except ValueError:
         return None, 'Invalid date.'
- 
-    description = (data.get('description') or '').strip()[:500]
-    return {'event_date': event_date, 'tag': tag, 'description': description, 'link_url': link_url}, None
+
+    if event_date.year < CALENDAR_MIN_YEAR or end_date.year < CALENDAR_MIN_YEAR:
+        return None, 'Invalid date.'
+    if end_date < event_date:
+        return None, 'End date cannot be before the start date.'
+
+    description = text('description')
+    if len(description) > CALENDAR_MAX_DESCRIPTION:
+        return None, f'Description must be {CALENDAR_MAX_DESCRIPTION} characters or fewer.'
+    return {'event_date': event_date, 'end_date': end_date, 'tag': tag, 'description': description, 'link_url': link_url}, None
  
  
 @main_bp.route("/calendar/events", methods=['GET', 'POST'])
@@ -626,7 +920,9 @@ def calendar_event_detail(event_id):
         return {'error': error}, 400
  
     event.event_date = values['event_date']
+    event.end_date = values['end_date']
     event.tag = values['tag']
+    event.link_url = values['link_url']
     event.description = values['description']
     db.session.commit()
     return jsonify(event.to_dict())
@@ -634,9 +930,17 @@ def calendar_event_detail(event_id):
 
 # LINKAGES
 
-ALLOWED_EXTENSIONS = {'pdf', 'docx', 'xlsx', 'pptx'}
- 
- 
+FILE_MIME_TYPES = {
+    'pdf': 'application/pdf',
+    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+}
+ALLOWED_EXTENSIONS = set(FILE_MIME_TYPES)
+MAX_FILE_SIZE = 10 * 1024 * 1024
+MAX_TITLE_LENGTH = 150
+MAX_LINK_LENGTH = 500
+
+
 def get_extension(filename):
     return filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
  
@@ -648,10 +952,7 @@ def clean_url(raw):
         return None
     if '://' not in url:
         url = 'https://' + url          # "example.com" becomes "https://example.com"
-    parsed = urlparse(url)
-    if parsed.scheme not in ('http', 'https') or not parsed.netloc:
-        return None                     # blocks things like javascript: links
-    return url
+    return url if is_valid_http_url(url) else None
  
  
 def read_upload(upload):
@@ -662,16 +963,30 @@ def read_upload(upload):
     if ext not in ALLOWED_EXTENSIONS:
         return None, None, None, 'Only PDF, DOCX and XLSX files are allowed.'
     base = secure_filename(upload.filename.rsplit('.', 1)[0]) or 'file'
+    filename = f"{base}.{ext}"
+    if len(filename) > MAX_FILENAME_LENGTH:
+        return None, None, None, 'That filename is too long.'
     data = upload.read()
     if not data:
         return None, None, None, 'That file is empty.'
-    return f"{base}.{ext}", data, upload.mimetype, None
- 
- 
+    if len(data) > MAX_FILE_SIZE:
+        return None, None, None, 'That file is too large. The maximum size is 10 MB.'
+    if not is_real_document(ext, data):
+        return None, None, None, f'That file is not a valid {ext.upper()} file.'
+    return filename, data, FILE_MIME_TYPES[ext], None
+
+
 @main_bp.app_errorhandler(413)
 def file_too_large(error):
     # Needs app.config['MAX_CONTENT_LENGTH'] to be set in create_app()
+    if request.is_json:
+        return {'error': 'That request is too large.'}, 413
+    if request.endpoint == 'main.enrollment':
+        flash('That submission is too large.', 'danger')
+        return redirect(url_for('main.enrollment'))
     flash('That file is too large. The maximum size is 10 MB.', 'danger')
+    if request.endpoint == 'main.upload_report_card':
+        return redirect(url_for('main.student_grades', student_id=request.view_args['student_id']))
     return redirect(url_for('main.linkagefiles'))
  
  
@@ -701,9 +1016,11 @@ def add_link():
  
     title = request.form.get('title', '').strip()
     url = clean_url(request.form.get('url'))
- 
+
     if not title or not url:
         flash('Please enter a title and a valid link (http or https).', 'danger')
+    elif len(title) > MAX_TITLE_LENGTH or len(url) > MAX_LINK_LENGTH:
+        flash(f'Titles can be up to {MAX_TITLE_LENGTH} characters and links up to {MAX_LINK_LENGTH}.', 'danger')
     else:
         db.session.add(LinkItem(title=title, url=url))
         db.session.commit()
@@ -722,6 +1039,8 @@ def edit_link(link_id):
  
     if not title or not url:
         flash('Please enter a title and a valid link (http or https).', 'danger')
+    elif len(title) > MAX_TITLE_LENGTH or len(url) > MAX_LINK_LENGTH:
+        flash(f'Titles can be up to {MAX_TITLE_LENGTH} characters and links up to {MAX_LINK_LENGTH}.', 'danger')
     else:
         link.title = title
         link.url = url
@@ -754,7 +1073,10 @@ def upload_file():
         flash(error, 'danger')
         return redirect(url_for('main.linkagefiles'))
  
-    title = request.form.get('title', '').strip() or filename
+    title = request.form.get('title', '').strip() or filename[:MAX_TITLE_LENGTH]
+    if len(title) > MAX_TITLE_LENGTH:
+        flash(f'Titles can be up to {MAX_TITLE_LENGTH} characters.', 'danger')
+        return redirect(url_for('main.linkagefiles'))
     db.session.add(FileItem(title=title, filename=filename, content_type=content_type,
                             size=len(data), data=data))
     db.session.commit()
@@ -774,7 +1096,10 @@ def edit_file(file_id):
     if not title:
         flash('Please enter a title.', 'danger')
         return redirect(url_for('main.linkagefiles'))
- 
+    if len(title) > MAX_TITLE_LENGTH:
+        flash(f'Titles can be up to {MAX_TITLE_LENGTH} characters.', 'danger')
+        return redirect(url_for('main.linkagefiles'))
+
     # Optional: replace the stored file with a new one
     if upload and upload.filename:
         filename, data, content_type, error = read_upload(upload)
@@ -839,7 +1164,7 @@ def read_picture(upload):
 
     filename = secure_filename(upload.filename)
 
-    if not filename or '.' not in filename:
+    if not filename or '.' not in filename or len(filename) > MAX_FILENAME_LENGTH:
         return None, None, None, 'Invalid image filename.'
 
     extension = filename.rsplit('.', 1)[1].lower()
@@ -890,6 +1215,9 @@ def upload_picture():
 
     if not title:
         flash('Please enter a picture title.', 'danger')
+        return redirect(url_for('main.linkagefiles'))
+    if len(title) > MAX_TITLE_LENGTH:
+        flash(f'Titles can be up to {MAX_TITLE_LENGTH} characters.', 'danger')
         return redirect(url_for('main.linkagefiles'))
 
     try:

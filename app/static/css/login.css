@@ -76,23 +76,34 @@ html body > div > h3 {
     color: var(--text);
 }
 
-/* ---------- Flash messages (the plain div inside the card) ---------- */
-html body > div > div {
-    margin-bottom: 20px;
-    padding: 12px 16px;
-    font-size: 0.9rem;
-    text-align: center;
-    color: var(--danger-text);
-    background: var(--danger-bg);
-    border: 1px solid var(--danger-border);
-    border-left: 4px solid var(--danger-text);
-    border-radius: 10px;
-    animation: flash-in 0.35s ease-out;
+/* ---------- Flash messages (float over the page, so the card doesn't move) ---------- */
+.flash-stack {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 20;
+    width: min(420px, calc(100vw - 40px));
+    pointer-events: none;   /* only the messages themselves catch clicks */
 }
 
-@keyframes flash-in {
-    from { opacity: 0; transform: translateY(-6px); }
-    to   { opacity: 1; transform: translateY(0); }
+.flash-stack .alert {
+    margin-bottom: 8px;
+    padding: 12px 44px 12px 16px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-left-width: 4px;
+    border-radius: 10px;
+    pointer-events: auto;
+    box-shadow: 0 12px 28px -8px rgba(20, 40, 25, 0.55);
+    --bs-alert-color: var(--green-900);
+    --bs-alert-bg: #eef3e8;
+    --bs-alert-border-color: var(--green-500);
+}
+
+.flash-stack .alert-danger {
+    --bs-alert-color: var(--danger-text);
+    --bs-alert-bg: var(--danger-bg);
+    --bs-alert-border-color: var(--danger-text);
 }
 
 /* ---------- Form ---------- */

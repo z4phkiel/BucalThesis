@@ -325,6 +325,57 @@
     color: var(--ix-green-700) !important;
 }
 
+/* ---------- Flash messages (float over the page, so nothing else moves) ---------- */
+.flash-stack {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 1090;
+    width: min(440px, calc(100vw - 32px));
+    pointer-events: none;   /* only the messages themselves catch clicks */
+}
+
+.flash-stack .alert {
+    max-height: calc(100vh - 32px);
+    margin-bottom: 8px;
+    overflow-y: auto;
+    pointer-events: auto;
+    box-shadow: 0 12px 28px -8px rgba(36, 61, 40, 0.45);
+    scrollbar-width: none;  /* a long message still scrolls with the mouse wheel */
+}
+
+.flash-stack .alert::-webkit-scrollbar {
+    display: none;
+}
+
+/* Bootstrap's padding makes this taller than a one-line message */
+.flash-stack .alert-dismissible .btn-close {
+    padding: 18px 14px;
+}
+
+.main-content .alert-dismissible {
+    padding: 14px 48px 14px 18px;
+    font-weight: 500;
+}
+
+.main-content .alert-success {
+    --bs-alert-color: var(--ix-green-900);
+    --bs-alert-bg: #e8efe3;
+    --bs-alert-border-color: var(--ix-green-500);
+}
+
+.main-content .alert-danger {
+    --bs-alert-color: var(--ix-brick);
+    --bs-alert-bg: #fbeeea;
+    --bs-alert-border-color: var(--ix-brick);
+}
+
+.main-content .alert-warning {
+    --bs-alert-color: #6e5f2a;
+    --bs-alert-bg: var(--ix-khaki-100);
+    --bs-alert-border-color: var(--ix-khaki-500);
+}
+
 @media (max-width: 768px) {
 
 .sidebar {
