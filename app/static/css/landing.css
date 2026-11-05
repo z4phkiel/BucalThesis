@@ -245,50 +245,6 @@ a { color: inherit; }
     gap: 14px;
 }
 
-/* login-style card */
-.hero-card {
-    max-width: 380px;
-    margin-left: auto;
-    padding: 34px 32px 30px;
-    text-align: center;
-    color: var(--text);
-    background: var(--white);
-    border-top: 6px solid var(--khaki-500);
-    border-radius: 22px;
-    box-shadow: 0 25px 50px -12px rgba(20, 40, 25, 0.55);
-}
-
-.hero-logo {
-    width: 96px;
-    height: 96px;
-    object-fit: contain;
-    filter: drop-shadow(0 8px 14px rgba(47, 82, 51, 0.35));
-}
-
-.hero-card h2 {
-    margin: 12px 0 4px;
-    font-size: 1.1rem;
-    font-weight: 800;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    line-height: 1.3;
-    color: var(--green-700);
-}
-
-.hero-card-sub {
-    margin: 0 0 20px;
-    padding-bottom: 20px;
-    font-size: 0.88rem;
-    color: var(--muted);
-    border-bottom: 1px dashed var(--khaki-500);
-}
-
-.hero-card-note {
-    margin: 14px 0 0;
-    font-size: 0.8rem;
-    color: var(--muted);
-}
-
 /* ---------- Sections ---------- */
 .section {
     padding: 88px 0;
@@ -482,7 +438,7 @@ a { color: inherit; }
     height: 48px;
     padding: 2px;
     object-fit: contain;
-    background: var(--white);   /* keeps a .jpg logo (white background) looking clean on the dark footer */
+    background: var(--white); 
     border-radius: 50%;
 }
 
