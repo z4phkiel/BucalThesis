@@ -957,3 +957,7 @@ def delete_picture(picture_id):
         flash('Could not delete the picture. Please try again.', 'danger')
 
     return redirect(url_for('main.linkagefiles'))
+
+@main_bp.route('/welcome')
+def landing():
+    return render_template('landing.html')
