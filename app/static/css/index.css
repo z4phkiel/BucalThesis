@@ -152,12 +152,6 @@
     border-top: 5px solid var(--ix-khaki-500);
     border-radius: 16px;
     box-shadow: 0 12px 30px -12px rgba(36, 61, 40, 0.28) !important;
-    animation: ix-card-in 0.45s ease-out;
-}
-
-@keyframes ix-card-in {
-    from { opacity: 0; transform: translateY(14px); }
-    to   { opacity: 1; transform: translateY(0); }
 }
 
 .main-content .card-body {
@@ -628,13 +622,62 @@ body:has(#metricEditFab) .main-content > .p-4 {
     border-color: var(--ix-brick);
 }
 
-/* forecast card while it is being refreshed after a save */
-#forecastCard {
-    transition: opacity 0.2s ease;
+/* the table's drop-down: the height animates between 0 and the table's natural height */
+.metrics-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s ease;   /* dashboard.js finishes up after this long */
 }
 
-#forecastCard.is-updating {
-    opacity: 0.55;
+.metrics-panel.is-open {
+    grid-template-rows: 1fr;
+}
+
+.metrics-panel-clip {
+    min-height: 0;
+    overflow: clip;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.metrics-panel.is-open .metrics-panel-clip {
+    opacity: 1;
+}
+
+/* clipping is only needed while moving, and would cut off the card's shadow */
+.metrics-panel.is-settled .metrics-panel-clip {
+    overflow: visible;
+}
+
+#metricsCard {
+    margin-bottom: 1.5rem;      /* inside the panel, so the gap opens and closes with the table */
+}
+
+/* placeholder rows, while the table's data is on its way */
+#metricsCard .metrics-placeholder-bar {
+    width: 60%;
+    margin-left: auto;
+}
+
+#metricsCard td:first-child .metrics-placeholder-bar {
+    width: 72%;
+    margin-left: 0;
+}
+
+.dashboard-load-error {
+    font-weight: 500;
+    text-align: center;
+    color: var(--ix-brick);
+}
+
+/* forecast card while it is being refreshed after a save: the values shimmer, the labels stay */
+#forecastCard.is-updating .alert .fw-bold.text-dark,
+#forecastCard.is-updating .card-body > p.mt-3 {
+    color: transparent !important;
+    background: var(--ix-skel-shimmer);
+    background-size: 200% 100%;
+    border-radius: 6px;
+    animation: skel-shimmer 1.5s linear infinite;
 }
 
 .forecast-refresh-note {
@@ -925,7 +968,9 @@ body:has(#metricEditFab) .main-content > .p-4 {
 @media (prefers-reduced-motion: reduce) {
     .metric-fab,
     .metric-fab-label,
-    .metric-save-progress span {
+    .metric-save-progress span,
+    .metrics-panel,
+    .metrics-panel-clip {
         transition: none;
     }
 
@@ -934,6 +979,522 @@ body:has(#metricEditFab) .main-content > .p-4 {
     .metric-save-modal,
     .metric-save-modal.is-pulsing,
     .metric-saved-notice {
+        animation: none;
+    }
+}
+
+/* ==========================================================
+   Skeleton loading
+   These live here rather than in each page's stylesheet because a placeholder
+   shows on the page being left, before the next page's stylesheet has loaded.
+   ========================================================== */
+:root {
+    --ix-skel-shimmer: linear-gradient(90deg, var(--ix-border) 30%, var(--ix-khaki-100) 50%, var(--ix-border) 70%);
+}
+
+@keyframes skel-shimmer {
+    from { background-position: 150% 0; }
+    to   { background-position: -50% 0; }
+}
+
+.skel {
+    display: block;
+    height: 14px;
+    background: var(--ix-skel-shimmer);
+    background-size: 200% 100%;
+    border-radius: 6px;
+    animation: skel-shimmer 1.5s linear infinite;
+}
+
+/* ---------- Between pages ---------- */
+body.is-page-loading #pageContent {
+    display: none;
+}
+
+/* the sidebar moves to the clicked page straight away */
+body.is-navigating .sidebar .nav-link {
+    color: rgba(253, 252, 247, 0.78) !important;
+    font-weight: 500 !important;
+    background-color: transparent !important;
+}
+
+body.is-navigating .sidebar .nav-link.is-navigation-target {
+    color: var(--ix-green-900) !important;
+    font-weight: 700 !important;
+    background-color: var(--ix-khaki-500) !important;
+}
+
+/* ---------- Page headings ---------- */
+.skel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+
+.skel-title {
+    position: relative;
+    padding-left: 16px;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: var(--ix-green-700);
+}
+
+.skel-title::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 6px;
+    height: 70%;
+    background: linear-gradient(180deg, var(--ix-khaki-500), var(--ix-green-500));
+    border-radius: 6px;
+    transform: translateY(-50%);
+}
+
+.skel-title-dashboard {
+    font-size: calc(1.325rem + 0.9vw);
+}
+
+@media (min-width: 1200px) {
+    .skel-title-dashboard {
+        font-size: 2rem;
+    }
+}
+
+.skel-title-list {
+    font-size: 1.55rem;
+}
+
+.skel-title-calendar {
+    margin-bottom: 24px;
+    font-size: 1.7rem;
+}
+
+.skel-title-linkage {
+    margin-bottom: 1.5rem;
+    font-size: calc(1.3rem + 0.6vw);
+}
+
+@media (min-width: 1200px) {
+    .skel-title-linkage {
+        font-size: 1.75rem;
+    }
+}
+
+.skel-button {
+    flex: 0 0 auto;
+    width: 112px;
+    height: 38px;
+    border-radius: 10px;
+}
+
+/* ---------- Cards ---------- */
+.skel-card,
+.skel-table-card,
+.skel-cal-card {
+    background: var(--ix-white);
+    border: 1px solid var(--ix-border);
+    border-top: 5px solid var(--ix-khaki-500);
+    border-radius: 16px;
+    box-shadow: 0 12px 30px -12px rgba(36, 61, 40, 0.28);
+}
+
+.skel-card {
+    margin-bottom: 1.5rem;
+}
+
+.skel-card-body {
+    padding: 1.5rem;
+}
+
+.skel-table-card {
+    overflow: hidden;
+}
+
+.skel-card-title {
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--ix-green-700);
+}
+
+.skel-section-title {
+    margin-bottom: 1.1rem;
+    padding-bottom: 12px;
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--ix-green-700);
+    border-bottom: 1px dashed var(--ix-khaki-500);
+}
+
+.skel-label {
+    margin-bottom: 8px;
+    padding-top: 2px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.5;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ix-green-700);
+}
+
+.skel-search {
+    height: 49px;
+    border-radius: 999px;
+}
+
+/* the Masterlist's search card has no border or background, and its search box is a little shorter */
+.skel-card-plain {
+    background: transparent;
+    border: 0;
+}
+
+.skel-card-plain .skel-search {
+    height: 47px;
+}
+
+/* ---------- Dashboard ---------- */
+.skel-note {
+    margin: 4px 0 22px;
+}
+
+.skel-alerts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.skel-alert {
+    padding: 1rem;
+    background: var(--ix-khaki-100);
+    border: 1px solid var(--ix-khaki-500);
+    border-left-width: 5px;
+    border-radius: 12px;
+}
+
+.skel-alert-green {
+    display: flex;
+    align-items: center;
+    background: #e8efe3;
+    border-color: var(--ix-green-500);
+}
+
+.skel-alert-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 30px;
+}
+
+.skel-alert-row-divided {
+    min-height: 21px;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(33, 37, 41, 0.25);
+    box-sizing: content-box;
+}
+
+.skel-value {
+    height: 22px;
+}
+
+.skel-footnote {
+    margin: 20px 0 4px;
+}
+
+/* ---------- Tables ---------- */
+.skel-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+
+.skel-table th {
+    padding: 16px 18px;
+    overflow: hidden;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: #fff;
+    background: linear-gradient(135deg, var(--ix-green-600), var(--ix-green-700));
+    border-bottom: 3px solid var(--ix-khaki-500);
+}
+
+.skel-table td {
+    height: 53px;
+    padding: 15px 18px;
+    border-bottom: 1px solid var(--ix-border);
+}
+
+.skel-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.skel-table-striped tbody tr:nth-child(odd) td {
+    background: var(--ix-khaki-100);
+}
+
+.skel-table .skel-end {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.skel-table .skel-center {
+    text-align: center;
+}
+
+.skel-table-compact th {
+    padding: 14px 16px;
+    font-size: 0.76rem;
+}
+
+.skel-table-compact td {
+    padding: 12px 16px;
+}
+
+.skel-table-frame {
+    overflow: hidden;
+    border: 1px solid var(--ix-border);
+    border-radius: 12px;
+}
+
+.skel-row-action {
+    display: inline-block;
+    width: 84px;
+    height: 29px;
+    margin-left: 6px;
+    vertical-align: middle;
+    border-radius: 999px;
+}
+
+.skel-row-action-large {
+    width: 136px;
+    height: 36px;
+    margin-left: 0;
+}
+
+/* ---------- Linkage/Files ---------- */
+.skel-form {
+    display: grid;
+    grid-template-columns: 4fr 6fr 2fr;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.skel-input {
+    height: 46px;
+    border-radius: 8px;
+}
+
+.skel-help {
+    width: 38%;
+    margin: -11px 0 23px;
+}
+
+.skel-pictures {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.skel-picture {
+    overflow: hidden;
+    border-radius: 16px;
+    box-shadow: 0 12px 30px -12px rgba(36, 61, 40, 0.28);
+}
+
+.skel-picture-image {
+    height: 190px;
+    border-radius: 0;
+}
+
+.skel-picture-body {
+    display: grid;
+    gap: 14px;
+    padding: 1.5rem;
+}
+
+.skel-picture-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-top: 6px;
+}
+
+.skel-picture-actions .skel-row-action {
+    display: block;
+    width: 100%;
+    margin: 0;
+}
+
+/* ---------- Calendar ---------- */
+.skel-cal {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 24px;
+    align-items: start;
+}
+
+.skel-cal-card {
+    padding: 22px;
+}
+
+.skel-cal-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 18px;
+    padding-bottom: 16px;
+    border-bottom: 1px dashed var(--ix-khaki-500);
+}
+
+.skel-cal-month {
+    width: 170px;
+    height: 26px;
+}
+
+.skel-cal-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.skel-pill {
+    height: 37px;
+    border-radius: 999px;
+}
+
+.skel-cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.skel-cal-dow {
+    padding: 10px 4px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-align: center;
+    text-transform: uppercase;
+    color: #fff;
+    background: linear-gradient(135deg, var(--ix-green-600), var(--ix-green-700));
+    border-bottom: 3px solid var(--ix-khaki-500);
+    border-radius: 8px;
+}
+
+.skel-cal-day {
+    display: grid;
+    align-content: start;
+    gap: 4px;
+    height: 120px;
+    padding: 8px;
+    background: #fff;
+    border: 1px solid var(--ix-border);
+    border-radius: 10px;
+}
+
+.skel-cal-num {
+    justify-self: center;
+    width: 20px;
+    height: 20px;
+    margin-bottom: 4px;
+    border-radius: 50%;
+}
+
+.skel-cal-chip {
+    height: 22px;
+}
+
+.skel-side-section {
+    margin-bottom: 20px;
+}
+
+.skel-side-section + .skel-side-section {
+    padding-top: 20px;
+    border-top: 1px dashed var(--ix-khaki-500);
+}
+
+.skel-side-title {
+    margin-bottom: 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ix-green-700);
+}
+
+.skel-side-item {
+    display: grid;
+    gap: 8px;
+    margin: 0 4px 6px 0;
+    padding: 12px;
+    background: var(--ix-khaki-100);
+    border: 1px solid var(--ix-border);
+    border-left: 4px solid var(--ix-khaki-500);
+    border-radius: 10px;
+}
+
+/* ---------- Smaller screens ---------- */
+@media (max-width: 991.98px) {
+    .skel-pictures {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 900px) {
+    .skel-cal {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .skel-alerts,
+    .skel-form {
+        grid-template-columns: 1fr;
+    }
+
+    .skel-pictures {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 576px) {
+    .skel-title-list {
+        font-size: 1.3rem;
+    }
+
+    .skel-cal-card {
+        padding: 14px;
+    }
+
+    .skel-cal-grid {
+        gap: 4px;
+    }
+
+    .skel-cal-day {
+        height: 84px;
+        padding: 4px;
+    }
+
+    .skel-cal-chip {
+        height: 15px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .skel,
+    #forecastCard.is-updating .alert .fw-bold.text-dark,
+    #forecastCard.is-updating .card-body > p.mt-3 {
         animation: none;
     }
 }

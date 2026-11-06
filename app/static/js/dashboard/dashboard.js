@@ -1,27 +1,17 @@
 document.addEventListener('DOMContentLoaded', function () {
     const toggleBtn = document.getElementById('toggleMetricBtn');
     const metricsCard = document.getElementById('metricsCard');
-
-    function setMetricsVisible(visible) {
-        metricsCard.classList.toggle('d-none', !visible);
-        toggleBtn.textContent = visible ? 'Hide Yearly Metric' : 'Show Yearly Metric';
-    }
-
-    if (toggleBtn && metricsCard) {
-        toggleBtn.addEventListener('click', function () {
-            setMetricsVisible(metricsCard.classList.contains('d-none'));
-        });
-    }
-
-    // Pages that extend this template load this script too, but don't have the edit controls
     const fab = document.getElementById('metricEditFab');
-    if (!fab || !metricsCard) {
+
+    // Pages that extend this template load this script too, but don't have the dashboard's controls
+    if (!toggleBtn || !metricsCard || !fab) {
         return;
     }
 
     const TYPING_PAUSE_MS = 700;    // how long after the last keystroke the save prompt starts
     const LOADING_BAR_MS = 600;     // matches the metric-loading-fill animation in index.css
     const SAVED_NOTICE_MS = 1800;
+    const PANEL_MS = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 300;   // matches .metrics-panel in index.css
 
     const fabLabel = document.getElementById('metricEditFabLabel');
     const loadingBar = document.getElementById('metricLoadingBar');
@@ -34,20 +24,43 @@ document.addEventListener('DOMContentLoaded', function () {
     const saveBtn = document.getElementById('metricSaveBtn');
     const savedNotice = document.getElementById('metricSavedNotice');
     const forecastCard = document.getElementById('forecastCard');
+    const metricsPanel = document.getElementById('metricsPanel');
+    const metricsTable = document.getElementById('metricsTable');
+    const forecastPlaceholder = forecastCard.innerHTML;
+    const tablePlaceholder = metricsTable.innerHTML;
 
-    const editableRows = Array.from(metricsCard.querySelectorAll('tr')).filter(function (row) {
-        return row.querySelector('.metric-input');
-    });
-
+    let editableRows = [];      // filled in once the table has loaded
+    let tableOpen = false;
+    let panelTimer = null;
     let editing = false;
     let typingTimer = null;
     let loadingTimer = null;
     let savedTimer = null;
     let latestForecastRequest = 0;
 
-    // With nothing to edit, the pencil stays hidden
-    if (!editableRows.length) {
-        return;
+    // The pencil belongs to the table, so it only shows while the table is open and has something to edit
+    function updateFab() {
+        fab.hidden = !(tableOpen && editableRows.length);
+    }
+
+    // The table drops down when opened and folds back up when closed
+    function setTableOpen(open) {
+        tableOpen = open;
+        clearTimeout(panelTimer);
+        toggleBtn.textContent = open ? 'Hide Yearly Metric' : 'Show Yearly Metric';
+        metricsPanel.classList.remove('is-settled');
+
+        if (open) {
+            metricsCard.classList.remove('d-none');
+            void metricsPanel.offsetHeight;     // starts the animation from the closed height
+        }
+        metricsPanel.classList.toggle('is-open', open);
+
+        panelTimer = setTimeout(function () {
+            metricsPanel.classList.toggle('is-settled', open);
+            metricsCard.classList.toggle('d-none', !open);
+        }, PANEL_MS);
+        updateFab();
     }
 
     function rowInputs(row) {
@@ -215,27 +228,72 @@ document.addEventListener('DOMContentLoaded', function () {
         forecastCard.querySelector('.card-body').appendChild(note);
     }
 
-    // The forecast is worked out on the server, so request the page again and take only its new card.
-    // If saves overlap, only the newest response is used, so an older forecast can't replace a newer one.
-    function refreshForecast() {
-        const request = ++latestForecastRequest;
-        forecastCard.classList.add('is-updating');
-        forecastCard.setAttribute('aria-busy', 'true');
-
-        fetch(window.location.href, { cache: 'no-store' })
+    // Resolves to the table and forecast from the server
+    function requestDashboardData() {
+        return fetch(forecastCard.dataset.url, { cache: 'no-store' })
             .then(function (res) {
+                if (res.status === 401) {
+                    // Logged out in the meantime: reloading goes to the login page, so this never resolves
+                    window.location.reload();
+                    return new Promise(function () {});
+                }
                 if (!res.ok) {
                     throw new Error(`status ${res.status}`);
                 }
                 return res.text();
             })
             .then(function (html) {
-                const fresh = new DOMParser().parseFromString(html, 'text/html').getElementById('forecastCard');
-                if (!fresh) {
-                    throw new Error('the response has no forecast card');
+                const page = new DOMParser().parseFromString(html, 'text/html');
+                const table = page.getElementById('metricsTable');
+                const forecast = page.getElementById('forecastCard');
+                if (!table || !forecast) {
+                    throw new Error('the response has no dashboard data');
                 }
+                return { table: table, forecast: forecast };
+            });
+    }
+
+    function showLoadError() {
+        forecastCard.innerHTML = `<div class="card-body dashboard-load-error">
+            <p class="mb-3">The forecast could not be loaded.</p>
+            <button type="button" class="btn btn-primary btn-sm" data-retry-dashboard>Try again</button>
+        </div>`;
+        metricsTable.innerHTML = '<div class="dashboard-load-error p-4">The yearly metrics could not be loaded.</div>';
+    }
+
+    function loadDashboard() {
+        forecastCard.innerHTML = forecastPlaceholder;
+        metricsTable.innerHTML = tablePlaceholder;
+        forecastCard.setAttribute('aria-busy', 'true');
+
+        requestDashboardData()
+            .then(function (data) {
+                metricsTable.innerHTML = data.table.innerHTML;
+                forecastCard.innerHTML = data.forecast.innerHTML;
+                editableRows = Array.from(metricsTable.querySelectorAll('tr')).filter(function (row) {
+                    return row.querySelector('.metric-input');
+                });
+                updateFab();
+            })
+            .catch(function (err) {
+                console.error('Dashboard data failed to load:', err);
+                showLoadError();
+            })
+            .finally(function () {
+                forecastCard.removeAttribute('aria-busy');
+            });
+    }
+
+    // If saves overlap, only the newest response is used, so an older forecast can't replace a newer one
+    function refreshForecast() {
+        const request = ++latestForecastRequest;
+        forecastCard.classList.add('is-updating');
+        forecastCard.setAttribute('aria-busy', 'true');
+
+        requestDashboardData()
+            .then(function (data) {
                 if (request === latestForecastRequest) {
-                    forecastCard.innerHTML = fresh.innerHTML;
+                    forecastCard.innerHTML = data.forecast.innerHTML;
                 }
             })
             .catch(function (err) {
@@ -312,10 +370,8 @@ document.addEventListener('DOMContentLoaded', function () {
         saveModal.classList.add('is-pulsing');
     }
 
-    // The pencil belongs to the table, so it only shows while the table is open
     toggleBtn.addEventListener('click', function () {
-        const tableOpen = !metricsCard.classList.contains('d-none');
-        fab.hidden = !tableOpen;
+        setTableOpen(!tableOpen);
         if (tableOpen || !editing) {
             return;
         }
@@ -375,10 +431,18 @@ document.addEventListener('DOMContentLoaded', function () {
     saveBtn.addEventListener('click', saveChanges);
     discardBtn.addEventListener('click', discardChanges);
 
+    forecastCard.addEventListener('click', function (event) {
+        if (event.target.matches('[data-retry-dashboard]')) {
+            loadDashboard();
+        }
+    });
+
     window.addEventListener('beforeunload', function (event) {
         if (changedRows().length) {
             event.preventDefault();
             event.returnValue = '';
         }
     });
+
+    loadDashboard();
 });

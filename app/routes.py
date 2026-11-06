@@ -25,6 +25,14 @@ from urllib.parse import urlparse
 main_bp = Blueprint('main', __name__)
 
 
+@main_bp.after_request
+def keep_private_pages_out_of_browser_history(response):
+    # Otherwise the Back button can show a logged-in page again after logging out
+    if 'user_id' in session and response.mimetype in ('text/html', 'application/json'):
+        response.headers['Cache-Control'] = 'no-store'
+    return response
+
+
 
 
 
@@ -175,19 +183,12 @@ FORECAST_FEATURES = [
 ]
 
 
-@main_bp.route("/")
-def index():
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
-    ensure_current_school_year_metric()
-    metrics = YearlyMetric.query.order_by(YearlyMetric.school_year.desc()).all()
-
-    all_metrics_asc = YearlyMetric.query.order_by(YearlyMetric.school_year.asc()).all()
+def forecast_values(metrics_oldest_first):
+    """Train the model on the yearly metrics and return what the forecast card shows."""
     data = [{
         'school_year': m.school_year,
         **{field: getattr(m, field) for field in METRIC_FIELDS},
-    } for m in all_metrics_asc]
+    } for m in metrics_oldest_first]
 
     pred_next_year = None
     r2_score_val = None
@@ -248,19 +249,37 @@ def index():
 
                 pred_next_year = round(float(model.predict(df.loc[[anchor], features])[0]))
 
-    return render_template(
-        'dashboard.html',
-        username=session['username'],
-        metrics=metrics,
-        pred_next_year=pred_next_year,
-        r2_score=r2_score_val,
-        mape=mape,
-        based_on_year=based_on_year,
-        target_year=target_year,
-        forecast_note=forecast_note,
-        actual_year=actual_year,
-        actual_count=actual_count,
-    )
+    return {
+        'pred_next_year': pred_next_year,
+        'r2_score': r2_score_val,
+        'mape': mape,
+        'based_on_year': based_on_year,
+        'target_year': target_year,
+        'forecast_note': forecast_note,
+        'actual_year': actual_year,
+        'actual_count': actual_count,
+    }
+
+
+@main_bp.route("/")
+def index():
+    if 'user_id' not in session:
+        return redirect(url_for('main.login'))
+
+    # The table and forecast load separately from /dashboard/data, so the page can appear straight away
+    return render_template('dashboard.html', username=session['username'])
+
+
+@main_bp.route("/dashboard/data")
+def dashboard_data():
+    if 'user_id' not in session:
+        return {'error': 'Unauthorized'}, 401
+
+    ensure_current_school_year_metric()
+    metrics = YearlyMetric.query.order_by(YearlyMetric.school_year.desc()).all()
+    all_metrics_asc = YearlyMetric.query.order_by(YearlyMetric.school_year.asc()).all()
+
+    return render_template('dashboard_data.html', metrics=metrics, **forecast_values(all_metrics_asc))
 
 @main_bp.route("/test_signatures")
 def test_signatures():
@@ -599,7 +618,7 @@ def enrolled():
 @main_bp.route("/enrolled/<int:student_id>")
 def student_detail(student_id):
     if 'user_id' not in session:
-        return redirect(url_for('main_login'))
+        return redirect(url_for('main.login'))
 
     student = Enrollment.query.get_or_404(student_id)
     return render_template('student.html', student=student)

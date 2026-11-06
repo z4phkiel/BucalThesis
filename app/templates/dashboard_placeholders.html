@@ -1,0 +1,56 @@
+{# Placeholders for the dashboard's data, shared by the page itself and its skeleton in page_skeletons.html #}
+
+{% macro forecast_placeholder() %}
+<div class="skel-card-title">Enrollment Forecast &amp; Model Performance</div>
+<span class="skel skel-note" style="width: 62%"></span>
+<div class="skel-alerts">
+    <div class="skel-alert">
+        <div class="skel-alert-row">
+            <span class="skel" style="width: 46%"></span>
+            <span class="skel skel-value" style="width: 24%"></span>
+        </div>
+        <div class="skel-alert-row skel-alert-row-divided">
+            <span class="skel" style="width: 42%"></span>
+            <span class="skel" style="width: 22%"></span>
+        </div>
+    </div>
+    <div class="skel-alert skel-alert-green">
+        <div class="skel-alert-row skel-alert-row-center">
+            <span class="skel" style="width: 44%"></span>
+            <span class="skel skel-value" style="width: 14%"></span>
+        </div>
+    </div>
+</div>
+<span class="skel skel-footnote" style="width: 72%"></span>
+{% endmacro %}
+
+{% macro metrics_table_head() %}
+<thead class="table-dark">
+    <tr>
+        <th>School Year</th>
+        <th>Enrollees</th>
+        <th>Promotion</th>
+        <th>Survival</th>
+        <th>Completion</th>
+        <th>Transition</th>
+        <th>Dropout</th>
+        <th>Graduation</th>
+        <th>Retention</th>
+    </tr>
+</thead>
+{% endmacro %}
+
+{% macro metrics_table_placeholder() %}
+<table class="table table-striped align-middle">
+    {{ metrics_table_head() }}
+    <tbody>
+        {% for row in range(6) %}
+        <tr>
+            {% for cell in range(9) %}
+            <td><span class="skel metrics-placeholder-bar"></span></td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endmacro %}

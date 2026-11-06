@@ -40,12 +40,6 @@ html body > div {
     border-radius: 22px;
     border-top: 6px solid var(--khaki-500);
     box-shadow: 0 25px 50px -12px rgba(20, 40, 25, 0.5);
-    animation: card-in 0.5s ease-out;
-}
-
-@keyframes card-in {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ---------- School logo + name ---------- */
@@ -177,6 +171,13 @@ html body > div form .btn.btn-primary:hover {
 html body > div form .btn.btn-primary:active {
     transform: translateY(0);
     box-shadow: 0 4px 10px rgba(47, 82, 51, 0.4);
+}
+
+html body > div form .btn.btn-primary:disabled {
+    cursor: progress;
+    opacity: 0.85;
+    transform: none;
+    filter: none;
 }
 
 html body > div form .btn.btn-primary:focus-visible {

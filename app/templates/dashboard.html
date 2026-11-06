@@ -54,7 +54,7 @@
     </div>
 
     <section class="main-content min-vh-100 bg-light">
-        <div class="p-4">
+        <div id="pageContent" class="p-4">
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                 <aside class="flash-stack">
@@ -69,121 +69,28 @@
             {% endwith %}
 
             {% block content %}
+            {% from 'dashboard_placeholders.html' import forecast_placeholder, metrics_table_placeholder %}
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="text-dark">Dashboard Overview</h2>
                 <button id="toggleMetricBtn" class="btn btn-primary">Yearly Metric</button>
             </div>
 
-            <div id="metricsCard" class="card shadow-sm d-none">
-                <div class="card-body">
-                    <h5 class="card-title mb-3">Yearly Metrics Summary</h5>
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover align-middle">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>School Year</th>
-                                    <th>Enrollees</th>
-                                    <th>Promotion</th>
-                                    <th>Survival</th>
-                                    <th>Completion</th>
-                                    <th>Transition</th>
-                                    <th>Dropout</th>
-                                    <th>Graduation</th>
-                                    <th>Retention</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for m in metrics %}
-                                {% set start_year = m.school_year.split('-')[0] | trim | int(-1) %}
-                                {% set locked = start_year != -1 and start_year <= 2024 %}
-                                <tr data-metric-id="{{ m.id }}" data-update-url="{{ url_for('main.update_metric', metric_id=m.id) }}" data-school-year="{{ m.school_year }}"{% if locked %} class="metric-row-locked"{% endif %}>
-                                    <td>
-                                        <strong>{{ m.school_year }}</strong>
-                                        {% if locked %}
-                                        <span class="metric-lock" title="This school year is locked and cannot be edited.">
-                                            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
-                                            <span class="visually-hidden">Locked</span>
-                                        </span>
-                                        {% endif %}
-                                    </td>
-
-                                    {% for field in ['enrollee_count', 'promotion_rate', 'cohort_survival_rate',
-                                                      'completion_rate', 'transition_rate', 'dropout_rate',
-                                                      'graduation_rate', 'retention_rate'] %}
-                                    <td>
-                                        {% if locked %}
-                                            {{ m[field] if m[field] is not none else '—' }}{{ '%' if field != 'enrollee_count' and m[field] is not none }}
-                                        {% else %}
-                                            <span class="metric-display" data-field="{{ field }}">{% if m[field] is none %}—{% elif field == 'enrollee_count' %}{{ m[field] }}{% else %}{{ m[field] }}%{% endif %}</span>
-                                            <div class="input-group input-group-sm metric-edit-group d-none">
-                                                <input type="number" step="0.01"
-                                                       class="form-control metric-input"
-                                                       data-field="{{ field }}"
-                                                       aria-label="{{ field | replace('_', ' ') }} for {{ m.school_year }}"
-                                                       autocomplete="off"
-                                                       value="{{ m[field] if m[field] is not none else '' }}">
-                                                {% if field != 'enrollee_count' %}
-                                                    <span class="input-group-text">%</span>
-                                                {% endif %}
-                                            </div>
-                                        {% endif %}
-                                    </td>
-                                    {% endfor %}
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="9" class="text-center text-muted py-4">No yearly metrics available.</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+            <div id="metricsPanel" class="metrics-panel">
+                <div class="metrics-panel-clip">
+                    <div id="metricsCard" class="card shadow-sm d-none">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Yearly Metrics Summary</h5>
+                            <div id="metricsTable" class="table-responsive">
+                                {{ metrics_table_placeholder() }}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div id="forecastCard" class="card shadow-sm mt-4" aria-live="polite">
+
+            <div id="forecastCard" class="card shadow-sm" aria-live="polite" aria-busy="true" data-url="{{ url_for('main.dashboard_data') }}">
                 <div class="card-body">
-                    <h5 class="card-title text-dark mb-3">Enrollment Forecast & Model Performance</h5>
-                    <p class="text-muted small">Computed automatically using a lagged Multiple Linear Regression model based on prior academic year performance metrics.</p>
-                    
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <div class="alert alert-info mb-0 h-100 d-flex flex-wrap justify-content-between align-items-center">
-                               <span><strong>Enrollee Forecast{% if target_year %} for S.Y. {{ target_year }}{% endif %}:</strong></span>
-
-                                <span class="fs-5 fw-bold text-dark">
-                                    {{ pred_next_year if pred_next_year is not none else 'Insufficient Data' }}
-                                    {% if pred_next_year is not none %} enrollees {% endif %}
-                                </span>
-
-                                {% if actual_year %}
-                                <div class="w-100 d-flex flex-wrap justify-content-between align-items-center border-top border-dark border-opacity-25 mt-2 pt-2 small">
-                                    <span><strong>Actual Enrollees for S.Y. {{ actual_year }}:</strong></span>
-                                    <span class="fw-bold text-dark">
-                                        {% if actual_count is not none %}{{ actual_count }} enrollees{% else %}Not yet submitted{% endif %}
-                                    </span>
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="alert alert-secondary mb-0 h-100 d-flex justify-content-between align-items-center">
-                                <span><strong>Model Accuracy ($R^2$ Score):</strong></span>
-                                <span class="fs-5 fw-bold text-dark">
-                                    {{ r2_score if r2_score is not none else 'N/A' }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    {% if pred_next_year is not none and mape is not none %}
-                        <p class="text-muted small mt-3 mb-0">
-                            Based on {{ based_on_year }} data. On past years, predictions were off by about {{ mape }}% on average,
-                            so expect roughly {{ (pred_next_year * (1 - mape / 100)) | round | int }}
-                            to {{ (pred_next_year * (1 + mape / 100)) | round | int }} enrollees.
-                        </p>
-                    {% elif forecast_note %}
-                    <p class="text-muted small mt-3 mb-0">{{ forecast_note }}</p>
-                    {% endif %}
-
+                    {{ forecast_placeholder() }}
                 </div>
             </div>
 
@@ -224,6 +131,8 @@
             </div>
             {% endblock %}
         </div>
+
+        {% include 'page_skeletons.html' %}
     </section>
 
 
@@ -233,5 +142,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
     <script src="{{ url_for('static', filename='js/flash-messages.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/page-skeleton.js') }}"></script>
 </body>
 </html>

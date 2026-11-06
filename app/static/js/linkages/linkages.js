@@ -1,4 +1,18 @@
     document.addEventListener('DOMContentLoaded', function () {
+        // Each picture loads separately from the database, so it shimmers until it arrives
+        document.querySelectorAll('.picture-thumb img').forEach(function (img) {
+            if (img.complete) {
+                return;
+            }
+            const thumb = img.closest('.picture-thumb');
+            const finish = function () {
+                thumb.classList.remove('is-loading');
+            };
+            thumb.classList.add('is-loading');
+            img.addEventListener('load', finish, { once: true });
+            img.addEventListener('error', finish, { once: true });
+        });
+
         // Search filters the links, files and pictures already on the page
         const sections = document.querySelectorAll('[data-search-section]');
         document.getElementById('linkageSearch').addEventListener('input', function () {

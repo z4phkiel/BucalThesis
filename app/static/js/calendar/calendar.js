@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', function(){
         const now = new Date();
         let view = { y: now.getFullYear(), m: now.getMonth() };
         let events = [];
+        let eventsState = 'loading';   // 'loading', 'ready' or 'failed'
         let selectedDate = null;
         let editingId = null;
         let saving = false;
@@ -55,8 +56,18 @@ document.addEventListener('DOMContentLoaded', function(){
     }
         
         async function load() {
+            // The dates don't depend on the server, so they show straight away
+            renderGrid();
+            renderSideLoading();
             events = await api(API, 'GET');
+            eventsState = 'ready';
             render();
+        }
+
+        function renderSideLoading() {
+            const item = '<div class="side-item side-item-loading"><span class="skel" style="width: 45%"></span><span class="skel" style="width: 85%"></span></div>';
+            $('sideCurrent').innerHTML = item;
+            $('sideUpcoming').innerHTML = item.repeat(2);
         }
         
         const isMultiDay = e => e.date !== e.end_date;
@@ -137,11 +148,14 @@ document.addEventListener('DOMContentLoaded', function(){
             }
             const hidden = list.length - shown.length;
             const more = hidden > 0 ? `<div class="chip-more">+${hidden} more</div>` : '';
+            const placeholder = eventsState === 'loading' && d % 6 === 2 ? '<span class="skel skel-chip"></span>' : '';
             html += `<div class="cal-day${k === today ? ' today' : ''}" data-date="${k}">
-                        <span class="num">${d}</span>${chips}${more}
+                        <span class="num">${d}</span>${chips}${more}${placeholder}
                     </div>`;
             }
             $('calGrid').innerHTML = html;
+            $('calGrid').classList.toggle('is-inactive', eventsState !== 'ready');
+            $('calGrid').setAttribute('aria-busy', String(eventsState === 'loading'));
         }
         
         function sideItem(e, extra) {
@@ -318,6 +332,7 @@ document.addEventListener('DOMContentLoaded', function(){
         
         // ---- Events ----
         $('calGrid').addEventListener('click', e => {
+            if (eventsState !== 'ready') return;   // a day can't list or edit its entries until they've arrived
             const cell = e.target.closest('.cal-day');
             if (cell) openDay(cell.dataset.date);
         });
@@ -376,5 +391,10 @@ document.addEventListener('DOMContentLoaded', function(){
             renderGrid();   // also puts back the current year if the value was rejected
         });
 
-        load().catch(err => { $('sideCurrent').innerHTML = `<div class="side-empty">${esc(err.message)}</div>`; });
+        load().catch(err => {
+            eventsState = 'failed';
+            renderGrid();
+            $('sideCurrent').innerHTML = `<div class="side-empty">${esc(err.message)}</div>`;
+            $('sideUpcoming').innerHTML = '';
+        });
 });

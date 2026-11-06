@@ -173,5 +173,11 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('input', render);
     document.addEventListener('change', render);
     document.addEventListener('click', () => setTimeout(render, 50));
+
+    // The first render only sets the starting state, so it shouldn't animate
+    const stepper = fill.closest('.stepper');
+    stepper.classList.add('stepper-no-motion');
     render();
+    void stepper.offsetWidth;   // applies the starting state before the transitions come back
+    stepper.classList.remove('stepper-no-motion');
 });

@@ -199,7 +199,7 @@
             <!-- Picture Preview -->
             <a href="{{ url_for('main.view_picture', picture_id=picture.id) }}"
                target="_blank"
-               class="d-block bg-light text-center"
+               class="d-block bg-light text-center picture-thumb"
                style="height: 190px; overflow: hidden;">
 
                 <img src="{{ url_for('main.view_picture', picture_id=picture.id) }}"
@@ -279,6 +279,8 @@
         <div class="text-center text-muted py-5">
             <p class="mb-0">No matching pictures.</p>
         </div>
+    </div>
+</div>
     </div>
 </div>
 

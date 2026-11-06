@@ -136,14 +136,9 @@
     border-top: 5px solid var(--cl-khaki-500);
     border-radius: 16px;
     box-shadow: 0 12px 30px -12px rgba(36, 61, 40, 0.28);
-    animation: cl-in 0.45s ease-out;
 }
 
-.cal-card + .cal-card {
-    animation-delay: 0.08s;
-    animation-fill-mode: backwards;
-}
-
+/* used when the day popup opens */
 @keyframes cl-in {
     from { opacity: 0; transform: translateY(14px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -627,4 +622,33 @@
     .cal-modal {
         padding: 20px;
     }
+}
+
+/* ---------- While the events load (or if they could not be loaded) ---------- */
+.cal-grid.is-inactive .cal-day {
+    cursor: default;
+}
+
+.cal-grid.is-inactive .cal-day:hover {
+    transform: none;
+}
+
+.cal-grid.is-inactive .cal-day:not(.today):hover {
+    background: #fff;
+    border-color: var(--cl-border);
+    box-shadow: none;
+}
+
+.cal-grid.is-inactive .cal-day.today:hover {
+    box-shadow: 0 0 0 3px rgba(79, 125, 69, 0.15);
+}
+
+.cal-day .skel-chip {
+    height: var(--cl-tag-h);
+}
+
+.side-item-loading {
+    display: grid;
+    gap: 8px;
+    padding: 12px;
 }

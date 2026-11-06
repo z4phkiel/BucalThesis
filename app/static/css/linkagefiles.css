@@ -328,3 +328,23 @@
         padding-right: 20px;
     }
 }
+
+/* ---------- Pictures: each thumbnail shimmers until its image arrives ---------- */
+.picture-thumb {
+    position: relative;
+}
+
+.picture-thumb.is-loading::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--ix-skel-shimmer);
+    background-size: 200% 100%;
+    animation: skel-shimmer 1.5s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .picture-thumb.is-loading::before {
+        animation: none;
+    }
+}
