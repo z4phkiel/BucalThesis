@@ -1,0 +1,202 @@
+{#
+    Placeholder versions of the five main pages. page-skeleton.js shows the destination's placeholder
+    while the server responds to a link click, because the browser has nothing new to show until then.
+
+    Everything uses its own skel-* classes (styled in index.css), since the stylesheet of whichever
+    page is open restyles .card and .table. Titles and column headings mirror the real templates,
+    so update them here if they change there.
+#}
+
+{% from 'dashboard_placeholders.html' import forecast_placeholder %}
+
+{% macro table(columns, rows, variant='') %}
+<table class="skel-table {{ variant }}">
+    <thead>
+        <tr>
+            {% for col in columns %}
+            <th{{ {'style': 'width: ' ~ col.width} | xmlattr }}{% if col.align %} class="skel-{{ col.align }}"{% endif %}>{{ col.label }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in range(rows) %}
+        <tr>
+            {% for col in columns %}
+            <td{% if col.align %} class="skel-{{ col.align }}"{% endif %}>
+                {% if col.pills %}
+                    {% for pill in range(col.pills) %}<span class="skel skel-row-action {{ col.pill_class }}"></span>{% endfor %}
+                {% else %}
+                    <span class="skel"{{ {'style': 'width: ' ~ col.bars[row % col.bars | length]} | xmlattr }}></span>
+                {% endif %}
+            </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endmacro %}
+
+{% macro search_card(label, variant='') %}
+<div class="skel-card {{ variant }}">
+    <div class="skel-card-body">
+        <div class="skel-label">{{ label }}</div>
+        <span class="skel skel-search"></span>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro upload_form() %}
+<div class="skel-form">
+    <span class="skel skel-input"></span>
+    <span class="skel skel-input"></span>
+    <span class="skel skel-input"></span>
+</div>
+{% endmacro %}
+
+<div id="pageSkeleton" class="p-4" role="status" aria-busy="true" hidden></div>
+
+<template data-skeleton-path="{{ url_for('main.index') }}">
+    <span class="visually-hidden">Loading the dashboard</span>
+    <div class="skel-head">
+        <div class="skel-title skel-title-dashboard">Dashboard Overview</div>
+        <span class="skel skel-button"></span>
+    </div>
+    <div class="skel-card">
+        <div class="skel-card-body">
+            {{ forecast_placeholder() }}
+        </div>
+    </div>
+</template>
+
+<template data-skeleton-path="{{ url_for('main.enrolled') }}">
+    <span class="visually-hidden">Loading the masterlist</span>
+    <div class="skel-head">
+        <div class="skel-title skel-title-list">Enrolled Students</div>
+    </div>
+    {{ search_card('Search Students', 'skel-card-plain') }}
+    <div class="skel-table-card">
+        {{ table([
+            {'label': '#', 'width': '56px', 'bars': ['18px']},
+            {'label': 'Student Name', 'width': '32%', 'bars': ['68%', '82%', '60%', '74%', '88%', '64%', '78%', '70%']},
+            {'label': 'LRN', 'width': '21%', 'bars': ['62%', '68%', '58%']},
+            {'label': 'Grade Level', 'width': '19%', 'bars': ['45%', '52%', '40%']},
+            {'label': 'Date Enrolled', 'width': 'auto', 'bars': ['58%', '64%', '52%']},
+        ], 8, 'skel-table-striped') }}
+    </div>
+</template>
+
+<template data-skeleton-path="{{ url_for('main.grades') }}">
+    <span class="visually-hidden">Loading school forms</span>
+    <div class="skel-head">
+        <div class="skel-title skel-title-list">Student Grades</div>
+    </div>
+    {{ search_card('Search Students') }}
+    <div class="skel-table-card">
+        {{ table([
+            {'label': '#', 'width': '64px', 'bars': ['18px']},
+            {'label': 'Student Name', 'width': '28%', 'bars': ['68%', '82%', '60%', '74%', '88%', '64%', '78%', '70%']},
+            {'label': 'LRN', 'width': '18%', 'bars': ['62%', '68%', '58%']},
+            {'label': 'Enrolled Grade Level', 'width': '26%', 'bars': ['32%', '38%', '28%']},
+            {'label': 'Action', 'width': 'auto', 'align': 'center', 'pills': 1, 'pill_class': 'skel-row-action-large'},
+        ], 8) }}
+    </div>
+</template>
+
+<template data-skeleton-path="{{ url_for('main.calendar') }}">
+    <span class="visually-hidden">Loading the calendar</span>
+    <div class="skel-title skel-title-calendar">Calendar</div>
+    <div class="skel-cal">
+        <div class="skel-cal-card">
+            <div class="skel-cal-head">
+                <span class="skel skel-cal-month"></span>
+                <div class="skel-cal-nav">
+                    <span class="skel skel-pill" style="width: 118px"></span>
+                    <span class="skel skel-pill" style="width: 88px"></span>
+                    <span class="skel skel-pill" style="width: 82px"></span>
+                    <span class="skel skel-pill" style="width: 72px"></span>
+                    <span class="skel skel-pill" style="width: 82px"></span>
+                </div>
+            </div>
+            <div class="skel-cal-grid">
+                {% for day in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] %}
+                <div class="skel-cal-dow">{{ day }}</div>
+                {% endfor %}
+                {% for cell in range(35) %}
+                <div class="skel-cal-day">
+                    <span class="skel skel-cal-num"></span>
+                    {% if cell % 6 == 2 %}<span class="skel skel-cal-chip"></span>{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="skel-cal-card skel-cal-side">
+            <div class="skel-side-section">
+                <div class="skel-side-title">Current</div>
+                <div class="skel-side-item"><span class="skel" style="width: 42%"></span><span class="skel" style="width: 86%"></span></div>
+            </div>
+            <div class="skel-side-section">
+                <div class="skel-side-title">Upcoming</div>
+                <div class="skel-side-item"><span class="skel" style="width: 56%"></span><span class="skel" style="width: 78%"></span></div>
+                <div class="skel-side-item"><span class="skel" style="width: 50%"></span><span class="skel" style="width: 88%"></span></div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<template data-skeleton-path="{{ url_for('main.linkagefiles') }}">
+    <span class="visually-hidden">Loading linkage and files</span>
+    <div class="skel-title skel-title-linkage">Linkage/Files</div>
+    {{ search_card('Search Linkages') }}
+    <div class="skel-card">
+        <div class="skel-card-body">
+            <div class="skel-section-title">Important Links</div>
+            {{ upload_form() }}
+            <div class="skel-table-frame">
+                {{ table([
+                    {'label': 'Title', 'width': '25%', 'bars': ['64%', '78%', '56%']},
+                    {'label': 'Link', 'width': '40%', 'bars': ['72%', '58%', '66%']},
+                    {'label': 'Actions', 'width': 'auto', 'align': 'end', 'pills': 2},
+                ], 3, 'skel-table-compact skel-table-striped') }}
+            </div>
+        </div>
+    </div>
+    <div class="skel-card">
+        <div class="skel-card-body">
+            <div class="skel-section-title">Important Files</div>
+            {{ upload_form() }}
+            <span class="skel skel-help"></span>
+            <div class="skel-table-frame">
+                {{ table([
+                    {'label': 'Title', 'width': '18%', 'bars': ['64%', '78%', '56%']},
+                    {'label': 'File', 'width': '15%', 'bars': ['72%', '58%', '66%']},
+                    {'label': 'Size', 'width': '9.5%', 'bars': ['62%', '54%']},
+                    {'label': 'Uploaded', 'width': '15.5%', 'bars': ['58%', '52%']},
+                    {'label': 'Actions', 'width': 'auto', 'align': 'end', 'pills': 3},
+                ], 3, 'skel-table-compact skel-table-striped') }}
+            </div>
+        </div>
+    </div>
+    <div class="skel-card">
+        <div class="skel-card-body">
+            <div class="skel-section-title">Important Pictures</div>
+            {{ upload_form() }}
+            <span class="skel skel-help"></span>
+            <div class="skel-pictures">
+                {% for picture in range(4) %}
+                <div class="skel-picture">
+                    <span class="skel skel-picture-image"></span>
+                    <div class="skel-picture-body">
+                        <span class="skel" style="width: 68%"></span>
+                        <span class="skel" style="width: 82%"></span>
+                        <span class="skel" style="width: 56%"></span>
+                        <div class="skel-picture-actions">
+                            <span class="skel skel-row-action"></span>
+                            <span class="skel skel-row-action"></span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</template>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bucal II Elementary School</title>
+    <meta name="description" content="Official website of Bucal II Elementary School. Visit our Facebook page for the latest school news and sign in to the school portal.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+</head>
+<body>
+
+    <!-- ================= Top bar ================= -->
+    <header class="site-header">
+        <div class="container header-inner">
+            <a href="#home" class="brand">
+                <img src="{{ url_for('static', filename='images/SchoolLogo.jpg') }}" alt="Bucal II Elementary School logo" class="brand-logo">
+                <span class="brand-name">Bucal II Elementary School</span>
+            </a>
+
+            <nav class="site-nav" aria-label="Main">
+                <a href="#about">About</a>
+                <a href="#portal">School Management System</a>
+            </nav>
+
+            <a href="{{ url_for('main.login') }}" class="btn btn-login">Staff Login</a>
+        </div>
+    </header>
+
+    <main>
+
+        <!-- ================= Hero ================= -->
+        <section class="hero" id="home">
+            <div class="container hero-inner">
+                <div class="hero-text">
+                    <span class="eyebrow">DepEd Tayo &middot; BES 108039</span>
+                    <h1>Welcome to <span>Bucal II Elementary School</span></h1>
+                    <p class="lead">A public elementary school working together with learners, parents and the community to give every child a good start in education.</p>
+                    <div class="hero-actions">
+                        <a href="https://www.facebook.com/DepEdTayoBES108039" class="btn btn-outline" target="_blank" rel="noopener noreferrer">Visit Our Facebook Page</a>
+                    </div>
+                </div>
+
+        </section>
+
+        <!-- ================= About ================= -->
+        <section class="section" id="about">
+            <div class="container">
+                <div class="section-head">
+                    <span class="kicker">About Us</span>
+                    <h2>Our School</h2>
+                    <p>Bucal II Elementary School is a public elementary school under the Department of Education. We are committed to caring, quality basic education for our learners.</p>
+                </div>
+
+                <div class="grid grid-3">
+                    <article class="card">
+                        <div class="icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v15H5.5A1.5 1.5 0 0 0 4 20.5zM20 5.5A1.5 1.5 0 0 0 18.5 4H13v15h5.5a1.5 1.5 0 0 1 1.5 1.5z"/></svg>
+                        </div>
+                        <h3>Quality Learning</h3>
+                        <p>Lessons and activities that help every learner build strong reading, writing and number skills.</p>
+                    </article>
+                    <article class="card">
+                        <div class="icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10z"/></svg>
+                        </div>
+                        <h3>Caring Community</h3>
+                        <p>A safe and friendly school where teachers, staff and classmates look out for one another.</p>
+                    </article>
+                    <article class="card">
+                        <div class="icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M15 14.3c.6-.2 1.3-.3 2-.3 2.2 0 4 1.8 4 4"/></svg>
+                        </div>
+                        <h3>Working With Parents</h3>
+                        <p>Parents and guardians are partners in the education and growth of every child.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= School portal ================= -->
+        <section class="section section-tint" id="portal">
+            <div class="container">
+                <div class="section-head">
+                    <span class="kicker">For School Staff</span>
+                    <h2>School Management System</h2>
+                    <p>Our school management system keeps everyday school records in one place. Sign in to use it.</p>
+                </div>
+
+                <div class="grid grid-5">
+                    <article class="card card-small">
+                        <div class="icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h7"/></svg>
+                        </div>
+                        <h3>Enrollment Form</h3>
+                        <p>Register new learners.</p>
+                    </article>
+                    <article class="card card-small">
+                        <div class="icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 11l2 2 4-4"/></svg>
+                        </div>
+                        <h3>Masterlist</h3>
+                        <p>See enrolled students.</p>
+                    </article>
+                    <article class="card card-small">
+                        <div class="icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+                        </div>
+                        <h3>School Forms</h3>
+                        <p>Keep learner grades.</p>
+                    </article>
+                    <article class="card card-small">
+                        <div class="icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+                        </div>
+                        <h3>Calendar</h3>
+                        <p>Holidays, events and exams.</p>
+                    </article>
+                    <article class="card card-small">
+                        <div class="icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1"/></svg>
+                        </div>
+                        <h3>Linkage/Files</h3>
+                        <p>Important links and files.</p>
+                    </article>
+                </div>
+
+                <div class="center">
+                    <a href="{{ url_for('main.login') }}" class="btn btn-green">Go to Staff Login</a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ================= Footer ================= -->
+    <footer class="site-footer">
+        <div class="container footer-inner">
+            <div class="footer-brand">
+                <img src="{{ url_for('static', filename='images/SchoolLogo.jpg') }}" alt="" class="footer-logo">
+                <div>
+                    <strong>Bucal II Elementary School</strong>
+                    <span>Department of Education &middot; Republic of the Philippines</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

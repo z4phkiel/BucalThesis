@@ -54,107 +54,85 @@
     </div>
 
     <section class="main-content min-vh-100 bg-light">
-        <div class="p-4">
+        <div id="pageContent" class="p-4">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <aside class="flash-stack">
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                </aside>
+                {% endif %}
+            {% endwith %}
+
             {% block content %}
+            {% from 'dashboard_placeholders.html' import forecast_placeholder, metrics_table_placeholder %}
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="text-dark">Dashboard Overview</h2>
                 <button id="toggleMetricBtn" class="btn btn-primary">Yearly Metric</button>
             </div>
 
-            <div id="metricsCard" class="card shadow-sm d-none">
-                <div class="card-body">
-                    <h5 class="card-title mb-3">Yearly Metrics Summary</h5>
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover align-middle">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>School Year</th>
-                                    <th>Enrollees</th>
-                                    <th>Promotion</th>
-                                    <th>Survival</th>
-                                    <th>Completion</th>
-                                    <th>Transition</th>
-                                    <th>Dropout</th>
-                                    <th>Graduation</th>
-                                    <th>Retention</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for m in metrics %}
-                                {% set start_year = m.school_year.split('-')[0] | trim | int(-1) %}
-                                {% set locked = start_year != -1 and start_year <= 2024 %}
-                                {% set saved = (not locked) and (m.enrollee_count is not none) %}
-                                <tr data-metric-id="{{ m.id }}" data-update-url="{{ url_for('main.update_metric', metric_id=m.id) }}">
-                                    <td><strong>{{ m.school_year }}</strong></td>
-
-                                    {% for field in ['enrollee_count', 'promotion_rate', 'cohort_survival_rate',
-                                                      'completion_rate', 'transition_rate', 'dropout_rate',
-                                                      'graduation_rate', 'retention_rate'] %}
-                                    <td>
-                                        {% if locked %}
-                                            {{ m[field] if m[field] is not none else '—' }}{{ '%' if field != 'enrollee_count' and m[field] is not none }}
-                                        {% else %}
-                                            <span class="metric-display {{ '' if saved else 'd-none' }}" data-field="{{ field }}">{% if m[field] is none %}—{% elif field == 'enrollee_count' %}{{ m[field] }}{% else %}{{ m[field] }}%{% endif %}</span>
-                                            <div class="input-group input-group-sm metric-edit-group {{ 'd-none' if saved else '' }}">
-                                                <input type="number" step="0.01"
-                                                       class="form-control metric-input"
-                                                       data-field="{{ field }}"
-                                                       value="{{ m[field] if m[field] is not none else '' }}">
-                                                {% if field != 'enrollee_count' %}
-                                                    <span class="input-group-text">%</span>
-                                                {% endif %}
-                                            </div>
-                                        {% endif %}
-                                    </td>
-                                    {% endfor %}
-
-                                    <td>
-                                        {% if locked %}
-                                            <span class="badge bg-secondary">Locked</span>
-                                        {% else %}
-                                            <button class="btn btn-sm {{ 'btn-outline-success' if saved else 'btn-success' }} save-row-btn" data-mode="{{ 'edit' if saved else 'save' }}">{{ 'Edit' if saved else 'Save' }}</button>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="10" class="text-center text-muted py-4">No yearly metrics available.</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+            <div id="metricsPanel" class="metrics-panel">
+                <div class="metrics-panel-clip">
+                    <div id="metricsCard" class="card shadow-sm d-none">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Yearly Metrics Summary</h5>
+                            <div id="metricsTable" class="table-responsive">
+                                {{ metrics_table_placeholder() }}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="card shadow-sm mt-4">
+
+            <div id="forecastCard" class="card shadow-sm" aria-live="polite" aria-busy="true" data-url="{{ url_for('main.dashboard_data') }}">
                 <div class="card-body">
-                    <h5 class="card-title text-dark mb-3">Enrollment Forecast & Model Performance</h5>
-                    <p class="text-muted small">Computed automatically using a lagged Multiple Linear Regression model based on prior academic year performance metrics.</p>
-                    
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <div class="alert alert-info mb-0 d-flex justify-content-between align-items-center">
-                                <span><strong>Next School Year Enrollee Forecast:</strong></span>
-                                <span class="fs-5 fw-bold text-dark">
-                                    {{ pred_next_year if pred_next_year is not none else 'Insufficient Data' }} 
-                                    {% if pred_next_year is not none %} enrollees {% endif %}
-                                </span>
-                            </div>
+                    {{ forecast_placeholder() }}
+                </div>
+            </div>
+
+            <!-- Yearly metrics editing: stays inside this block so pages that extend this template don't get it -->
+            <button type="button" id="metricEditFab" class="metric-fab" aria-pressed="false" aria-label="Edit yearly metrics" hidden>
+                <span class="metric-fab-icon" aria-hidden="true">
+                    <svg class="metric-fab-edit" viewBox="0 0 24 24"><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+                    <svg class="metric-fab-done" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+                </span>
+                <span id="metricEditFabLabel" class="metric-fab-label">Edit metrics</span>
+            </button>
+
+            <div class="metric-save-dock">
+                <div id="metricLoadingBar" class="metric-loading" role="progressbar" aria-label="Preparing your changes" hidden>
+                    <span class="metric-loading-fill"></span>
+                </div>
+
+                <div id="metricSaveModal" class="metric-save-modal" role="region" aria-label="Unsaved yearly metric changes" hidden>
+                    <div class="metric-save-content">
+                        <div class="metric-save-text">
+                            <div class="metric-save-title">Save your changes?</div>
+                            <div id="metricSaveSummary" class="metric-save-summary" aria-live="polite"></div>
+                            <div id="metricSaveNote" class="metric-save-note" hidden>Blank fields in a changed year will be saved as 0.</div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="alert alert-secondary mb-0 d-flex justify-content-between align-items-center">
-                                <span><strong>Model Accuracy ($R^2$ Score):</strong></span>
-                                <span class="fs-5 fw-bold text-dark">
-                                    {{ r2_score if r2_score is not none else 'N/A' }}
-                                </span>
-                            </div>
+                        <div class="metric-save-actions">
+                            <button type="button" id="metricDiscardBtn" class="btn btn-sm metric-btn-ghost">Discard</button>
+                            <button type="button" id="metricSaveBtn" class="btn btn-primary btn-sm">Save changes</button>
                         </div>
                     </div>
+                    <div id="metricSaveError" class="metric-save-error" role="alert" hidden></div>
+                    <div id="metricSaveProgress" class="metric-save-progress" hidden><span></span></div>
+                </div>
+
+                <div id="metricSavedNotice" class="metric-saved-notice" role="status" hidden>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+                    Changes saved
                 </div>
             </div>
             {% endblock %}
         </div>
+
+        {% include 'page_skeletons.html' %}
     </section>
 
 
@@ -163,5 +141,7 @@
     {% endblock %}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='js/flash-messages.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/page-skeleton.js') }}"></script>
 </body>
 </html>

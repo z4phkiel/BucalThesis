@@ -45,6 +45,12 @@
     transition: width 0.4s ease;
 }
 
+/* on while the stepper sets its starting state on page load */
+.stepper-no-motion,
+.stepper-no-motion * {
+    transition: none !important;
+}
+
 /* Individual step */
 .step-node {
     position: relative;

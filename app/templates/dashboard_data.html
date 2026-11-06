@@ -1,0 +1,98 @@
+{# The dashboard's data, requested by dashboard.js after the page appears. The script copies each part into the matching element on the page. #}
+{% from 'dashboard_placeholders.html' import metrics_table_head %}
+
+<div id="metricsTable">
+    <table class="table table-striped table-hover align-middle">
+        {{ metrics_table_head() }}
+        <tbody>
+            {% for m in metrics %}
+            {% set start_year = m.school_year.split('-')[0] | trim | int(-1) %}
+            {% set locked = start_year != -1 and start_year <= 2024 %}
+            <tr data-metric-id="{{ m.id }}" data-update-url="{{ url_for('main.update_metric', metric_id=m.id) }}" data-school-year="{{ m.school_year }}"{% if locked %} class="metric-row-locked"{% endif %}>
+                <td>
+                    <strong>{{ m.school_year }}</strong>
+                    {% if locked %}
+                    <span class="metric-lock" title="This school year is locked and cannot be edited.">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+                        <span class="visually-hidden">Locked</span>
+                    </span>
+                    {% endif %}
+                </td>
+
+                {% for field in ['enrollee_count', 'promotion_rate', 'cohort_survival_rate',
+                                  'completion_rate', 'transition_rate', 'dropout_rate',
+                                  'graduation_rate', 'retention_rate'] %}
+                <td>
+                    {% if locked %}
+                        {{ m[field] if m[field] is not none else '—' }}{{ '%' if field != 'enrollee_count' and m[field] is not none }}
+                    {% else %}
+                        <span class="metric-display" data-field="{{ field }}">{% if m[field] is none %}—{% elif field == 'enrollee_count' %}{{ m[field] }}{% else %}{{ m[field] }}%{% endif %}</span>
+                        <div class="input-group input-group-sm metric-edit-group d-none">
+                            <input type="number" step="0.01"
+                                   class="form-control metric-input"
+                                   data-field="{{ field }}"
+                                   aria-label="{{ field | replace('_', ' ') }} for {{ m.school_year }}"
+                                   autocomplete="off"
+                                   value="{{ m[field] if m[field] is not none else '' }}">
+                            {% if field != 'enrollee_count' %}
+                                <span class="input-group-text">%</span>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="9" class="text-center text-muted py-4">No yearly metrics available.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div id="forecastCard">
+    <div class="card-body">
+        <h5 class="card-title text-dark mb-3">Enrollment Forecast & Model Performance</h5>
+        <p class="text-muted small">Computed automatically using a lagged Multiple Linear Regression model based on prior academic year performance metrics.</p>
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="alert alert-info mb-0 h-100 d-flex flex-wrap justify-content-between align-items-center">
+                   <span><strong>Enrollee Forecast{% if target_year %} for S.Y. {{ target_year }}{% endif %}:</strong></span>
+
+                    <span class="fs-5 fw-bold text-dark">
+                        {{ pred_next_year if pred_next_year is not none else 'Insufficient Data' }}
+                        {% if pred_next_year is not none %} enrollees {% endif %}
+                    </span>
+
+                    {% if actual_year %}
+                    <div class="w-100 d-flex flex-wrap justify-content-between align-items-center border-top border-dark border-opacity-25 mt-2 pt-2 small">
+                        <span><strong>Actual Enrollees for S.Y. {{ actual_year }}:</strong></span>
+                        <span class="fw-bold text-dark">
+                            {% if actual_count is not none %}{{ actual_count }} enrollees{% else %}Not yet submitted{% endif %}
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="alert alert-secondary mb-0 h-100 d-flex justify-content-between align-items-center">
+                    <span><strong>Model Accuracy ($R^2$ Score):</strong></span>
+                    <span class="fs-5 fw-bold text-dark">
+                        {{ r2_score if r2_score is not none else 'N/A' }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        {% if pred_next_year is not none and mape is not none %}
+            <p class="text-muted small mt-3 mb-0">
+                Based on {{ based_on_year }} data. On past years, predictions were off by about {{ mape }}% on average,
+                so expect roughly {{ (pred_next_year * (1 - mape / 100)) | round | int }}
+                to {{ (pred_next_year * (1 + mape / 100)) | round | int }} enrollees.
+            </p>
+        {% elif forecast_note %}
+        <p class="text-muted small mt-3 mb-0">{{ forecast_note }}</p>
+        {% endif %}
+    </div>
+</div>

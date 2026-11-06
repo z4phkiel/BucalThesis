@@ -11,18 +11,19 @@ document.addEventListener('DOMContentLoaded', function(){
         const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         
         // The calendar is generated on the fly, so every year exists automatically.
-        // Navigation range: January of this year -> December of next year (rolls forward each Jan 1).
-        const bounds = () => {
-            const y = new Date().getFullYear();
-            return { min: y * 12, max: (y + 1) * 12 + 11 };
-        };
-        
+        // Dates stay 4-digit years so they can be compared as strings (same limit as routes.py).
+        const MIN_YEAR = 1000;
+        const MAX_YEAR = 9999;
+        const MAX_CHIPS = 2;   // tag bars shown per day before "+N more"
+
         const now = new Date();
         let view = { y: now.getFullYear(), m: now.getMonth() };
         let events = [];
+        let eventsState = 'loading';   // 'loading', 'ready' or 'failed'
         let selectedDate = null;
         let editingId = null;
-        
+        let saving = false;
+
         const $ = id => document.getElementById(id);
         
         async function api(url, method, body) {
@@ -55,49 +56,106 @@ document.addEventListener('DOMContentLoaded', function(){
     }
         
         async function load() {
+            // The dates don't depend on the server, so they show straight away
+            renderGrid();
+            renderSideLoading();
             events = await api(API, 'GET');
+            eventsState = 'ready';
             render();
         }
-        
-        function byDate() {
-            const map = {};
-            events.forEach(e => { (map[e.date] = map[e.date] || []).push(e); });
-            return map;
+
+        function renderSideLoading() {
+            const item = '<div class="side-item side-item-loading"><span class="skel" style="width: 45%"></span><span class="skel" style="width: 85%"></span></div>';
+            $('sideCurrent').innerHTML = item;
+            $('sideUpcoming').innerHTML = item.repeat(2);
         }
         
+        const isMultiDay = e => e.date !== e.end_date;
+        const coversDate = (e, k) => e.date <= k && k <= e.end_date;
+        const daysBetween = (a, b) => Math.round((parseKey(b) - parseKey(a)) / 86400000);
+        const shortDate = k => parseKey(k).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+        const rangeLabel = e => `${shortDate(e.date)} &ndash; ${shortDate(e.end_date)}`;
+
+        // Gives each event a fixed row, so a multi-day bar stays level across the days it covers.
+        function assignLanes(list) {
+            const laneEnds = [];
+            const lanes = {};
+            [...list]
+            .sort((a, b) => a.date.localeCompare(b.date) || b.end_date.localeCompare(a.end_date) || a.id - b.id)
+            .forEach(e => {
+                let lane = laneEnds.findIndex(end => end < e.date);
+                if (lane === -1) lane = laneEnds.length;
+                laneEnds[lane] = e.end_date;
+                lanes[e.id] = lane;
+            });
+            return lanes;
+        }
+
+        function renderChip(e, k, d, days, weekday) {
+            const text = `${esc(TAG_LABEL[e.tag] || e.tag)}${e.description ? ': ' + esc(e.description) : ''}`;
+            if (!isMultiDay(e)) {
+                return `<span class="chip ${esc(e.tag)}" title="${esc(e.description)}">${text}</span>`;
+            }
+
+            // A bar is one chip per day, joined across the gaps. The bar breaks at the end of a week or month.
+            const lastInRow = weekday === 6 || d === days;
+            const classes = ['chip', 'chip-span', esc(e.tag)];
+            if (k > e.date) classes.push('span-prev');
+            if (k < e.end_date) classes.push(lastInRow ? 'span-next' : 'span-next span-join');
+
+            // The label sits on the first day of each row and runs across the whole bar
+            let label = '';
+            if (k === e.date || weekday === 0 || d === 1) {
+                const cells = Math.min(daysBetween(k, e.end_date) + 1, 7 - weekday, days - d + 1);
+                label = `<span class="chip-label" style="--span:${cells}">${text}</span>`;
+            }
+            return `<span class="${classes.join(' ')}" title="${esc(e.description)}">${label}</span>`;
+        }
+
         function render() {
             renderGrid();
             renderSide();
         }
         
         function renderGrid() {
-            const map = byDate();
             const today = todayKey();
-            const b = bounds();
-            const idx = view.y * 12 + view.m;
-        
+
             $('calTitle').textContent = `${MONTHS[view.m]} ${view.y}`;
-            $('calPrev').disabled = idx <= b.min;
-            $('calNext').disabled = idx >= b.max;
-        
+            $('calMonth').value = view.m;
+            $('calYear').value = view.y;
+            $('calPrev').disabled = view.y === MIN_YEAR && view.m === 0;
+            $('calNext').disabled = view.y === MAX_YEAR && view.m === 11;
+
             let html = DOW.map(d => `<div class="cal-dow">${d}</div>`).join('');
             const first = new Date(view.y, view.m, 1).getDay();
             const days = new Date(view.y, view.m + 1, 0).getDate();
-        
+
             for (let i = 0; i < first; i++) html += '<div class="cal-empty"></div>';
-        
+
+            const visible = events.filter(e => e.date <= key(view.y, view.m, days) && e.end_date >= key(view.y, view.m, 1));
+            const lanes = assignLanes(visible);
+
             for (let d = 1; d <= days; d++) {
             const k = key(view.y, view.m, d);
-            const list = map[k] || [];
-            const chips = list.slice(0, 2).map(e =>
-                `<span class="chip ${esc(e.tag)}" title="${esc(e.description)}">${esc(TAG_LABEL[e.tag] || e.tag)}${e.description ? ': ' + esc(e.description) : ''}</span>`
-            ).join('');
-            const more = list.length > 2 ? `<div class="chip-more">+${list.length - 2} more</div>` : '';
+            const weekday = (first + d - 1) % 7;
+            const list = visible.filter(e => coversDate(e, k));
+            const shown = list.filter(e => lanes[e.id] < MAX_CHIPS);
+            const rows = shown.reduce((max, e) => Math.max(max, lanes[e.id] + 1), 0);
+            let chips = '';
+            for (let lane = 0; lane < rows; lane++) {
+                const e = shown.find(x => lanes[x.id] === lane);
+                chips += e ? renderChip(e, k, d, days, weekday) : '<span class="chip-gap"></span>';
+            }
+            const hidden = list.length - shown.length;
+            const more = hidden > 0 ? `<div class="chip-more">+${hidden} more</div>` : '';
+            const placeholder = eventsState === 'loading' && d % 6 === 2 ? '<span class="skel skel-chip"></span>' : '';
             html += `<div class="cal-day${k === today ? ' today' : ''}" data-date="${k}">
-                        <span class="num">${d}</span>${chips}${more}
+                        <span class="num">${d}</span>${chips}${more}${placeholder}
                     </div>`;
             }
             $('calGrid').innerHTML = html;
+            $('calGrid').classList.toggle('is-inactive', eventsState !== 'ready');
+            $('calGrid').setAttribute('aria-busy', String(eventsState === 'loading'));
         }
         
         function sideItem(e, extra) {
@@ -123,12 +181,11 @@ document.addEventListener('DOMContentLoaded', function(){
         
         function renderSide() {
             const today = todayKey();
-            const current = events.filter(e => e.date === today);
+            const current = events.filter(e => coversDate(e, today));
             $('sideCurrent').innerHTML = current.length
-            ? current.map(e => sideItem(e, 'Today')).join('')
+            ? current.map(e => sideItem(e, isMultiDay(e) ? rangeLabel(e) : 'Today')).join('')
             : '<div class="side-empty">Nothing happening today</div>';
         
-            const t0 = parseKey(today);
             const upcoming = events
             .filter(e => e.date > today)
             .sort((a, b) => a.date.localeCompare(b.date))
@@ -136,9 +193,8 @@ document.addEventListener('DOMContentLoaded', function(){
         
             $('sideUpcoming').innerHTML = upcoming.length
             ? upcoming.map(e => {
-                const dt = parseKey(e.date);
-                const diff = Math.round((dt - t0) / 86400000);
-                const label = dt.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+                const diff = daysBetween(today, e.date);
+                const label = isMultiDay(e) ? rangeLabel(e) : shortDate(e.date);
                 return sideItem(e, `${label} (${diff === 1 ? 'tomorrow' : 'in ' + diff + ' days'})`);
                 }).join('')
             : '<div class="side-empty">No upcoming items</div>';
@@ -159,8 +215,15 @@ document.addEventListener('DOMContentLoaded', function(){
             selectedDate = null;
         }
         
+        function setDates(start, end) {
+            $('fStart').value = start;
+            $('fEnd').value = end;
+            $('fEnd').min = start || `${MIN_YEAR}-01-01`;
+        }
+
         function resetForm() {
             editingId = null;
+            setDates(selectedDate || '', selectedDate || '');
             $('fTag').value = 'event';
             $('fDesc').value = '';
             $('fLink').value = '';
@@ -170,7 +233,7 @@ document.addEventListener('DOMContentLoaded', function(){
         }
         
         function renderEntries() {
-            const list = events.filter(e => e.date === selectedDate);
+            const list = events.filter(e => coversDate(e, selectedDate));
             $('modalEntries').innerHTML = list.length
         ? list.map(e => `
             <div class="entry">
@@ -183,6 +246,8 @@ document.addEventListener('DOMContentLoaded', function(){
                     ${e.description
                         ? esc(e.description)
                         : '<em>No description</em>'}
+
+                    ${isMultiDay(e) ? `<div class="entry-range">${rangeLabel(e)}</div>` : ''}
 
                     ${e.link_url ? `
                         <div style="margin-top:6px;">
@@ -208,12 +273,35 @@ document.addEventListener('DOMContentLoaded', function(){
         }
         
         async function save() {
+            if (saving) return;   // ignore extra clicks while a request is running
+
+            const start = $('fStart').value;
+            const end = $('fEnd').value;
+            if (!start || !end) {
+                $('formError').textContent = 'Please enter a start and end date.';
+                return;
+            }
+            if (end < start) {
+                $('formError').textContent = 'End date cannot be before the start date.';
+                return;
+            }
+            if (!$('fStart').validity.valid || !$('fEnd').validity.valid) {
+                $('formError').textContent = 'Please enter a valid year.';
+                return;
+            }
+
             $('formError').textContent = '';
-            const body = { date: selectedDate, tag: $('fTag').value, description: $('fDesc').value.trim(), link_url: $('fLink').value.trim() };
+            const body = { date: start, end_date: end, tag: $('fTag').value, description: $('fDesc').value.trim(), link_url: $('fLink').value.trim() };
+            const id = editingId;
+            const btn = $('btnSave');
+            const btnLabel = btn.textContent;
+            saving = true;
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
             try {
-            if (editingId) {
-                const updated = await api(`${API}/${editingId}`, 'PUT', body);
-                events = events.map(e => e.id === editingId ? updated : e);
+            if (id) {
+                const updated = await api(`${API}/${id}`, 'PUT', body);
+                events = events.map(e => e.id === id ? updated : e);
             } else {
                 events.push(await api(API, 'POST', body));
             }
@@ -221,7 +309,11 @@ document.addEventListener('DOMContentLoaded', function(){
             renderEntries();
             render();
             } catch (err) {
+            btn.textContent = btnLabel;
             $('formError').textContent = err.message;
+            } finally {
+            saving = false;
+            btn.disabled = false;
             }
         }
         
@@ -240,6 +332,7 @@ document.addEventListener('DOMContentLoaded', function(){
         
         // ---- Events ----
         $('calGrid').addEventListener('click', e => {
+            if (eventsState !== 'ready') return;   // a day can't list or edit its entries until they've arrived
             const cell = e.target.closest('.cal-day');
             if (cell) openDay(cell.dataset.date);
         });
@@ -251,6 +344,7 @@ document.addEventListener('DOMContentLoaded', function(){
             const ev = events.find(x => x.id === Number(edit.dataset.edit));
             if (!ev) return;
             editingId = ev.id;
+            setDates(ev.date, ev.end_date);
             $('fTag').value = ev.tag;
             $('fDesc').value = ev.description || '';
             $('fLink').value = ev.link_url || '';
@@ -261,6 +355,12 @@ document.addEventListener('DOMContentLoaded', function(){
             }
         });
         
+        // The end date follows the start date when the start moves past it
+        $('fStart').addEventListener('change', () => {
+            const start = $('fStart').value;
+            setDates(start, start && $('fEnd').value < start ? start : $('fEnd').value);
+        });
+
         $('btnSave').addEventListener('click', save);
         $('btnClose').addEventListener('click', closeModal);
         $('btnCancelEdit').addEventListener('click', resetForm);
@@ -279,6 +379,22 @@ document.addEventListener('DOMContentLoaded', function(){
             view = { y: n.getFullYear(), m: n.getMonth() };
             renderGrid();
         });
-        
-        load().catch(err => { $('sideCurrent').innerHTML = `<div class="side-empty">${esc(err.message)}</div>`; });
+
+        $('calMonth').innerHTML = MONTHS.map((name, i) => `<option value="${i}">${name}</option>`).join('');
+        $('calMonth').addEventListener('change', e => {
+            view.m = Number(e.target.value);
+            renderGrid();
+        });
+        $('calYear').addEventListener('change', e => {
+            const y = Number(e.target.value);
+            if (Number.isInteger(y) && y >= MIN_YEAR && y <= MAX_YEAR) view.y = y;
+            renderGrid();   // also puts back the current year if the value was rejected
+        });
+
+        load().catch(err => {
+            eventsState = 'failed';
+            renderGrid();
+            $('sideCurrent').innerHTML = `<div class="side-empty">${esc(err.message)}</div>`;
+            $('sideUpcoming').innerHTML = '';
+        });
 });

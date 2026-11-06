@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 
 from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import inspect, text
 
 from flask_wtf.csrf import CSRFProtect
 
@@ -38,7 +39,8 @@ def create_app():
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     # FILE UPLOAD LIMIT
-    app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024 # 10 MB LIMIT
+    # Whole request, so 1 MB above the 10 MB file limit (checked in routes.py) to leave room for the form around the file
+    app.config['MAX_CONTENT_LENGTH'] = 11 * 1024 * 1024
 
     db.init_app(app)
     csrf.init_app(app)
@@ -53,8 +55,17 @@ def create_app():
             
     with app.app_context():
         db.create_all()
-        
+        add_missing_columns()
+
     return app
+
+
+def add_missing_columns():
+    # create_all() only makes new tables, so columns added to existing tables go here
+    columns = {c['name'] for c in inspect(db.engine).get_columns('calendar_events')}
+    if 'end_date' not in columns:
+        with db.engine.begin() as connection:
+            connection.execute(text('ALTER TABLE calendar_events ADD COLUMN end_date DATE NULL'))
 
 
     

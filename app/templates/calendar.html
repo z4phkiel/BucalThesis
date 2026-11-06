@@ -12,6 +12,8 @@
         <div class="cal-head">
             <h2 id="calTitle"></h2>
             <div class="cal-nav">
+                <select id="calMonth" aria-label="Month"></select>
+                <input type="number" id="calYear" min="1000" max="9999" aria-label="Year">
                 <button id="calPrev" type="button">&lt; Prev</button>
                 <button id="calToday" type="button">Today</button>
                 <button id="calNext" type="button">Next &gt;</button>
@@ -36,7 +38,17 @@
     <div class="cal-modal">
         <h3 id="modalDate"></h3>
         <div id="modalEntries"></div>
- 
+
+        <div class="date-row">
+            <div>
+                <label for="fStart">Start Date</label>
+                <input type="date" id="fStart" min="1000-01-01" max="9999-12-31">
+            </div>
+            <div>
+                <label for="fEnd">End Date</label>
+                <input type="date" id="fEnd" min="1000-01-01" max="9999-12-31">
+            </div>
+        </div>
         <label for="fTag">Tag</label>
         <select id="fTag">
             <option value="holiday">Holiday</option>

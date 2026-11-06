@@ -149,6 +149,7 @@ class CalendarEvent(db.Model):
  
     id = db.Column(db.Integer, primary_key=True)
     event_date = db.Column(db.Date, nullable=False, index=True)
+    end_date = db.Column(db.Date, nullable=True)            # NULL on older rows = single day
     tag = db.Column(db.String(20), nullable=False)          # holiday / event / exam
     link_url = db.Column(db.String(2048), nullable=True)
     description = db.Column(db.Text, default='')
@@ -158,6 +159,7 @@ class CalendarEvent(db.Model):
         return {
             'id': self.id,
             'date': self.event_date.strftime('%Y-%m-%d'),
+            'end_date': (self.end_date or self.event_date).strftime('%Y-%m-%d'),
             'tag': self.tag,
             'link_url': self.link_url,
             'description': self.description or '',

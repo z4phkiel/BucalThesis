@@ -49,18 +49,10 @@ div.mb-4 > h3.fw-bold.mb-1 + p.text-muted {
     border-top: 5px solid var(--gr-khaki-500) !important;
     border-radius: 16px;
     box-shadow: 0 12px 30px -12px rgba(36, 61, 40, 0.28) !important;
-    animation: gr-in 0.45s ease-out;
 }
 
 .card.border-0:has(> .table-responsive) {
     overflow: hidden;
-    animation-delay: 0.08s;
-    animation-fill-mode: backwards;
-}
-
-@keyframes gr-in {
-    from { opacity: 0; transform: translateY(14px); }
-    to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ---------- Search ---------- */
