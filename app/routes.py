@@ -115,6 +115,7 @@ def ensure_current_school_year_metric():
 
 
 MAX_ENROLLEE_COUNT = 2147483647     # largest value the INT column holds
+MAX_RATE = 150                      # rates can pass 100; this only catches typos such as 985 for 98.5
 
 
 def _parse_metric_payload(data):
@@ -136,8 +137,8 @@ def _parse_metric_payload(data):
             if value != int(value) or not 0 <= value <= MAX_ENROLLEE_COUNT:
                 return None, f'{label} must be a whole number that is not negative.'
             value = int(value)
-        elif not 0 <= value <= 100:
-            return None, f'{label} must be between 0 and 100.'
+        elif not 0 <= value <= MAX_RATE:
+            return None, f'{label} must be between 0 and {MAX_RATE}.'
 
         values[field] = value
     return values, None
@@ -165,6 +166,15 @@ def update_metric(metric_id):
     db.session.commit()
     return {'success': True}
 
+# LINEAR REGRESSION ALGORITHM
+
+
+FORECAST_FEATURES = [
+    'enrollee_count', 'promotion_rate', 'cohort_survival_rate', 'completion_rate',
+    'transition_rate', 'dropout_rate', 'graduation_rate', 'retention_rate',
+]
+
+
 @main_bp.route("/")
 def index():
     if 'user_id' not in session:
@@ -176,41 +186,67 @@ def index():
     all_metrics_asc = YearlyMetric.query.order_by(YearlyMetric.school_year.asc()).all()
     data = [{
         'school_year': m.school_year,
-        'enrollee_count': m.enrollee_count,
-        'promotion_rate': m.promotion_rate,
-        'dropout_rate': m.dropout_rate,
+        **{field: getattr(m, field) for field in METRIC_FIELDS},
     } for m in all_metrics_asc]
 
     pred_next_year = None
     r2_score_val = None
     mape = None
     based_on_year = None
+    target_year = None
+    forecast_note = None
+    actual_year = None
+    actual_count = None
 
-    features = ['enrollee_count', 'promotion_rate', 'dropout_rate']
+    
 
     if data:
-        df = pd.DataFrame(data).sort_values('school_year').reset_index(drop=True)
+        df = pd.DataFrame(data)
+        df[METRIC_FIELDS] = df[METRIC_FIELDS].apply(pd.to_numeric, errors='coerce').fillna(0)   # a blank field counts as 0
+        df['start_year'] = df['school_year'].str.split('-').str[0].str.strip().astype(int)
+
+        # One row per calendar year, so shift() can't pair non-consecutive years
+        df = df.drop_duplicates('start_year', keep='last').set_index('start_year').sort_index()
+        df = df.reindex(range(df.index.min(), df.index.max() + 1))
+
+        # A year's count and rates are submitted together, so they predict the next year's count
+        features = FORECAST_FEATURES
+
         df['next_enrollee_count'] = df['enrollee_count'].shift(-1)
 
-        complete = (df['enrollee_count'] > 0) & (df['promotion_rate'] > 0)
-        train_df = df[complete & (df['next_enrollee_count'] > 0)]
+        has_count = df['enrollee_count'] > 0
+        train_df = df[has_count & (df['next_enrollee_count'] > 0)]
 
-        if len(train_df) >= 5:
-            X = train_df[features].astype(float)
-            y = train_df['next_enrollee_count'].astype(float)
+        if has_count.any():
+            anchor = int(df.index[has_count][-1])   # latest recorded enrollment
+            target_year = f'{anchor + 1}-{anchor + 2}'
+            based_on_year = f'{anchor}-{anchor + 1}'
 
-            model = make_pipeline(StandardScaler(), Ridge(alpha=1.0))
+            # Show the current year's submitted count; until then, the forecast year's actual is pending
+            if anchor >= get_current_start_year():
+                actual_year = based_on_year
+                actual_count = int(df.loc[anchor, 'enrollee_count'])
+            else:
+                actual_year = target_year
 
-            # honest error estimate
-            cv_pred = cross_val_predict(model, X, y, cv=LeaveOneOut())
-            mape = round(float(mean_absolute_percentage_error(y, cv_pred)) * 100, 2)
+            if len(train_df) <= len(features):
+                forecast_note = (
+                    f'Not enough complete years: the model has {len(features)} inputs '
+                    f'but only {len(train_df)} usable years.'
+                )
+            else:
+                X = train_df[features]
+                y = train_df['next_enrollee_count']
 
-            model.fit(X, y)
-            r2_score_val = round(float(model.score(X, y)), 4)
+                model = make_pipeline(StandardScaler(), Ridge(alpha=1.0))
 
-            latest = df[complete].iloc[[-1]]
-            pred_next_year = round(float(model.predict(latest[features].astype(float))[0]))
-            based_on_year = latest['school_year'].iloc[0]
+                cv_pred = cross_val_predict(model, X, y, cv=LeaveOneOut())
+                mape = round(float(mean_absolute_percentage_error(y, cv_pred)) * 100, 2)
+
+                model.fit(X, y)
+                r2_score_val = round(float(model.score(X, y)), 4)
+
+                pred_next_year = round(float(model.predict(df.loc[[anchor], features])[0]))
 
     return render_template(
         'dashboard.html',
@@ -220,6 +256,10 @@ def index():
         r2_score=r2_score_val,
         mape=mape,
         based_on_year=based_on_year,
+        target_year=target_year,
+        forecast_note=forecast_note,
+        actual_year=actual_year,
+        actual_count=actual_count,
     )
 
 @main_bp.route("/test_signatures")

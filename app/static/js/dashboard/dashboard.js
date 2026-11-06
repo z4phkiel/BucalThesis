@@ -51,7 +51,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     const updateUrl = row.dataset.updateUrl;
                     const payload = {};
                     row.querySelectorAll('.metric-input').forEach(function (input) {
-                        payload[input.dataset.field] = parseFloat(input.value) || 0;
+                        const value = parseFloat(input.value) || 0;   // a blank field counts as 0
+                        input.value = value;
+                        payload[input.dataset.field] = value;
                     });
 
                     btn.disabled = true;

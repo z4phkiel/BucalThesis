@@ -147,16 +147,26 @@
                     
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <div class="alert alert-info mb-0 d-flex justify-content-between align-items-center">
-                                <span><strong>Next School Year Enrollee Forecast:</strong></span>
+                            <div class="alert alert-info mb-0 h-100 d-flex flex-wrap justify-content-between align-items-center">
+                               <span><strong>Enrollee Forecast{% if target_year %} for S.Y. {{ target_year }}{% endif %}:</strong></span>
+
                                 <span class="fs-5 fw-bold text-dark">
-                                    {{ pred_next_year if pred_next_year is not none else 'Insufficient Data' }} 
+                                    {{ pred_next_year if pred_next_year is not none else 'Insufficient Data' }}
                                     {% if pred_next_year is not none %} enrollees {% endif %}
                                 </span>
+
+                                {% if actual_year %}
+                                <div class="w-100 d-flex flex-wrap justify-content-between align-items-center border-top border-dark border-opacity-25 mt-2 pt-2 small">
+                                    <span><strong>Actual Enrollees for S.Y. {{ actual_year }}:</strong></span>
+                                    <span class="fw-bold text-dark">
+                                        {% if actual_count is not none %}{{ actual_count }} enrollees{% else %}Not yet submitted{% endif %}
+                                    </span>
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="alert alert-secondary mb-0 d-flex justify-content-between align-items-center">
+                            <div class="alert alert-secondary mb-0 h-100 d-flex justify-content-between align-items-center">
                                 <span><strong>Model Accuracy ($R^2$ Score):</strong></span>
                                 <span class="fs-5 fw-bold text-dark">
                                     {{ r2_score if r2_score is not none else 'N/A' }}
@@ -170,7 +180,10 @@
                             so expect roughly {{ (pred_next_year * (1 - mape / 100)) | round | int }}
                             to {{ (pred_next_year * (1 + mape / 100)) | round | int }} enrollees.
                         </p>
+                    {% elif forecast_note %}
+                    <p class="text-muted small mt-3 mb-0">{{ forecast_note }}</p>
                     {% endif %}
+
                 </div>
             </div>
             {% endblock %}
