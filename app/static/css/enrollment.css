@@ -7,7 +7,39 @@
     width: 100%;
     padding: 12px 16px;
     margin: 0 auto 30px;
-    background: transparent;
+    background-color: transparent;
+    border-radius: 16px;
+
+    --stepper-label-gap: 9px;       /* space between a dot and its label */
+    --stepper-label-height: 18.2px; /* one line of .step-label: 13px x 1.4 */
+
+    /* Outline and shadow, matching the page's cards. Shadows take up no
+       layout space, so nothing on the page moves when they appear. */
+    box-shadow:
+        inset 0 0 0 1px transparent,
+        0 12px 30px -12px transparent;
+    transition:
+        background-color 0.25s ease,
+        box-shadow 0.25s ease,
+        backdrop-filter 0.25s ease,
+        margin-bottom 0.25s ease;
+}
+
+/* Once scrolled, the bar sits over the form, so it gets a background of its own and slims down
+   to just the dots. The margin grows by exactly what the labels give up, so the form never moves. */
+.stepper-wrap.is-stuck {
+    margin-bottom: calc(30px + var(--stepper-label-gap) + var(--stepper-label-height));
+    background-color: rgba(253, 252, 247, 0.97);    /* --ix-white, slightly see-through */
+    box-shadow:
+        inset 0 0 0 1px var(--ix-border),
+        0 12px 30px -12px rgba(36, 61, 40, 0.28);
+    backdrop-filter: blur(6px);
+}
+
+.stepper-wrap.is-stuck .step-label {
+    height: 0;
+    margin-top: 0;
+    opacity: 0;
 }
 
 /* Main stepper */
@@ -30,7 +62,7 @@
     left: 17%;
     right: 17%;
     height: 4px;
-    background: #dce2ea;
+    background: var(--ix-khaki-300);
     border-radius: 20px;
     overflow: hidden;
     z-index: 0;
@@ -40,7 +72,7 @@
 .stepper-fill {
     height: 100%;
     width: 0;
-    background: linear-gradient(90deg, #2563eb, #60a5fa);
+    background: linear-gradient(90deg, var(--ix-green-600), var(--ix-green-500));
     border-radius: 20px;
     transition: width 0.4s ease;
 }
@@ -78,63 +110,99 @@
     border-radius: 50%;
 
     background: #ffffff;
-    border: 2px solid #cbd5e1;
+    border: 2px solid var(--ix-khaki-500);
 
-    color: #64748b;
+    color: var(--ix-green-700);
     font-size: 15px;
     font-weight: 700;
 
-    box-shadow: 0 3px 10px rgba(15, 23, 42, 0.08);
+    box-shadow: 0 3px 10px rgba(36, 61, 40, 0.1);
     transition: all 0.3s ease;
 }
 
-/* Step label */
+/* Step label: always one line, so the bar knows how much space it gives up when the labels hide */
 .step-label {
     display: block;
-    margin-top: 9px;
+    height: var(--stepper-label-height);
+    margin-top: var(--stepper-label-gap);
+    overflow: hidden;
 
     font-size: 13px;
     font-weight: 500;
     line-height: 1.4;
+    white-space: nowrap;
 
-    color: #64748b;
-    transition: all 0.3s ease;
+    color: var(--ix-text);
+
+    /* The height and gap must match the bar's margin-bottom transition, so the form stays still */
+    transition:
+        height 0.25s ease,
+        margin-top 0.25s ease,
+        opacity 0.25s ease,
+        color 0.3s ease;
 }
 
-/* Active step */
+/* With the labels hidden, hovering or tabbing to a dot shows its step name as a tooltip below the bar.
+   It's taken out of the layout, so showing it doesn't change the bar's height. */
+.stepper-wrap.is-stuck .step-node:hover .step-label,
+.stepper-wrap.is-stuck .step-node:focus-visible .step-label {
+    position: absolute;
+    top: calc(100% + 20px);
+    left: 50%;
+    height: auto;
+    padding: 4px 10px;
+    overflow: visible;
+    color: #ffffff;
+    background: var(--ix-green-900);
+    border-radius: 8px;
+    box-shadow: 0 8px 18px rgba(36, 61, 40, 0.3);
+    opacity: 1;
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+
+/* Comes after the transitions above so that it overrides them */
+@media (prefers-reduced-motion: reduce) {
+    .stepper-wrap,
+    .step-label {
+        transition: none;
+    }
+}
+
+/* Active step: the ring is what tells it apart from a completed step */
 .step-node.active .step-dot {
-    background: #2563eb;
-    border-color: #2563eb;
+    background: var(--ix-green-600);
+    border-color: var(--ix-green-600);
     color: #ffffff;
 
     box-shadow:
-        0 0 0 5px rgba(37, 99, 235, 0.13),
-        0 4px 12px rgba(37, 99, 235, 0.25);
+        0 0 0 5px rgba(79, 125, 69, 0.18),
+        0 4px 12px rgba(47, 82, 51, 0.28);
 
     transform: scale(1.05);
 }
 
 .step-node.active .step-label {
-    color: #1d4ed8;
+    color: var(--ix-green-700);
     font-weight: 700;
 }
 
 /* Completed step */
 .step-node.done .step-dot {
-    background: #16a34a;
-    border-color: #16a34a;
+    background: var(--ix-green-500);
+    border-color: var(--ix-green-500);
     color: #ffffff;
 }
 
 .step-node.done .step-label {
-    color: #15803d;
+    color: var(--ix-green-600);
     font-weight: 600;
 }
 
 /* Hover effect */
 .step-node:not(.active):hover .step-dot {
-    border-color: #2563eb;
-    color: #2563eb;
+    border-color: var(--ix-green-600);
+    color: var(--ix-green-600);
     transform: translateY(-2px);
 }
 
@@ -142,9 +210,20 @@
     color: #ffffff;
 }
 
-/* Form section scrolling offset */
-.form-part {
-    scroll-margin-top: 120px;
+/* Radio buttons and checkboxes: the page's green instead of Bootstrap's blue */
+.main-content .form-check-input:focus {
+    border-color: var(--ix-green-500);
+    box-shadow: 0 0 0 4px rgba(79, 125, 69, 0.18);
+}
+
+.main-content .form-check-input:checked {
+    background-color: var(--ix-green-600);
+    border-color: var(--ix-green-600);
+}
+
+/* Keeps anything scrolled to or focused clear of the sticky bar: form sections, tabbed-to fields and validation messages */
+html {
+    scroll-padding-top: 80px;
 }
 
 /* Fixed Modal Overlay */

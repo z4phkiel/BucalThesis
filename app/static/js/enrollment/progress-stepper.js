@@ -131,6 +131,11 @@ document.addEventListener('DOMContentLoaded', function () {
             const done = !findProblem(i);
             node.classList.toggle('active', i === current);
             node.classList.toggle('done', done);
+            if (i === current) {
+                node.setAttribute('aria-current', 'step');
+            } else {
+                node.removeAttribute('aria-current');
+            }
             node.querySelector('.step-dot').textContent = done ? '✓' : i + 1;
         });
         fill.style.width = (current / (nodes.length - 1)) * 100 + '%';
@@ -180,4 +185,16 @@ document.addEventListener('DOMContentLoaded', function () {
     render();
     void stepper.offsetWidth;   // applies the starting state before the transitions come back
     stepper.classList.remove('stepper-no-motion');
+
+    // The bar gets its background once it has stuck to the top of the window.
+    // This marker sits just above it and takes up no space, so it scrolls away at that moment.
+    const wrap = stepper.closest('.stepper-wrap');
+    const stickyTop = parseFloat(getComputedStyle(wrap).top);
+    const marker = document.createElement('div');
+    marker.setAttribute('aria-hidden', 'true');
+    wrap.before(marker);
+    new IntersectionObserver(
+        ([entry]) => wrap.classList.toggle('is-stuck', !entry.isIntersecting),
+        { rootMargin: `-${stickyTop}px 0px 0px 0px` }
+    ).observe(marker);
 });
