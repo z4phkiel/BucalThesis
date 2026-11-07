@@ -2,7 +2,7 @@
 {% block content %}
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
   <div>
-    <a href="{{ url_for('main.grades') }}" class="text-decoration-none small"><i class="bi bi-arrow-left"></i> Back to Students</a>
+    <a href="{{ url_for('main.enrolled') }}" class="text-decoration-none small"><i class="bi bi-arrow-left"></i> Back to Students</a>
     <h3 class="fw-bold mt-2 mb-1">Student Grade Files</h3>
     <p class="text-muted mb-1">{{ student.last_name }}, {{ student.first_name }} {{ student.middle_name or '' }}{% if student.extension_name %} {{ student.extension_name }}{% endif %}</p>
     <small class="text-muted">LRN: {{ student.lrn_no or '—' }}</small>

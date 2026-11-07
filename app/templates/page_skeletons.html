@@ -1,5 +1,5 @@
 {#
-    Placeholder versions of the five main pages. page-skeleton.js shows the destination's placeholder
+    Placeholder versions of the main pages. page-skeleton.js shows the destination's placeholder
     while the server responds to a link click, because the browser has nothing new to show until then.
 
     Everything uses its own skel-* classes (styled in index.css), since the stylesheet of whichever
@@ -24,7 +24,7 @@
             {% for col in columns %}
             <td{% if col.align %} class="skel-{{ col.align }}"{% endif %}>
                 {% if col.pills %}
-                    {% for pill in range(col.pills) %}<span class="skel skel-row-action {{ col.pill_class }}"></span>{% endfor %}
+                    {% for pill in range(col.pills) %}<span class="skel skel-row-action"></span>{% endfor %}
                 {% else %}
                     <span class="skel"{{ {'style': 'width: ' ~ col.bars[row % col.bars | length]} | xmlattr }}></span>
                 {% endif %}
@@ -68,37 +68,46 @@
     </div>
 </template>
 
-<template data-skeleton-path="{{ url_for('main.enrolled') }}">
-    <span class="visually-hidden">Loading the masterlist</span>
+<template data-skeleton-path="{{ url_for('main.statistics') }}">
+    <span class="visually-hidden">Loading the enrollment comparison</span>
     <div class="skel-head">
-        <div class="skel-title skel-title-list">Enrolled Students</div>
+        <div class="skel-title skel-title-stat">Predicted vs Actual Enrollment</div>
+        <span class="skel skel-stat-button"></span>
     </div>
-    {{ search_card('Search Students', 'skel-card-plain') }}
-    <div class="skel-table-card">
-        {{ table([
-            {'label': '#', 'width': '56px', 'bars': ['18px']},
-            {'label': 'Student Name', 'width': '32%', 'bars': ['68%', '82%', '60%', '74%', '88%', '64%', '78%', '70%']},
-            {'label': 'LRN', 'width': '21%', 'bars': ['62%', '68%', '58%']},
-            {'label': 'Grade Level', 'width': '19%', 'bars': ['45%', '52%', '40%']},
-            {'label': 'Date Enrolled', 'width': 'auto', 'bars': ['58%', '64%', '52%']},
-        ], 8, 'skel-table-striped') }}
+    <div class="skel-stat-tiles">
+        {% for tile in range(3) %}
+        <div class="skel-card">
+            <div class="skel-card-body">
+                <span class="skel" style="width: 40%"></span>
+                <span class="skel skel-stat-value"></span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="skel-card">
+        <div class="skel-card-body">
+            <div class="skel-card-title">Predicted and actual enrollees by school year</div>
+            <span class="skel skel-stat-chart"></span>
+        </div>
     </div>
 </template>
 
-<template data-skeleton-path="{{ url_for('main.grades') }}">
-    <span class="visually-hidden">Loading school forms</span>
-    <div class="skel-head">
-        <div class="skel-title skel-title-list">Student Grades</div>
+<template data-skeleton-path="{{ url_for('main.enrolled') }}">
+    <span class="visually-hidden">Loading the masterlist</span>
+    <div class="skel-head skel-head-slim">
+        <div class="skel-title skel-title-list">Enrolled Students</div>
     </div>
-    {{ search_card('Search Students') }}
+    {{ search_card('Search Students', 'skel-card-slim') }}
     <div class="skel-table-card">
         {{ table([
-            {'label': '#', 'width': '64px', 'bars': ['18px']},
-            {'label': 'Student Name', 'width': '28%', 'bars': ['68%', '82%', '60%', '74%', '88%', '64%', '78%', '70%']},
-            {'label': 'LRN', 'width': '18%', 'bars': ['62%', '68%', '58%']},
-            {'label': 'Enrolled Grade Level', 'width': '26%', 'bars': ['32%', '38%', '28%']},
-            {'label': 'Action', 'width': 'auto', 'align': 'center', 'pills': 1, 'pill_class': 'skel-row-action-large'},
-        ], 8) }}
+            {'label': '#', 'width': '56px', 'bars': ['18px']},
+            {'label': 'Student Name', 'width': 'auto', 'bars': ['68%', '82%', '60%', '74%', '88%', '64%', '78%', '70%']},
+            {'label': 'LRN', 'width': '136px', 'bars': ['62%', '68%', '58%']},
+            {'label': 'Grade Level', 'width': '116px', 'bars': ['45%', '52%', '40%']},
+            {'label': 'Gender', 'width': '84px', 'bars': ['60%', '70%']},
+            {'label': 'Date Enrolled', 'width': '150px', 'bars': ['58%', '64%', '52%']},
+            {'label': 'Actions', 'width': '84px', 'align': 'center', 'bars': ['16px']},
+        ], 12, 'skel-table-tight skel-table-striped') }}
     </div>
 </template>
 

@@ -423,9 +423,12 @@
 #metricsCard .metric-edit-group .metric-input {
     flex: 0 0 var(--ix-field-w);
     width: var(--ix-field-w);
+    height: var(--ix-cell-h);
     min-width: 0;
-    padding-left: 0.35rem;
-    padding-right: 0.35rem;
+    min-height: 0;
+    padding: 0 var(--ix-field-pad);
+    border-width: var(--ix-field-border);
+    font-size: inherit;
     text-align: right;
     font-variant-numeric: tabular-nums;
     -moz-appearance: textfield;
@@ -443,16 +446,35 @@
 #metricsCard .metric-edit-group .input-group-text {
     justify-content: center;
     flex: 0 0 var(--ix-addon-w);
+    height: var(--ix-cell-h);
     min-width: 0;
     padding: 0;
+    font-size: inherit;
+    font-weight: inherit;
+    color: inherit;
 }
 
+/* the boxes fade in around the digits, which stay still */
+#metricsCard .metric-edit-group > * {
+    animation: metric-box-in 0.15s ease-out;
+}
+
+@keyframes metric-box-in {
+    from {
+        background-color: transparent;
+        border-color: transparent;
+    }
+}
+
+/* Displayed text has the size and layout of the edit box, so switching to edit mode moves nothing */
 #metricsCard .metric-display {
     display: block;
     width: calc(var(--ix-field-w) + var(--ix-addon-w));
+    height: var(--ix-cell-h);
     margin-left: auto;
-    padding-right: 0rem;
-    text-align: right;
+    line-height: var(--ix-cell-h);
+    text-align: left;
+    white-space: nowrap;
     font-variant-numeric: tabular-nums;
 }
 
@@ -460,11 +482,39 @@
     display: none !important;
 }
 
-#metricsCard {
-    --ix-field-w: 3.5rem;   /* input: fits 4 digits, or 97.80 */
-    --ix-addon-w: 1.9rem;   /* the % box */
+#metricsCard .metric-value {
+    display: inline-block;
+    width: var(--ix-field-w);
+    padding-right: calc(var(--ix-field-pad) + var(--ix-field-border));
+    text-align: right;
 }
 
+/* the 1px overlap matches how Bootstrap joins the input and its % box */
+#metricsCard .metric-unit {
+    display: inline-block;
+    width: var(--ix-addon-w);
+    margin-left: -1px;
+    text-align: center;
+}
+
+#metricsCard .metric-unit.is-blank {
+    visibility: hidden;
+}
+
+#metricsCard {
+    --ix-field-w: 3.75rem;      /* input: fits 101.84 */
+    --ix-addon-w: 1.25rem;      /* the % box */
+    --ix-field-pad: 0.2rem;
+    --ix-field-border: 1.5px;
+    --ix-cell-h: 31px;
+}
+
+/* the same row height whether a row shows text, edit boxes or a loading placeholder */
+#metricsCard .table > tbody > tr > td {
+    height: 46px;
+    padding-top: 7.5px;
+    padding-bottom: 7.5px;
+}
 
 #metricsCard .table > tbody > tr > td:nth-child(2) .metric-edit-group {
     width: var(--ix-field-w);
@@ -472,7 +522,47 @@
 
 #metricsCard .table > tbody > tr > td:nth-child(2) .metric-display {
     width: var(--ix-field-w);
-    padding-right: 0rem;
+}
+
+/* ---------- Page controls under the table ----------
+   On the left, because the floating edit button sits bottom right and the save prompt bottom center */
+.table-pager {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    min-height: 31px;       /* the height of the buttons, so hiding them moves nothing */
+    margin-top: 12px;
+}
+
+.table-pager[hidden] {
+    display: none;
+}
+
+.table-pager-summary {
+    font-size: 0.85rem;
+    color: var(--ix-muted);
+}
+
+.table-pager .pagination {
+    --bs-pagination-color: var(--ix-green-700);
+    --bs-pagination-bg: var(--ix-white);
+    --bs-pagination-border-color: var(--ix-border);
+    --bs-pagination-hover-color: var(--ix-green-900);
+    --bs-pagination-hover-bg: var(--ix-khaki-100);
+    --bs-pagination-hover-border-color: var(--ix-khaki-500);
+    --bs-pagination-focus-color: var(--ix-green-900);
+    --bs-pagination-focus-bg: var(--ix-khaki-100);
+    --bs-pagination-focus-box-shadow: 0 0 0 4px rgba(79, 125, 69, 0.18);
+    --bs-pagination-active-color: #fff;
+    --bs-pagination-active-bg: var(--ix-green-600);
+    --bs-pagination-active-border-color: var(--ix-green-600);
+    --bs-pagination-disabled-color: var(--ix-muted);
+    --bs-pagination-disabled-bg: var(--ix-khaki-100);
+    --bs-pagination-disabled-border-color: var(--ix-border);
+    --bs-pagination-border-radius: 8px;
+    margin-bottom: 0;
+    font-weight: 600;
 }
 
 /* pressed state: shows the moment a link is clicked */
@@ -486,10 +576,9 @@
 body:has(#metricsCard) .sidebar .nav-item:nth-child(1) .nav-link,
 body:has(link[href*="enrollment.css"]) .sidebar .nav-item:nth-child(2) .nav-link,
 body:has(link[href*="enrolled.css"]) .sidebar .nav-item:nth-child(3) .nav-link,
-body:has(link[href*="grades.css"]) .sidebar .nav-item:nth-child(4) .nav-link,
-body:has(link[href*="calendar.css"]) .sidebar .nav-item:nth-child(5) .nav-link,
-body:has(link[href*="linkage"]) .sidebar .nav-item:nth-child(6) .nav-link,
-body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(6) .nav-link {
+body:has(link[href*="calendar.css"]) .sidebar .nav-item:nth-child(4) .nav-link,
+body:has(link[href*="linkage"]) .sidebar .nav-item:nth-child(5) .nav-link,
+body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(5) .nav-link {
     background-color: var(--ix-khaki-500);
     color: var(--ix-green-900);
     font-weight: 700;
@@ -528,10 +617,9 @@ body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(6) .nav-link {
 body:has(#metricsCard) .sidebar .nav-item:nth-child(1) .nav-link,
 body:has(link[href*="enrollment.css"]) .sidebar .nav-item:nth-child(2) .nav-link,
 body:has(link[href*="enrolled.css"]) .sidebar .nav-item:nth-child(3) .nav-link,
-body:has(link[href*="grades.css"]) .sidebar .nav-item:nth-child(4) .nav-link,
-body:has(link[href*="calendar.css"]) .sidebar .nav-item:nth-child(5) .nav-link,
-body:has(link[href*="linkage"]) .sidebar .nav-item:nth-child(6) .nav-link,
-body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(6) .nav-link {
+body:has(link[href*="calendar.css"]) .sidebar .nav-item:nth-child(4) .nav-link,
+body:has(link[href*="linkage"]) .sidebar .nav-item:nth-child(5) .nav-link,
+body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(5) .nav-link {
     box-shadow: inset 5px 0 0 var(--ix-green-600);
 }
 
@@ -547,20 +635,18 @@ body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(6) .nav-link {
 body:has(#metricsCard) .sidebar .nav-item:nth-child(1) .nav-link,
 body:has(link[href*="enrollment.css"]) .sidebar .nav-item:nth-child(2) .nav-link,
 body:has(link[href*="enrolled.css"]) .sidebar .nav-item:nth-child(3) .nav-link,
-body:has(link[href*="grades.css"]) .sidebar .nav-item:nth-child(4) .nav-link,
-body:has(link[href*="calendar.css"]) .sidebar .nav-item:nth-child(5) .nav-link,
-body:has(link[href*="linkage"]) .sidebar .nav-item:nth-child(6) .nav-link,
-body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(6) .nav-link {
+body:has(link[href*="calendar.css"]) .sidebar .nav-item:nth-child(4) .nav-link,
+body:has(link[href*="linkage"]) .sidebar .nav-item:nth-child(5) .nav-link,
+body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(5) .nav-link {
     box-shadow: inset var(--ix-nav-marker) 0 0 var(--ix-green-600);
 }
 
 body:has(#metricsCard) .sidebar .nav-item:nth-child(1) .nav-link,
 body:has(link[href*="enrollment.css"]) .sidebar .nav-item:nth-child(2) .nav-link,
 body:has(link[href*="enrolled.css"]) .sidebar .nav-item:nth-child(3) .nav-link,
-body:has(link[href*="grades.css"]) .sidebar .nav-item:nth-child(4) .nav-link,
-body:has(link[href*="calendar.css"]) .sidebar .nav-item:nth-child(5) .nav-link,
-body:has(link[href*="linkage"]) .sidebar .nav-item:nth-child(6) .nav-link,
-body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(6) .nav-link,
+body:has(link[href*="calendar.css"]) .sidebar .nav-item:nth-child(4) .nav-link,
+body:has(link[href*="linkage"]) .sidebar .nav-item:nth-child(5) .nav-link,
+body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(5) .nav-link,
 .sidebar .nav-link.active {
     box-shadow: none;
 }
@@ -577,29 +663,8 @@ body:has(#metricEditFab) .main-content > .p-4 {
     white-space: nowrap;
 }
 
-.metric-lock {
-    display: inline-flex;
-    margin-left: 0.3rem;
-    vertical-align: -0.1em;
-    color: var(--ix-muted);
-}
-
-.metric-lock svg {
-    width: 0.9rem;
-    height: 0.9rem;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
 #metricsCard.is-editing {
     border-top-color: var(--ix-green-600);
-}
-
-#metricsCard.is-editing .metric-row-locked > td {
-    color: var(--ix-muted);
 }
 
 #metricsCard .metric-input.is-changed {
@@ -966,6 +1031,10 @@ body:has(#metricEditFab) .main-content > .p-4 {
 }
 
 @media (prefers-reduced-motion: reduce) {
+    #metricsCard .metric-edit-group > * {
+        animation: none;
+    }
+
     .metric-fab,
     .metric-fab-label,
     .metric-save-progress span,
@@ -1147,14 +1216,29 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
     border-radius: 999px;
 }
 
-/* the Masterlist's search card has no border or background, and its search box is a little shorter */
-.skel-card-plain {
-    background: transparent;
-    border: 0;
+/* the Masterlist keeps its heading and search card short, so more students fit on the screen */
+.skel-head-slim,
+.skel-card-slim {
+    margin-bottom: 1rem;
 }
 
-.skel-card-plain .skel-search {
-    height: 47px;
+.skel-card-slim .skel-card-body {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+}
+
+.skel-card-slim .skel-label {
+    flex: 0 0 auto;
+    margin-bottom: 0;
+    padding-top: 0;
+    font-size: 0.72rem;
+}
+
+.skel-card-slim .skel-search {
+    flex: 1 1 auto;
+    height: 34px;
 }
 
 /* ---------- Dashboard ---------- */
@@ -1201,6 +1285,51 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
 
 .skel-value {
     height: 22px;
+}
+
+.skel-alert-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.skel-alert-column .skel-alert {
+    flex-grow: 1;
+}
+
+.skel-detail-button {
+    align-self: flex-end;
+    width: 104px;
+    height: 31px;
+    border-radius: 10px;
+}
+
+/* ---------- Statistics ---------- */
+.skel-stat-tiles {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.skel-title-stat {
+    font-size: 1.35rem;
+}
+
+.skel-stat-button {
+    width: 136px;
+    height: 28px;
+    border-radius: 8px;
+}
+
+.skel-stat-value {
+    width: 55%;
+    height: 24px;
+    margin-top: 8px;
+}
+
+.skel-stat-chart {
+    height: clamp(210px, 44vh, 340px);
+    border-radius: 12px;
 }
 
 .skel-footnote {
@@ -1259,6 +1388,17 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
     padding: 12px 16px;
 }
 
+.skel-table-tight th {
+    padding: 8px 12px;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+}
+
+.skel-table-tight td {
+    height: 32px;
+    padding: 2px 12px;
+}
+
 .skel-table-frame {
     overflow: hidden;
     border: 1px solid var(--ix-border);
@@ -1272,12 +1412,6 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
     margin-left: 6px;
     vertical-align: middle;
     border-radius: 999px;
-}
-
-.skel-row-action-large {
-    width: 136px;
-    height: 36px;
-    margin-left: 0;
 }
 
 /* ---------- Linkage/Files ---------- */
@@ -1459,7 +1593,8 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
 
 @media (max-width: 767.98px) {
     .skel-alerts,
-    .skel-form {
+    .skel-form,
+    .skel-stat-tiles {
         grid-template-columns: 1fr;
     }
 

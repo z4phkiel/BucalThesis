@@ -31,11 +31,6 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="{{ url_for('main.grades') }}" class="nav-link">
-                    School Forms
-                </a>
-            </li>
-            <li class="nav-item">
                 <a href="{{ url_for('main.calendar') }}" class="nav-link">
                     Calendar
                 </a>
@@ -83,6 +78,10 @@
                             <div id="metricsTable" class="table-responsive">
                                 {{ metrics_table_placeholder() }}
                             </div>
+                            <nav id="metricsPager" class="table-pager" aria-label="Yearly metrics pages" hidden>
+                                <ul id="metricsPagerList" class="pagination pagination-sm"></ul>
+                                <span id="metricsPagerSummary" class="table-pager-summary" aria-live="polite"></span>
+                            </nav>
                         </div>
                     </div>
                 </div>
@@ -113,7 +112,8 @@
                         <div class="metric-save-text">
                             <div class="metric-save-title">Save your changes?</div>
                             <div id="metricSaveSummary" class="metric-save-summary" aria-live="polite"></div>
-                            <div id="metricSaveNote" class="metric-save-note" hidden>Blank fields in a changed year will be saved as 0.</div>
+                            <!-- <div id="metricSaveNote" class="metric-save-note" hidden>Blank fields in a changed year will be saved as 0.</div> -->
+                             <div id="metricSaveNote" class="metric-save-note" hidden>Fill in every field for a year, or leave the whole year blank.</div>
                         </div>
                         <div class="metric-save-actions">
                             <button type="button" id="metricDiscardBtn" class="btn btn-sm metric-btn-ghost">Discard</button>

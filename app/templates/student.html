@@ -2,6 +2,10 @@
 
 {% block content %}
 
+{# Older or imported records can have these empty, and the "in" checks below fail on an empty value #}
+{% set disabilities = student.disabilities or '' %}
+{% set modalities = student.distance_learning_modalities or '' %}
+
 <!--                                                                   -->
 <!--                                                                   -->
 <!-- DO NOT REMOVE ANY COMMENTS (ANG DAMING INPUTS NEED KO NG MARKING) -->
@@ -252,22 +256,22 @@
                 <td class="align-top ps-4" style="width: 25%;">
                     <div class="form-check mb-1">
                         <input class="form-check-input" type="checkbox" name="disabilities" value="Visual Impairment" id="dis_visual" 
-                            {% if "Visual Impairment" in student.disabilities %}checked{% endif %} disabled>
+                            {% if "Visual Impairment" in disabilities %}checked{% endif %} disabled>
                         <label class="form-check-label small" for="dis_visual">Visual Impairment</label>
                     </div>
                     <div class="form-check mb-1 ms-3">
                         <input class="form-check-input" type="checkbox" name="disabilities" value="Visual Impairment - Blind" id="dis_blind" 
-                            {% if "Visual Impairment - Blind" in student.disabilities %}checked{% endif %} disabled>
+                            {% if "Visual Impairment - Blind" in disabilities %}checked{% endif %} disabled>
                         <label class="form-check-label small" for="dis_blind">a. blind</label>
                     </div>
                     <div class="form-check mb-1 ms-3">
                         <input class="form-check-input" type="checkbox" name="disabilities" value="Visual Impairment - Low Vision" id="dis_low_vision"
-                            {% if "Visual Impairment - Low Vision" in student.disabilities %}checked{% endif %} disabled>
+                            {% if "Visual Impairment - Low Vision" in disabilities %}checked{% endif %} disabled>
                         <label class="form-check-label small" for="dis_low_vision">b. low vision</label>
                     </div>
                     <div class="form-check mb-1 mt-2">
                         <input class="form-check-input" type="checkbox" name="disabilities" value="Multiple Disorder" id="dis_multiple"
-                            {% if "Multiple Disorder" in student.disabilities %}checked{% endif %} disabled>
+                            {% if "Multiple Disorder" in disabilities %}checked{% endif %} disabled>
                         <label class="form-check-label small" for="dis_multiple">Multiple Disorder</label>
                     </div>
                 </td>
@@ -276,17 +280,17 @@
                 <td class="align-top" style="width: 25%;">
                     <div class="form-check mb-1">
                         <input class="form-check-input" type="checkbox" name="disabilities" value="Hearing Impairment" id="dis_hearing" 
-                            {% if "Hearing Impairment" in student.disabilities %}checked{% endif %} disabled>
+                            {% if "Hearing Impairment" in disabilities %}checked{% endif %} disabled>
                         <label class="form-check-label small" for="dis_hearing">Hearing Impairment</label>
                     </div>
                     <div class="form-check mb-1">
                         <input class="form-check-input" type="checkbox" name="disabilities" value="Autism Spectrum Disorder" id="dis_autism" 
-                            {% if "Autism Spectrum Disorder" in student.disabilities %}checked{% endif %} disabled>
+                            {% if "Autism Spectrum Disorder" in disabilities %}checked{% endif %} disabled>
                         <label class="form-check-label small" for="dis_autism">Autism Spectrum Disorder</label>
                     </div>
                     <div class="form-check mb-1">
                         <input class="form-check-input" type="checkbox" name="disabilities" value="Speech/Language Disorder" id="dis_speech" 
-                            {% if "Speech/Language Disorder" in student.disabilities %}checked{% endif %} disabled>
+                            {% if "Speech/Language Disorder" in disabilities %}checked{% endif %} disabled>
                         <label class="form-check-label small" for="dis_speech">Speech/Language Disorder</label>
                     </div>
                 </td>
@@ -295,17 +299,17 @@
                 <td class="align-top" style="width: 25%;">
                     <div class="form-check mb-1">
                         <input class="form-check-input" type="checkbox" name="disabilities" value="Learning Disability" id="dis_learning" 
-                            {% if "Learning Disability" in student.disabilities %}checked{% endif %} disabled>
+                            {% if "Learning Disability" in disabilities %}checked{% endif %} disabled>
                         <label class="form-check-label small" for="dis_learning">Learning Disability</label>
                     </div>
                     <div class="form-check mb-1">
                         <input class="form-check-input" type="checkbox" name="disabilities" value="Emotional-Behavioral Disorder" id="dis_emotional" 
-                            {% if "Emotional-Behavioral Disorder" in student.disabilities %}checked{% endif %} disabled>
+                            {% if "Emotional-Behavioral Disorder" in disabilities %}checked{% endif %} disabled>
                         <label class="form-check-label small" for="dis_emotional">Emotional- Behavioral Disorder</label>
                     </div>
                     <div class="form-check mb-1">
                         <input class="form-check-input" type="checkbox" name="disabilities" value="Cerebral Palsy" id="dis_cp" 
-                            {% if "Cerebral Palsy" in student.disabilities %}checked{% endif %} disabled>
+                            {% if "Cerebral Palsy" in disabilities %}checked{% endif %} disabled>
                         <label class="form-check-label small" for="dis_cp">Cerebral Palsy</label>
                     </div>
                 </td>
@@ -314,22 +318,22 @@
                 <td class="align-top" style="width: 25%;">
                     <div class="form-check mb-1">
                         <input class="form-check-input" type="checkbox" name="disabilities" value="Intellectual Disability" id="dis_intellectual" 
-                            {% if "Intellectual Disability" in student.disabilities %}checked{% endif %} disabled>
+                            {% if "Intellectual Disability" in disabilities %}checked{% endif %} disabled>
                         <label class="form-check-label small" for="dis_intellectual">Intellectual Disability</label>
                     </div>
                     <div class="form-check mb-1">
                         <input class="form-check-input" type="checkbox" name="disabilities" value="Orthopedic/Physical Handicap" id="dis_orthopedic" 
-                            {% if "Orthopedic/Physical Handicap" in student.disabilities %}checked{% endif %} disabled>
+                            {% if "Orthopedic/Physical Handicap" in disabilities %}checked{% endif %} disabled>
                         <label class="form-check-label small" for="dis_orthopedic">Orthopedic/Physical Handicap</label>
                     </div>
                     <div class="form-check mb-1">
                         <input class="form-check-input" type="checkbox" name="disabilities" value="Special Health Problem/Chronic Disease" id="dis_health" 
-                            {% if "Special Health Problem/Chronic Disease" in student.disabilities %}checked{% endif %} disabled>
+                            {% if "Special Health Problem/Chronic Disease" in disabilities %}checked{% endif %} disabled>
                         <label class="form-check-label small" for="dis_health">Special Health Problem/ Chronic Disease</label>
                     </div>
                     <div class="form-check mb-1 ms-3">
                         <input class="form-check-input" type="checkbox" name="disabilities" value="Special Health Problem - Cancer" id="dis_cancer" 
-                            {% if "Special Health Problem - Cancer" in student.disabilities %}checked{% endif %} disabled>
+                            {% if "Special Health Problem - Cancer" in disabilities %}checked{% endif %} disabled>
                         <label class="form-check-label small" for="dis_cancer">a. Cancer</label>
                     </div>
                 </td>
@@ -621,14 +625,14 @@
         <div class="col-md-3">
             <div class="form-check mb-2">
                 <input class="form-check-input" type="checkbox" id="modular_print" 
-                   {% if "Modular (Print)" in student.distance_learning_modalities %}checked{% endif %} disabled>
+                   {% if "Modular (Print)" in modalities %}checked{% endif %} disabled>
                 <label class="form-check-label small fw-semibold" for="modular_print">
                     Modular (Print)
                 </label>
             </div>
             <div class="form-check mb-0">
                 <input class="form-check-input" type="checkbox" id="modular_digital"
-                    {% if "Modular (Digital)" in student.distance_learning_modalities %}checked{% endif %} disabled>
+                    {% if "Modular (Digital)" in modalities %}checked{% endif %} disabled>
                 <label class="form-check-label small fw-semibold" for="modular_digital">
                     Modular (Digital)
                 </label>
@@ -638,14 +642,14 @@
         <div class="col-md-3">
             <div class="form-check mb-2">
                 <input class="form-check-input" type="checkbox" id="online"
-                    {% if "Online" in student.distance_learning_modalities %}checked{% endif %} disabled>
+                    {% if "Online" in modalities %}checked{% endif %} disabled>
                 <label class="form-check-label small fw-semibold" for="online">
                     Online
                 </label>
             </div>
             <div class="form-check mb-0">
                 <input class="form-check-input" type="checkbox" id="educational_tv"
-                    {% if "Educational Television" in student.distance_learning_modalities %}checked{% endif %} disabled>
+                    {% if "Educational Television" in modalities %}checked{% endif %} disabled>
                 <label class="form-check-label small fw-semibold" for="educational_tv">
                     Educational Television
                 </label>
@@ -655,14 +659,14 @@
         <div class="col-md-3">
             <div class="form-check mb-2">
                 <input class="form-check-input" type="checkbox" id="radio_based"
-                    {% if "Radio-Based Instruction" in student.distance_learning_modalities %}checked{% endif %} disabled>
+                    {% if "Radio-Based Instruction" in modalities %}checked{% endif %} disabled>
                 <label class="form-check-label small fw-semibold" for="radio_based">
                     Radio-Based Instruction
                 </label>
             </div>
             <div class="form-check mb-0">
                 <input class="form-check-input" type="checkbox" id="homeschooling"
-                    {% if "Homeschooling" in student.distance_learning_modalities %}checked{% endif %} disabled>
+                    {% if "Homeschooling" in modalities %}checked{% endif %} disabled>
                 <label class="form-check-label small fw-semibold" for="homeschooling">
                     Homeschooling
                 </label>
@@ -672,7 +676,7 @@
         <div class="col-md-3">
             <div class="form-check mb-2">
                 <input class="form-check-input" type="checkbox" id="blended"
-                    {% if "Blended" in student.distance_learning_modalities %}checked{% endif %} disabled>
+                    {% if "Blended" in modalities %}checked{% endif %} disabled>
                 <label class="form-check-label small fw-semibold" for="blended">
                     Blended
                 </label>
