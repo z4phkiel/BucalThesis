@@ -565,11 +565,13 @@ def signature_problem(signature):
     return None
 
 
-def validate_enrollment(form):
-    """Check a submitted enrollment. Returns (values for the Enrollment model, list of errors)."""
+def validate_enrollment(form, age_on=None):
+    """Check a submitted enrollment. Returns (values for the Enrollment model, list of errors).
+    The age is worked out for the date age_on, or for today if it isn't given."""
     errors = []
     values = {}
     today = school_today()
+    age_on = age_on or today
 
     def text(name):
         return form.get(name, '').strip()
@@ -621,11 +623,11 @@ def validate_enrollment(form):
     else:
         try:
             birthdate = datetime.strptime(birthdate_text, '%Y-%m-%d').date()
-            if birthdate > today or birthdate.year < EARLIEST_BIRTH_YEAR:
+            if birthdate > age_on or birthdate.year < EARLIEST_BIRTH_YEAR:
                 errors.append('Birthdate must be a real date that is not in the future.')
             else:
                 values['birthdate'] = birthdate
-                values['age'] = today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthdate.day))
+                values['age'] = age_on.year - birthdate.year - ((age_on.month, age_on.day) < (birthdate.month, birthdate.day))
         except ValueError:
             errors.append('Birthdate is not a valid date.')
 
@@ -770,6 +772,54 @@ def student_detail(student_id):
 
     student = Enrollment.query.get_or_404(student_id)
     return render_template('student.html', student=student)
+
+
+def student_form_data(student):
+    """A saved record in the shape of a submitted form, so the edit page fills in the same way as a rejected form."""
+    data = {name: ['' if getattr(student, name) is None else str(getattr(student, name))] for name in ENROLLMENT_LABELS}
+    data['birthdate'] = [student.birthdate.isoformat() if student.birthdate else '']
+    data['disabilities'] = (student.disabilities or '').replace(', ', ',').split(',')
+    data['distance_learning_modalities'] = (student.distance_learning_modalities or '').replace(', ', ',').split(',')
+    data['signature_data'] = [student.signature_data or '']
+    return data
+
+
+@main_bp.route("/enrolled/<int:student_id>/edit", methods=['GET', 'POST'])
+def edit_student(student_id):
+    if 'user_id' not in session:
+        return redirect(url_for('main.login'))
+
+    student = Enrollment.query.get_or_404(student_id)
+
+    if request.method == 'GET':
+        return render_template('student.html', student=student, editing=True, form_data=student_form_data(student))
+
+    def show_rejected(status):
+        # A field missing from the submission was left empty, so it comes back empty and not as it was saved
+        typed = {**dict.fromkeys(student_form_data(student), ['']), **enrollment_form_data(request.form)}
+        return render_template('student.html', student=student, editing=True, rejected=True, form_data=typed), status
+
+    # The age stays the student's age when the form was signed, not their age on the day it is corrected
+    values, errors = validate_enrollment(request.form, age_on=student.date_signed)
+    if errors:
+        flash('Please correct the following: ' + ' '.join(errors), 'danger')
+        return show_rejected(400)
+
+    # These record when the form was first submitted, so correcting it later doesn't change them
+    del values['school_year'], values['date_signed']
+
+    try:
+        for name, value in values.items():
+            setattr(student, name, value)
+        db.session.commit()
+        flash('Enrollment form updated.', 'success')
+        return redirect(url_for('main.student_detail', student_id=student.id))
+
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception("Failed to update the enrollment.")
+        flash('Could not save the changes. Please try again.', 'danger')
+        return show_rejected(500)
 
 
 # Grade View

@@ -1,0 +1,227 @@
+/* A student's enrollment form: viewing, editing and printing */
+
+/* room to scroll the end of the form clear of the floating controls */
+#pageContent {
+    padding-bottom: 6.5rem !important;
+}
+
+/* an empty field reads N/A, in the same color as the other answers */
+.is-viewing input::placeholder {
+    color: var(--ix-text);
+    opacity: 1;
+}
+
+/* Radio buttons and checkboxes: the page's green instead of Bootstrap's blue */
+.student-form .form-check-input:focus {
+    border-color: var(--ix-green-500);
+    box-shadow: 0 0 0 4px rgba(79, 125, 69, 0.18);
+}
+
+.student-form .form-check-input:checked {
+    background-color: var(--ix-green-600);
+    border-color: var(--ix-green-600);
+}
+
+.signature-preview-box img {
+    max-height: 45px;
+    object-fit: contain;
+}
+
+/* ---------- Editing ---------- */
+/* fields that can't be changed right now look different from the ones that can */
+#studentForm .form-control[readonly],
+#studentForm .form-select:disabled,
+#studentForm .form-control:disabled {
+    background-color: var(--ix-khaki-100);
+    cursor: not-allowed;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ---------- Floating button: its two options open above it on hover or keyboard focus ---------- */
+.form-fab {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 1040;
+}
+
+.form-fab-toggle {
+    position: static;
+    width: 56px;
+}
+
+.form-fab-menu {
+    position: absolute;
+    right: 0;
+    bottom: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    padding-bottom: 10px;   /* part of the menu, so the pointer can cross this gap without closing it */
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0s linear 0.15s;
+}
+
+.form-fab:hover .form-fab-menu,
+.form-fab:has(:focus-visible) .form-fab-menu {
+    visibility: visible;
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0s;
+}
+
+.form-fab-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 44px;
+    padding: 0 18px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--ix-green-700);
+    text-decoration: none;
+    background: var(--ix-white);
+    border: 2px solid var(--ix-khaki-500);
+    border-radius: 999px;
+    box-shadow: 0 8px 18px rgba(47, 82, 51, 0.28);
+    transition: background-color 0.15s ease;
+}
+
+.form-fab-option:hover,
+.form-fab-option:focus-visible {
+    color: var(--ix-green-900);
+    background: var(--ix-khaki-300);
+}
+
+.form-fab-option:focus-visible {
+    outline: 3px solid rgba(79, 125, 69, 0.45);
+    outline-offset: 2px;
+}
+
+.form-fab-option svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+@media (max-width: 768px) {
+    .form-fab {
+        right: 16px;
+        bottom: 16px;
+    }
+}
+
+/* On a phone the form is wider than the screen. It scrolls sideways in its own area,
+   so the page stays screen-width and the floating controls stay on screen. */
+@media screen and (max-width: 768px) {
+    .student-form {
+        overflow-x: auto;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .form-fab-menu,
+    .form-fab:hover .form-fab-menu,
+    .form-fab:has(:focus-visible) .form-fab-menu {
+        transform: none;
+        transition: none;
+    }
+}
+
+/* ---------- Printing: only the form, on white, laid out as it is on screen ---------- */
+@media print {
+    /* The browser prints its date, title, address and page number in the top and bottom page margins.
+       With none there, it has no room for them. The space above and below the form comes from the
+       padding on #pageContent instead, on every page. */
+    @page {
+        margin: 0 10mm;
+    }
+
+    .sidebar,
+    .form-fab,
+    .metric-save-dock,
+    .flash-stack,
+    #pageSkeleton,
+    #open_sig_modal_btn,
+    #sig_modal {
+        display: none !important;
+    }
+
+    html,
+    body,
+    .main-content.bg-light {
+        background: #fff !important;
+    }
+
+    .main-content {
+        width: 100%;
+        min-height: 0 !important;
+        margin-left: 0;
+    }
+
+    #pageContent {
+        padding: 10mm 0 !important;
+        box-decoration-break: clone;            /* repeats the padding on every printed page */
+        -webkit-box-decoration-break: clone;
+    }
+
+    /* Paper is narrower than the screen. Scaling lays the form out at about its on-screen
+       width, so its lines wrap the same way and nothing overlaps. */
+    .student-form {
+        zoom: 0.7;
+    }
+
+    .main-content .form-control,
+    .main-content .form-select,
+    #studentForm .form-control[readonly],
+    #studentForm .form-select:disabled,
+    #studentForm .form-control:disabled {
+        background-color: #fff;
+    }
+
+    /* A printed page is narrower than Bootstrap's md breakpoint, which would stack these columns */
+    .col-md-2 { flex: 0 0 auto; width: 16.66666667%; }
+    .col-md-3 { flex: 0 0 auto; width: 25%; }
+    .col-md-4 { flex: 0 0 auto; width: 33.33333333%; }
+    .col-md-5 { flex: 0 0 auto; width: 41.66666667%; }
+    .col-md-6 { flex: 0 0 auto; width: 50%; }
+    .col-md-7 { flex: 0 0 auto; width: 58.33333333%; }
+    .col-md-8 { flex: 0 0 auto; width: 66.66666667%; }
+
+    /* Browsers leave out background colors when printing, and a checkbox's tick is one.
+       Disabled boxes are faded on screen, which would make them hard to read on paper. */
+    .form-check-input {
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+        opacity: 1 !important;
+    }
+
+    .form-check-input:disabled ~ .form-check-label {
+        opacity: 1;
+    }
+
+    /* a section moves to the next page whole instead of splitting across two */
+    .student-form > .border {
+        break-inside: avoid;
+    }
+}

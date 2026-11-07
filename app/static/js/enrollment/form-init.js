@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // 1. Auto-fill School Year (e.g., 2026-2027)
     // ----------------------------------------------------
     const schoolYearInput = document.getElementById('school_year');
-    if (schoolYearInput) {
+    if (schoolYearInput && !schoolYearInput.value) {    // a saved form keeps its own school year
         const currentYear = new Date().getFullYear();
         const nextYear = currentYear + 1;
         schoolYearInput.value = `${currentYear}-${nextYear}`;
@@ -56,7 +56,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const birthDate = new Date(y, m - 1, d);
 
         if (!isNaN(birthDate.getTime())) {
-            const today = new Date();
+            // A saved form shows the age on the day it was signed, the same as the server works out
+            const today = ageInput.dataset.asOf ? new Date(`${ageInput.dataset.asOf}T00:00:00`) : new Date();
             let age = today.getFullYear() - birthDate.getFullYear();
             const monthDiff = today.getMonth() - birthDate.getMonth();
 

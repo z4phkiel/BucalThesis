@@ -88,8 +88,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 openSigBtn.textContent = 'Change Signature';
 
-                // Automatically capture the exact time the form was signed
-                if (dateInput) {
+                // Automatically capture the exact time the form was signed. A saved form keeps its original date.
+                if (dateInput && !dateInput.hasAttribute('data-locked')) {
                     const now = new Date();
                     
                     // Format option 1: standard YYYY-MM-DD format (Best for database parsing)
