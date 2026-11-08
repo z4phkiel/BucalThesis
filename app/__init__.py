@@ -45,7 +45,8 @@ def create_app():
     # Logged out after 30 idle minutes, since the cookie is re-signed on every request
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-    # HTTPS only, except in local development (FLASK_DEBUG=1), which runs on plain http
+    # HTTPS only unless FLASK_DEBUG=1. Browsers still accept it from the local dev server,
+    # since they treat 127.0.0.1 and localhost as secure.
     app.config['SESSION_COOKIE_SECURE'] = not app.debug
 
     # FILE UPLOAD LIMIT
