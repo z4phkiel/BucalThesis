@@ -2,44 +2,147 @@
 /* Floating sticky navigation */
 .stepper-wrap {
     position: sticky;
-    top: 10px;
+    top: 0;
     z-index: 100;
-    width: 100%;
     padding: 12px 16px;
-    margin: 0 auto 30px;
+    margin: 0 0 30px;
     background-color: transparent;
     border-radius: 16px;
 
     --stepper-label-gap: 9px;       /* space between a dot and its label */
     --stepper-label-height: 18.2px; /* one line of .step-label: 13px x 1.4 */
+    --stepper-page-pad: 1.5rem;     /* #pageContent's p-4, which the docked bar spreads over */
+    --stuck-steps: 260px;           /* width of the dots once docked */
+    --step-dot: 26px;               /* the numbered circles */
 
-    /* Outline and shadow, matching the page's cards. Shadows take up no
-       layout space, so nothing on the page moves when they appear. */
-    box-shadow:
-        inset 0 0 0 1px transparent,
-        0 12px 30px -12px transparent;
+    /* Shadows take up no layout space, so nothing on the page moves when they appear */
+    box-shadow: 0 10px 24px -14px transparent;
     transition:
         background-color 0.25s ease,
         box-shadow 0.25s ease,
-        backdrop-filter 0.25s ease,
+        border-radius 0.25s ease,
+        margin-left 0.25s ease,
+        margin-right 0.25s ease,
         margin-bottom 0.25s ease;
 }
 
-/* Once scrolled, the bar sits over the form, so it gets a background of its own and slims down
-   to just the dots. The margin grows by exactly what the labels give up, so the form never moves. */
+/* Once scrolled, the bar docks to the top of the window: flush with the top edge, across the whole
+   page area and solid, so no part of the form shows above or beside it. It slims down to the dots,
+   and the margin grows by exactly what the labels give up, so the form never moves. */
 .stepper-wrap.is-stuck {
+    margin-left: calc(-1 * var(--stepper-page-pad));
+    margin-right: calc(-1 * var(--stepper-page-pad));
     margin-bottom: calc(30px + var(--stepper-label-gap) + var(--stepper-label-height));
-    background-color: rgba(253, 252, 247, 0.97);    /* --ix-white, slightly see-through */
-    box-shadow:
-        inset 0 0 0 1px var(--ix-border),
-        0 12px 30px -12px rgba(36, 61, 40, 0.28);
-    backdrop-filter: blur(6px);
+    background-color: var(--ix-white);
+    border-radius: 0;
+    box-shadow: 0 10px 24px -14px rgba(36, 61, 40, 0.45);
 }
 
 .stepper-wrap.is-stuck .step-label {
     height: 0;
     margin-top: 0;
     opacity: 0;
+}
+
+/* The docked bar spreads under the sidebar's edge where the sidebar's 200px minimum is wider than
+   the page area's 15% margin, so the sidebar stays on top */
+.sidebar {
+    z-index: 101;
+}
+
+/* ---------- Docked: the part being filled in ---------- */
+/* Named on the left, so the step stays clear once the labels are hidden. Out of the layout, so it moves nothing. */
+.stepper-current {
+    position: absolute;
+    top: 50%;
+    left: var(--stepper-page-pad);
+    display: grid;
+    max-width: calc(50% - var(--stuck-steps) / 2 - var(--stepper-page-pad) - 16px);
+    line-height: 1.2;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transform: translate(-8px, -50%);
+    transition: opacity 0.25s ease, transform 0.25s ease, visibility 0s linear 0.25s;
+}
+
+.stepper-wrap.is-stuck .stepper-current {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(0, -50%);
+    transition: opacity 0.25s ease, transform 0.25s ease, visibility 0s;
+}
+
+.stepper-current-step {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ix-muted);
+}
+
+.stepper-current-name {
+    overflow: hidden;
+    font-size: 0.95rem;
+    font-weight: 700;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--ix-green-700);
+}
+
+/* The bar's bottom edge fills as the part on screen is scrolled through (set by progress-stepper.js) */
+.stepper-scroll {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    background: var(--ix-khaki-300);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.stepper-wrap.is-stuck .stepper-scroll {
+    opacity: 1;
+}
+
+.stepper-scroll span {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, var(--ix-green-600), var(--ix-green-500));
+    transform: scaleX(0);
+    transform-origin: left;
+}
+
+/* The current dot stands out more once the labels are gone */
+.stepper-wrap.is-stuck .stepper {
+    max-width: var(--stuck-steps);
+}
+
+.stepper-wrap.is-stuck .step-node.active .step-dot {
+    box-shadow:
+        0 0 0 5px rgba(79, 125, 69, 0.22),
+        0 4px 12px rgba(47, 82, 51, 0.3);
+    transform: scale(1.1);
+}
+
+/* Phones: the dots move to the right, so the step name has the left */
+@media (max-width: 576px) {
+    .stepper-wrap {
+        --stuck-steps: 185px;
+    }
+
+    .stepper-wrap.is-stuck .stepper {
+        margin-right: 0;
+    }
+
+    .stepper-current {
+        max-width: calc(100% - var(--stuck-steps) - var(--stepper-page-pad) - 28px);
+    }
+
+    .stepper-current-name {
+        font-size: 0.85rem;
+    }
 }
 
 /* Main stepper */
@@ -53,12 +156,13 @@
     max-width: 450px;
     margin: 0 auto;
     padding: 0 12px;
+    transition: max-width 0.25s ease;
 }
 
 /* Progress track */
 .stepper-track {
     position: absolute;
-    top: 15px;
+    top: calc(var(--step-dot) / 2 - 2px);     /* centered on the dots */
     left: 17%;
     right: 17%;
     height: 4px;
@@ -105,15 +209,15 @@
     align-items: center;
     justify-content: center;
 
-    width: 30px;
-    height: 30px;
+    width: var(--step-dot);
+    height: var(--step-dot);
     border-radius: 50%;
 
     background: #ffffff;
     border: 2px solid var(--ix-khaki-500);
 
     color: var(--ix-green-700);
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 700;
 
     box-shadow: 0 3px 10px rgba(36, 61, 40, 0.1);
@@ -161,14 +265,6 @@
     pointer-events: none;
 }
 
-/* Comes after the transitions above so that it overrides them */
-@media (prefers-reduced-motion: reduce) {
-    .stepper-wrap,
-    .step-label {
-        transition: none;
-    }
-}
-
 /* Active step: the ring is what tells it apart from a completed step */
 .step-node.active .step-dot {
     background: var(--ix-green-600);
@@ -180,6 +276,39 @@
         0 4px 12px rgba(47, 82, 51, 0.28);
 
     transform: scale(1.05);
+
+    /* One pulse when a part is reached, then the ring above. render() leaves the class alone while the
+       part stays the same, so typing in the form doesn't replay it. */
+    animation: step-here 0.9s ease-out;
+}
+
+@keyframes step-here {
+    from {
+        box-shadow:
+            0 0 0 0 rgba(79, 125, 69, 0.55),
+            0 4px 12px rgba(47, 82, 51, 0.28);
+    }
+    60% {
+        box-shadow:
+            0 0 0 14px rgba(79, 125, 69, 0),
+            0 4px 12px rgba(47, 82, 51, 0.28);
+    }
+}
+
+/* Comes after the transitions and animation above so that it overrides them */
+@media (prefers-reduced-motion: reduce) {
+    .stepper-wrap,
+    .stepper,
+    .stepper-current,
+    .stepper-wrap.is-stuck .stepper-current,
+    .stepper-scroll,
+    .step-label {
+        transition: none;
+    }
+
+    .step-node.active .step-dot {
+        animation: none;
+    }
 }
 
 .step-node.active .step-label {
@@ -246,3 +375,231 @@ html {
     object-fit: contain;
 }
 
+/* ==========================================================
+   A step that can't be finished yet (progress-stepper.js)
+   Shown instead of the browser's warning bubble: a small panel slides up from the bottom
+   of the page area, the field gets a red ring, and Next or Submit shows a lock.
+   ========================================================== */
+.step-alert {
+    --page-left: max(15%, 200px);   /* the fixed sidebar */
+    position: fixed;
+    left: calc((100% + var(--page-left)) / 2);
+    bottom: 24px;
+    z-index: 1045;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 12px;
+    width: min(540px, calc(100% - var(--page-left) - 32px));
+    padding: 12px 12px 12px 14px;
+    background: var(--ix-white);
+    border: 1px solid var(--ix-border);
+    border-left: 5px solid var(--ix-brick);
+    border-radius: 14px;
+    box-shadow: 0 18px 40px -12px rgba(36, 61, 40, 0.5);
+    visibility: hidden;
+    opacity: 0;
+    transform: translate(-50%, calc(100% + 40px));
+    transition: transform 0.25s ease-in, opacity 0.2s ease-in, visibility 0s linear 0.25s;
+}
+
+.step-alert.is-open {
+    visibility: visible;
+    opacity: 1;
+    transform: translate(-50%, 0);
+    transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.15), opacity 0.2s ease-out, visibility 0s;
+}
+
+/* tried again without fixing it */
+.step-alert.is-nudged {
+    animation: step-alert-nudge 0.45s ease;
+}
+
+@keyframes step-alert-nudge {
+    0%, 100% { transform: translate(-50%, 0); }
+    20% { transform: translate(calc(-50% - 10px), 0); }
+    40% { transform: translate(calc(-50% + 8px), 0); }
+    60% { transform: translate(calc(-50% - 5px), 0); }
+    80% { transform: translate(calc(-50% + 3px), 0); }
+}
+
+.step-alert-icon {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    color: var(--ix-brick);
+    background: #fbeeea;
+    border-radius: 50%;
+}
+
+.step-alert-icon svg {
+    grid-area: 1 / 1;
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.step-alert-done,
+.step-alert.is-resolved .step-alert-lock,
+.step-alert.is-resolved .step-alert-show {
+    display: none;
+}
+
+.step-alert.is-resolved .step-alert-done {
+    display: block;
+}
+
+.step-alert-title {
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--ix-brick);
+}
+
+.step-alert-message {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 0.88rem;
+    line-height: 1.35;
+    color: var(--ix-text);
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.step-alert-message strong {
+    color: var(--ix-green-900);
+}
+
+.main-content .step-alert-show {
+    --bs-btn-color: var(--ix-green-700);
+    --bs-btn-border-color: var(--ix-khaki-500);
+    --bs-btn-hover-color: var(--ix-green-900);
+    --bs-btn-hover-bg: var(--ix-khaki-100);
+    --bs-btn-hover-border-color: var(--ix-khaki-500);
+    --bs-btn-active-color: var(--ix-green-900);
+    --bs-btn-active-bg: var(--ix-khaki-300);
+    --bs-btn-active-border-color: var(--ix-khaki-500);
+    border-width: 1.5px;
+    border-radius: 999px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.step-alert .btn-close {
+    align-self: start;
+    width: 0.7em;
+    height: 0.7em;
+}
+
+/* fixed: green, then it slides away */
+.step-alert.is-resolved {
+    border-left-color: var(--ix-green-500);
+}
+
+.step-alert.is-resolved .step-alert-icon {
+    color: var(--ix-green-600);
+    background: #e8efe3;
+}
+
+.step-alert.is-resolved .step-alert-title {
+    color: var(--ix-green-700);
+}
+
+/* room to scroll the Back / Next buttons clear of the panel */
+body:has(.step-alert.is-open) #pageContent {
+    padding-bottom: 7rem !important;
+}
+
+/* ---------- The field holding up the step ---------- */
+.main-content .form-control.is-blocked,
+.main-content .form-select.is-blocked {
+    border-color: var(--ix-brick);
+    box-shadow: 0 0 0 4px rgba(163, 57, 42, 0.15);
+    animation: field-blocked 0.9s ease-out;
+}
+
+.main-content .form-check-input.is-blocked {
+    border-color: var(--ix-brick);
+    box-shadow: 0 0 0 3px rgba(163, 57, 42, 0.18);
+}
+
+.main-content .btn.is-blocked {
+    border-color: var(--ix-brick);
+    box-shadow: 0 0 0 4px rgba(163, 57, 42, 0.18);
+}
+
+@keyframes field-blocked {
+    from { box-shadow: 0 0 0 0 rgba(163, 57, 42, 0.5); }
+}
+
+/* ---------- Next / Submit while the step is held up: muted, with a lock ---------- */
+.main-content .btn-primary.is-locked {
+    --bs-btn-color: var(--ix-green-900);
+    --bs-btn-bg: var(--ix-khaki-400);
+    --bs-btn-border-color: var(--ix-khaki-500);
+    --bs-btn-hover-color: var(--ix-green-900);
+    --bs-btn-hover-bg: var(--ix-khaki-300);
+    --bs-btn-hover-border-color: var(--ix-khaki-500);
+    box-shadow: none;
+}
+
+.main-content .btn.is-locked::before {
+    content: "";
+    display: inline-block;
+    width: 0.95em;
+    height: 0.95em;
+    margin-right: 6px;
+    vertical-align: -0.12em;
+    background: currentColor;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='5' y='11' width='14' height='10' rx='2'/%3E%3Cpath d='M8 11V7a4 4 0 0 1 8 0v4'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='5' y='11' width='14' height='10' rx='2'/%3E%3Cpath d='M8 11V7a4 4 0 0 1 8 0v4'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+/* ---------- Smaller screens ---------- */
+@media (max-width: 768px) {
+    .step-alert {
+        --page-left: 0px;
+        bottom: 16px;
+    }
+}
+
+@media (max-width: 576px) {
+    .step-alert {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        width: calc(100% - 24px);
+    }
+
+    .step-alert-show {
+        grid-row: 2;
+        grid-column: 2;
+        justify-self: start;
+    }
+
+    .step-alert .btn-close {
+        grid-row: 1;
+        grid-column: 3;
+    }
+
+    /* the panel is two rows here, so it needs more room to scroll the buttons clear */
+    body:has(.step-alert.is-open) #pageContent {
+        padding-bottom: 10rem !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .step-alert,
+    .step-alert.is-open {
+        transition: none;
+    }
+
+    .step-alert.is-nudged,
+    .main-content .form-control.is-blocked,
+    .main-content .form-select.is-blocked {
+        animation: none;
+    }
+}
