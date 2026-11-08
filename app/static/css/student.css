@@ -180,15 +180,38 @@
     }
 
     #pageContent {
-        padding: 10mm 0 !important;
+        padding: 8mm 0 !important;
         box-decoration-break: clone;            /* repeats the padding on every printed page */
         -webkit-box-decoration-break: clone;
     }
 
     /* Paper is narrower than the screen. Scaling lays the form out at about its on-screen
-       width, so its lines wrap the same way and nothing overlaps. */
+       width, so its lines wrap the same way and nothing overlaps. 0.62 is the largest scale at which
+       page 1 (up to Parent/Guardian) fits on Letter, the shortest paper, with about 8mm to spare. */
     .student-form {
-        zoom: 0.7;
+        zoom: 0.62;
+    }
+
+    /* Tighter than on screen, so page 1 can hold everything up to Parent/Guardian, as on the DepEd form */
+    .student-form > .py-4 {
+        padding-top: .5rem !important;
+        padding-bottom: .5rem !important;
+    }
+
+    .student-form > .py-4 img {
+        height: 60px !important;
+    }
+
+    .student-form .mb-4 { margin-bottom: .5rem !important; }
+    .student-form .mb-3 { margin-bottom: .4rem !important; }
+    .student-form .p-3 { padding: .5rem !important; }
+    .student-form .g-3 { --bs-gutter-y: .5rem; }
+
+    .student-form .form-control,
+    .student-form .form-select {
+        padding-top: .1rem;
+        padding-bottom: .1rem;
+        line-height: 1.3;
     }
 
     .main-content .form-control,
@@ -223,5 +246,10 @@
     /* a section moves to the next page whole instead of splitting across two */
     .student-form > .border {
         break-inside: avoid;
+    }
+
+    /* Page 2 starts at "For Returning Learner", as on the DepEd form */
+    .print-new-page {
+        break-before: page;
     }
 }

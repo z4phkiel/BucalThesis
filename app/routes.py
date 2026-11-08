@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 import base64
 import math
 import re
+import threading
+import time
 import zipfile
 import pandas as pd
 from PIL import Image
@@ -58,6 +60,41 @@ def restrict_mobile_access():
         abort(403)
 
 
+# LOGIN
+
+LOGIN_MAX_ATTEMPTS = 5
+LOGIN_WINDOW_SECONDS = 15 * 60
+# (ip, account) -> (attempt count, time of first attempt). Kept oldest first, so expired entries sit at the front.
+login_attempts = {}
+login_attempts_lock = threading.Lock()
+
+
+def count_login_attempt(key):
+    # Returns the minutes left in a lockout, or 0 if this attempt may go ahead.
+    # Counted before the password check, so guesses sent in parallel can't share one slot.
+    with login_attempts_lock:
+        now = time.monotonic()
+        while login_attempts:
+            oldest_key = next(iter(login_attempts))
+            if now - login_attempts[oldest_key][1] < LOGIN_WINDOW_SECONDS:
+                break
+            del login_attempts[oldest_key]
+
+        count, first_attempt = login_attempts.get(key, (0, now))
+        if count >= LOGIN_MAX_ATTEMPTS:
+            return math.ceil((LOGIN_WINDOW_SECONDS - (now - first_attempt)) / 60)
+        login_attempts[key] = (count + 1, first_attempt)
+        return 0
+
+
+@main_bp.before_request
+def end_session_of_deleted_user():
+    # The signed cookie can't know the account was removed, so check that it still exists
+    user_id = session.get('user_id')
+    if user_id is not None and db.session.get(User, user_id) is None:
+        session.clear()
+
+
 @main_bp.route("/login", methods=['GET', 'POST'])
 def login():
     # If the user is already logged in, skip the login page and send them to dashboard
@@ -71,8 +108,19 @@ def login():
         # Query the database for the user
         user = User.query.filter_by(username=username).first()
 
+        # Keyed on the account id when it exists, so case or accent variants of a username share one count
+        attempt_key = (request.remote_addr, user.id if user else username.lower())
+        wait_minutes = count_login_attempt(attempt_key)
+        if wait_minutes:
+            flash(f'Too many failed attempts. Try again in {wait_minutes} min.', 'danger')
+            return render_template('login.html'), 429
+
         # Check if user exists and password matches
         if user and user.check_password(password):
+            with login_attempts_lock:
+                login_attempts.pop(attempt_key, None)
+            session.clear()           # nothing from before login carries over
+            session.permanent = True  # applies the 30-minute PERMANENT_SESSION_LIFETIME
             session['user_id'] = user.id
             session['username'] = user.username
             session['role'] = user.role
