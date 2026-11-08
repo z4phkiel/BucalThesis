@@ -27,6 +27,30 @@
 <span class="skel skel-footnote" style="width: 72%"></span>
 {% endmacro %}
 
+{# Four list rows for the dashboard's small cards: a round marker (students) or a square one (event dates) #}
+{% macro list_placeholder(marker='round') %}
+<ul class="dash-list">
+    {% for width in ['70%', '58%', '76%', '64%'] %}
+    <li class="skel-dash-item">
+        <span class="skel skel-dash-marker {{ 'is-square' if marker == 'square' }}"></span>
+        <span class="skel-dash-text">
+            <span class="skel" style="width: {{ width }}"></span>
+            <span class="skel" style="width: 52%"></span>
+        </span>
+    </li>
+    {% endfor %}
+</ul>
+{% endmacro %}
+
+{% macro recent_students_placeholder() %}
+{{ list_placeholder() }}
+{% endmacro %}
+
+{% macro week_events_placeholder() %}
+<span class="skel events-range-placeholder"></span>
+{{ list_placeholder('square') }}
+{% endmacro %}
+
 {% macro metrics_table_head() %}
 <thead class="table-dark">
     <tr>

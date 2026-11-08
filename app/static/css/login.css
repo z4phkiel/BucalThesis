@@ -1,73 +1,362 @@
 :root {
     --green-900: #243d28;
-    --green-700: #2f5233;
-    --green-600: #3f6b3a;
+    --green-800: #1c3220;
     --green-500: #4f7d45;
     --khaki-500: #c9b98f;
     --khaki-300: #e3d9b8;
+    --gold-100: #f4ecd2;
     --white: #fdfcf7;
-    --text: #26312a;
-    --muted: #6d7566;
-    --border: #e1dcc6;
-    --bg-input: #faf8ef;
     --danger-bg: #fbeeea;
     --danger-text: #a3392a;
-    --danger-border: #efc9c0;
+    --muted: rgba(253, 252, 247, 0.7);
+    --line: rgba(255, 255, 255, 0.5);
+    --glass-blur: blur(18px) saturate(160%);
 }
 
-/* ---------- Page background ---------- */
-html body {
-    min-height: 100vh;
-    margin: 0;
+/* ---------- Page: the school photo under a deep green tint, lighter where the card sits ---------- */
+body {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 24px;
-    font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
-    color: var(--text);
+    min-height: 100vh;
+    margin: 0;
+    padding: 72px 20px 32px;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    color: var(--white);
     background:
-        radial-gradient(circle at 12% 18%, rgba(227, 217, 184, 0.35), transparent 40%),
-        radial-gradient(circle at 88% 85%, rgba(201, 185, 143, 0.30), transparent 45%),
-        linear-gradient(135deg, var(--green-900) 0%, var(--green-600) 55%, #8a8a5c 100%);
+        radial-gradient(ellipse at 50% 50%, rgba(28, 50, 32, 0.2), rgba(16, 30, 20, 0.85) 75%),
+        linear-gradient(160deg, rgba(36, 61, 40, 0.55), rgba(20, 38, 25, 0.35) 50%, rgba(36, 61, 40, 0.65)),
+        url("../images/school.jpg") center / cover no-repeat fixed;
+    background-color: var(--green-800);
 }
 
-/* ---------- Login card ---------- */
-html body > div {
+/* ---------- Card: glass with a gradient edge light ---------- */
+.login-card {
+    position: relative;
     width: 100%;
-    max-width: 420px;
-    padding: 36px 36px 40px;
-    background: var(--white);
-    border-radius: 22px;
-    border-top: 6px solid var(--khaki-500);
-    box-shadow: 0 25px 50px -12px rgba(20, 40, 25, 0.5);
+    max-width: 400px;
+    padding: 36px 40px 40px;
+    text-align: center;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.05));
+    border-radius: 26px;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.3),
+        0 32px 64px -24px rgba(0, 0, 0, 0.65);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    animation: card-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-/* ---------- School logo + name ---------- */
-html body > div::before {
-    content: "BUCAL II ELEMENTARY SCHOOL";
-    display: block;
-    margin-bottom: 24px;
-    padding: 112px 0 22px;
-    text-align: center;
-    font-size: 1.2rem;
-    font-weight: 800;
-    line-height: 1.3;
-    letter-spacing: 0.08em;
-    color: var(--green-700);
-    border-bottom: 1px dashed var(--khaki-500);
-
-    background:
-        url("../images/SchoolLogo.jpg")
-        no-repeat center top / auto 96px;
+/* The outline: a 1.5px ring cut out of a gradient, brightest at the top left */
+.login-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1.5px;
+    border-radius: inherit;
+    background: linear-gradient(135deg,
+        rgba(255, 255, 255, 0.85),
+        rgba(227, 217, 184, 0.4) 35%,
+        rgba(255, 255, 255, 0.08) 65%,
+        rgba(227, 217, 184, 0.5));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
 }
 
-/* ---------- Heading ---------- */
-html body > div > h3 {
-    margin: 0 0 22px;
-    text-align: center;
-    font-size: 1.25rem;
+@keyframes card-in {
+    from { opacity: 0; transform: translateY(16px); }
+}
+
+/* Without blur the photo would show through sharply, so the glass goes solid instead */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .login-card,
+    .back-home {
+        background: rgba(28, 50, 32, 0.94);
+    }
+}
+
+/* ---------- Logo, school name, heading ---------- */
+.brand-logo {
+    position: relative;
+    width: 84px;
+    height: 84px;
+    margin: 0 auto 18px;
+}
+
+/* soft gold halo and a thin ring around the seal */
+.brand-logo::before {
+    content: "";
+    position: absolute;
+    inset: -8px;
+    border: 1px solid rgba(227, 217, 184, 0.5);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(233, 207, 122, 0.3), transparent 70%);
+}
+
+.brand-logo img {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.4));
+}
+
+.brand-name {
+    margin: 0 0 4px;
+    font-size: 0.72rem;
     font-weight: 700;
-    color: var(--text);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--khaki-300);
+}
+
+.login-title {
+    margin: 0 0 4px;
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #fff;
+}
+
+.login-subtitle {
+    margin: 0 0 28px;
+    font-size: 0.92rem;
+    color: var(--muted);
+}
+
+.login-card form {
+    margin: 0;
+    text-align: left;
+}
+
+/* ---------- Fields: an underline with an icon; the label rests on the line until the field is used ---------- */
+.field {
+    position: relative;
+    margin-bottom: 26px;
+    padding-top: 20px;
+}
+
+.field-icon {
+    position: absolute;
+    left: 0;
+    bottom: 12px;
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: var(--muted);
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: stroke 0.2s;
+}
+
+.field label {
+    position: absolute;
+    left: 32px;
+    top: 30px;
+    font-size: 1rem;
+    color: var(--muted);
+    pointer-events: none;   /* clicks go through to the field */
+    transition: top 0.2s ease, left 0.2s ease, font-size 0.2s ease, letter-spacing 0.2s ease, color 0.2s ease;
+}
+
+/* in use or filled in (the fields are required, so a filled one is :valid, autofill included) */
+.field:has(input:focus, input:valid) label {
+    top: 0;
+    left: 0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--khaki-300);
+}
+
+.field:focus-within .field-icon {
+    stroke: var(--khaki-300);
+}
+
+.field input {
+    width: 100%;
+    padding: 10px 4px 10px 32px;
+    font-size: 1rem;
+    color: #fff;
+    background: transparent;
+    border: 0;
+    border-bottom: 1.5px solid var(--line);
+    border-radius: 0;
+    outline: none;
+    caret-color: var(--khaki-300);
+    transition: border-color 0.2s;
+}
+
+.field input:hover {
+    border-bottom-color: rgba(255, 255, 255, 0.85);
+}
+
+.field:has(.field-toggle) input {
+    padding-right: 40px;
+}
+
+/* a gold line grows across the underline while the field is in use */
+.field::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--khaki-500), var(--gold-100));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+}
+
+.field:focus-within::after {
+    transform: scaleX(1);
+}
+
+/* the browser's saved-password fill would otherwise paint the field pale blue or white */
+.field input:-webkit-autofill {
+    -webkit-text-fill-color: #fff;
+    caret-color: var(--khaki-300);
+    transition: background-color 600000s 0s;
+}
+
+/* show / hide password */
+.field-toggle {
+    position: absolute;
+    right: 0;
+    bottom: 4px;
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    color: var(--muted);
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    transition: color 0.2s, background-color 0.2s;
+}
+
+.field-toggle:hover,
+.field-toggle:focus-visible {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.12);
+    outline: none;
+}
+
+.field-toggle svg {
+    grid-area: 1 / 1;
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.field-toggle .eye-closed,
+.field-toggle[aria-pressed="true"] .eye-open {
+    display: none;
+}
+
+.field-toggle[aria-pressed="true"] .eye-closed {
+    display: block;
+}
+
+/* sits on the label's row, so showing it moves nothing */
+.caps-hint {
+    position: absolute;
+    top: -2px;
+    right: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 9px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--green-900);
+    background: var(--khaki-300);
+    border-radius: 999px;
+}
+
+.caps-hint[hidden] {
+    display: none;
+}
+
+.caps-hint svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+}
+
+/* ---------- Sign In: a gold pill with an arrow ---------- */
+.login-button.btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    margin-top: 10px;
+    padding: 13px;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    --bs-btn-color: var(--green-900);
+    --bs-btn-hover-color: var(--green-900);
+    --bs-btn-active-color: var(--green-900);
+    --bs-btn-disabled-color: var(--green-900);
+    --bs-btn-bg: transparent;
+    --bs-btn-hover-bg: transparent;
+    --bs-btn-active-bg: transparent;
+    --bs-btn-disabled-bg: transparent;
+    --bs-btn-border-color: transparent;
+    --bs-btn-hover-border-color: transparent;
+    --bs-btn-active-border-color: transparent;
+    --bs-btn-disabled-border-color: transparent;
+    --bs-btn-disabled-opacity: 0.9;
+    background-image: linear-gradient(135deg, var(--gold-100), var(--khaki-500));
+    border-radius: 999px;
+    box-shadow: 0 14px 28px -10px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    transition: transform 0.15s, box-shadow 0.2s, filter 0.2s;
+}
+
+.login-button svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 0.2s;
+}
+
+.login-button.btn:hover {
+    filter: brightness(1.05);
+    transform: translateY(-2px);
+}
+
+.login-button:hover svg {
+    transform: translateX(4px);
+}
+
+.login-button.btn:active {
+    transform: translateY(0);
+    filter: brightness(0.97);
+}
+
+.login-button.btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(227, 217, 184, 0.6);
+}
+
+.login-button.btn:disabled {
+    cursor: progress;
+    transform: none;
 }
 
 /* ---------- Flash messages (float over the page, so the card doesn't move) ---------- */
@@ -100,123 +389,8 @@ html body > div > h3 {
     --bs-alert-border-color: var(--danger-text);
 }
 
-/* ---------- Form ---------- */
-html body > div form {
-    margin: 0;
-}
-
-html body > div form br {
-    display: none;
-}
-
-html body > div form > div {
-    margin-bottom: 20px;
-}
-
-html body > div form label {
-    display: block;
-    margin-bottom: 6px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--green-700);
-}
-
-html body > div form input[type="text"],
-html body > div form input[type="password"] {
-    width: 100%;
-    padding: 12px 14px;
-    font-size: 0.95rem;
-    color: var(--text);
-    background: var(--bg-input);
-    border: 1.5px solid var(--border);
-    border-radius: 10px;
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-}
-
-html body > div form input[type="text"]:hover,
-html body > div form input[type="password"]:hover {
-    border-color: var(--khaki-500);
-}
-
-html body > div form input[type="text"]:focus,
-html body > div form input[type="password"]:focus {
-    background: #fff;
-    border-color: var(--green-500);
-    box-shadow: 0 0 0 4px rgba(79, 125, 69, 0.18);
-}
-
-/* ---------- Button ---------- */
-html body > div form .btn.btn-primary {
-    width: 100%;
-    margin-top: 6px;
-    padding: 12px;
-    font-size: 1rem;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    color: #fff;
-    background: linear-gradient(135deg, var(--green-500), var(--green-700));
-    border: none;
-    border-radius: 10px;
-    box-shadow: 0 8px 18px rgba(47, 82, 51, 0.35);
-    transition: transform 0.15s, box-shadow 0.2s, filter 0.2s;
-}
-
-html body > div form .btn.btn-primary:hover {
-    transform: translateY(-1px);
-    filter: brightness(1.08);
-    box-shadow: 0 12px 24px rgba(47, 82, 51, 0.45);
-}
-
-html body > div form .btn.btn-primary:active {
-    transform: translateY(0);
-    box-shadow: 0 4px 10px rgba(47, 82, 51, 0.4);
-}
-
-html body > div form .btn.btn-primary:disabled {
-    cursor: progress;
-    opacity: 0.85;
-    transform: none;
-    filter: none;
-}
-
-html body > div form .btn.btn-primary:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 4px rgba(201, 185, 143, 0.6);
-}
-
-/* ---------- Small screens ---------- */
-@media (max-width: 480px) {
-    html body > div {
-        padding: 28px 22px 32px;
-        border-radius: 16px;
-    }
-
-    html body > div::before {
-        font-size: 1.05rem;
-    }
-}
-
-/* ==========================================================
-   Background photo
-   ========================================================== */
-html body {
-    background:
-        radial-gradient(circle at 12% 18%, rgba(227, 217, 184, 0.28), transparent 40%),
-        radial-gradient(circle at 88% 85%, rgba(201, 185, 143, 0.30), transparent 45%),
-        linear-gradient(135deg,
-            rgba(36, 61, 40, 0.88) 0%,
-            rgba(63, 107, 58, 0.70) 55%,
-            rgba(138, 138, 92, 0.60) 100%),
-        url("../images/school.jpg") center / cover no-repeat;
-    background-color: var(--green-900);
-}
-
-
-/* ==========================================================
-   "Back to Home" button 
-   ========================================================== */
-html body > a.back-home {
+/* ---------- "Back to Home": a small glass pill ---------- */
+.back-home {
     position: fixed;
     top: 20px;
     left: 20px;
@@ -224,50 +398,78 @@ html body > a.back-home {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 20px 10px 16px;
+    padding: 9px 18px 9px 14px;
     font-size: 0.88rem;
     font-weight: 600;
     letter-spacing: 0.02em;
     line-height: 1.2;
     text-decoration: none;
-    color: var(--green-700);
-    background: rgba(253, 252, 247, 0.92);
-    border: 1.5px solid var(--khaki-500);
+    color: #fff;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.06));
+    border: 1.5px solid rgba(255, 255, 255, 0.4);
     border-radius: 999px;
-    box-shadow: 0 8px 18px rgba(20, 40, 25, 0.3);
-    backdrop-filter: blur(6px);
-    transition: background-color 0.2s, color 0.2s, transform 0.15s, box-shadow 0.2s;
+    box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.45);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    transition: background-color 0.2s, color 0.2s, transform 0.15s;
 }
 
-html body > a.back-home::before {
+.back-home::before {
     content: "\2190";   /* left arrow */
     font-size: 1.05rem;
     line-height: 1;
     transition: transform 0.2s;
 }
 
-html body > a.back-home:hover {
+.back-home:hover {
     color: var(--green-900);
-    text-decoration: none;
-    background: var(--khaki-300);
+    background: #fff;
     transform: translateY(-1px);
-    box-shadow: 0 12px 24px rgba(20, 40, 25, 0.4);
 }
 
-html body > a.back-home:hover::before {
+.back-home:hover::before {
     transform: translateX(-3px);
 }
 
-html body > a.back-home:focus-visible {
+.back-home:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 4px rgba(201, 185, 143, 0.7);
+    box-shadow: 0 0 0 4px rgba(227, 217, 184, 0.65);
 }
 
+/* ---------- Small screens ---------- */
 @media (max-width: 480px) {
-    html body > a.back-home {
+    body {
+        padding: 64px 14px 24px;
+    }
+
+    .login-card {
+        padding: 30px 24px 32px;
+        border-radius: 22px;
+    }
+
+    .login-title {
+        font-size: 1.75rem;
+    }
+
+    .back-home {
         top: 12px;
         left: 12px;
-        padding: 8px 14px 8px 12px;
+        padding: 7px 14px 7px 11px;
         font-size: 0.8rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .login-card {
+        animation: none;
+    }
+
+    .field label,
+    .field::after,
+    .login-button.btn,
+    .login-button svg,
+    .back-home,
+    .back-home::before {
+        transition: none;
     }
 }

@@ -64,7 +64,7 @@
             {% endwith %}
 
             {% block content %}
-            {% from 'dashboard_placeholders.html' import forecast_placeholder, metrics_table_placeholder %}
+            {% from 'dashboard_placeholders.html' import forecast_placeholder, metrics_table_placeholder, recent_students_placeholder, week_events_placeholder %}
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="text-dark">Dashboard Overview</h2>
                 <button id="toggleMetricBtn" class="btn btn-primary">Yearly Metric</button>
@@ -87,9 +87,37 @@
                 </div>
             </div>
 
-            <div id="forecastCard" class="card shadow-sm" aria-live="polite" aria-busy="true" data-url="{{ url_for('main.dashboard_data') }}">
-                <div class="card-body">
-                    {{ forecast_placeholder() }}
+            <div class="row g-4">
+                <div class="col-xl-8">
+                    <div id="forecastCard" class="card shadow-sm h-100" aria-live="polite" aria-busy="true" data-url="{{ url_for('main.dashboard_data') }}">
+                        <div class="card-body">
+                            {{ forecast_placeholder() }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- The small cards are filled in from /dashboard/data along with the forecast -->
+                <div class="col-md-6 col-xl-4">
+                    <section class="card shadow-sm h-100" aria-labelledby="recentTitle">
+                        <div class="card-body">
+                            <h5 id="recentTitle" class="card-title mb-3">Recently Enrolled</h5>
+                            <div id="recentStudents" aria-busy="true">
+                                {{ recent_students_placeholder() }}
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Wraps to the next line on wide screens, so it sits right under the forecast -->
+                <div class="col-md-6 col-xl-4">
+                    <section class="card shadow-sm h-100 events-card" aria-labelledby="eventsTitle">
+                        <div class="card-body">
+                            <h5 id="eventsTitle" class="card-title mb-1">Upcoming Events</h5>
+                            <div id="weekEvents" aria-busy="true">
+                                {{ week_events_placeholder() }}
+                            </div>
+                        </div>
+                    </section>
                 </div>
             </div>
 

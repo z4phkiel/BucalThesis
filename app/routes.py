@@ -465,7 +465,23 @@ def dashboard_data():
     metrics = YearlyMetric.query.order_by(YearlyMetric.school_year.desc()).all()
     all_metrics_asc = YearlyMetric.query.order_by(YearlyMetric.school_year.asc()).all()
 
-    return render_template('dashboard_data.html', metrics=metrics, **forecast_values(all_metrics_asc))
+    # Newest first, as on the Masterlist. Only the columns the card shows: a full row carries the signature image.
+    recent_students = Enrollment.query.with_entities(
+        Enrollment.id, Enrollment.last_name, Enrollment.first_name, Enrollment.middle_name,
+        Enrollment.extension_name, Enrollment.grade_level, Enrollment.age, Enrollment.sex,
+    ).order_by(Enrollment.id.desc()).limit(4).all()
+
+    # Today and the next 6 days (school time), including events already under way
+    today = school_today()
+    week_end = today + timedelta(days=6)
+    week_events = CalendarEvent.query.filter(
+        CalendarEvent.event_date <= week_end,
+        db.func.coalesce(CalendarEvent.end_date, CalendarEvent.event_date) >= today,
+    ).order_by(CalendarEvent.event_date.asc(), CalendarEvent.id.asc()).all()
+
+    return render_template('dashboard_data.html', metrics=metrics, recent_students=recent_students,
+                           today=today, week_end=week_end, week_events=week_events,
+                           **forecast_values(all_metrics_asc))
 
 
 @main_bp.route("/statistics")
