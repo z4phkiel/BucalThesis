@@ -7,7 +7,7 @@
     so update them here if they change there.
 #}
 
-{% from 'dashboard_placeholders.html' import forecast_placeholder %}
+{% from 'dashboard_placeholders.html' import forecast_placeholder, recent_students_placeholder, week_events_placeholder %}
 
 {% macro table(columns, rows, variant='') %}
 <table class="skel-table {{ variant }}">
@@ -61,9 +61,23 @@
         <div class="skel-title skel-title-dashboard">Dashboard Overview</div>
         <span class="skel skel-button"></span>
     </div>
-    <div class="skel-card">
-        <div class="skel-card-body">
-            {{ forecast_placeholder() }}
+    <div class="skel-dash-row">
+        <div class="skel-card">
+            <div class="skel-card-body">
+                {{ forecast_placeholder() }}
+            </div>
+        </div>
+        <div class="skel-card">
+            <div class="skel-card-body">
+                <div class="skel-card-title">Recently Enrolled</div>
+                {{ recent_students_placeholder() }}
+            </div>
+        </div>
+        <div class="skel-card skel-events-card">
+            <div class="skel-card-body">
+                <div class="skel-card-title mb-1">Upcoming Events</div>
+                {{ week_events_placeholder() }}
+            </div>
         </div>
     </div>
 </template>

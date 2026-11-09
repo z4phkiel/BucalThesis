@@ -1,0 +1,636 @@
+/* A student's grade files: one Excel file per level, Kindergarten to Grade 6.
+   Colors come from the --ix-* palette in index.css. */
+
+/* this page is reached from the Masterlist, so that stays highlighted (this file loads on this page only) */
+.sidebar .nav-item:nth-child(3) .nav-link {
+    background-color: var(--ix-khaki-500);
+    color: var(--ix-green-900);
+    font-weight: 700;
+}
+
+/* ---------- Icons ---------- */
+.sg-sprite {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+}
+
+.sg-icon,
+.sg-file-icon,
+.sg-drop-icon {
+    flex: 0 0 auto;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.sg-icon {
+    width: 1em;
+    height: 1em;
+    vertical-align: -0.125em;
+}
+
+/* ---------- Heading ---------- */
+.sg-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    padding: 4px 12px 4px 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ix-green-600);
+    text-decoration: none;
+    border-radius: 999px;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.sg-back:hover,
+.sg-back:focus-visible {
+    color: var(--ix-green-900);
+    background: var(--ix-khaki-300);
+}
+
+.sg-title {
+    position: relative;
+    margin-bottom: 1rem;
+    padding-left: 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--ix-green-700);
+}
+
+.sg-title::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 6px;
+    height: 70%;
+    transform: translateY(-50%);
+    border-radius: 6px;
+    background: linear-gradient(180deg, var(--ix-khaki-500), var(--ix-green-500));
+}
+
+/* ---------- Student card ---------- */
+.sg-student {
+    margin-bottom: 1.75rem;
+    overflow: hidden;
+}
+
+.sg-student .card-body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px 20px;
+}
+
+.sg-avatar {
+    display: grid;
+    flex: 0 0 64px;
+    place-items: center;
+    height: 64px;
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: var(--ix-green-900);
+    background: linear-gradient(135deg, var(--ix-khaki-300), var(--ix-khaki-500));
+    border: 3px solid var(--ix-white);
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px var(--ix-khaki-500);
+}
+
+.sg-identity {
+    flex: 1 1 220px;
+    min-width: 0;
+}
+
+.sg-name {
+    margin-bottom: 6px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--ix-green-900);
+    overflow-wrap: anywhere;
+}
+
+.sg-lrn {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 3px 12px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--ix-muted);
+    background: var(--ix-khaki-100);
+    border: 1px solid var(--ix-border);
+    border-radius: 999px;
+}
+
+.sg-lrn strong {
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+    color: var(--ix-green-700);
+}
+
+.sg-progress {
+    display: grid;
+    justify-items: end;
+    gap: 10px;
+    margin-left: auto;
+}
+
+.sg-progress-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9rem;
+    color: var(--ix-muted);
+}
+
+.sg-progress-count strong,
+.sg-progress-count .sg-icon {
+    font-size: 1.1rem;
+    color: var(--ix-green-700);
+}
+
+/* K to 6, joined by a line */
+.sg-steps {
+    position: relative;
+    display: flex;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.sg-steps::before {
+    content: "";
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    top: 50%;
+    height: 2px;
+    background: var(--ix-border);
+    transform: translateY(-50%);
+}
+
+.sg-step {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--ix-muted);
+    text-decoration: none;
+    background: var(--ix-white);
+    border: 2px dashed var(--ix-khaki-500);
+    border-radius: 50%;
+    transition: transform 0.15s;
+}
+
+.sg-step.is-filed {
+    color: #fff;
+    background: var(--ix-green-600);
+    border: 2px solid var(--ix-green-600);
+}
+
+.sg-step:hover,
+.sg-step:focus-visible {
+    transform: translateY(-2px);
+}
+
+.sg-step:focus-visible {
+    outline: 3px solid rgba(79, 125, 69, 0.45);
+    outline-offset: 2px;
+}
+
+.sg-note {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding: 10px 1.5rem;
+    font-size: 0.85rem;
+    color: var(--ix-green-900);
+    background: var(--ix-khaki-100);
+    border-top: 1px dashed var(--ix-khaki-500);
+}
+
+.sg-note .sg-icon {
+    color: var(--ix-green-600);
+}
+
+/* ---------- Timeline of levels ---------- */
+.sg-timeline {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.sg-level {
+    --sg-mark: 48px;
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--sg-mark) minmax(0, 1fr);
+    gap: 16px;
+    align-items: center;
+    scroll-margin-top: 24px;
+}
+
+/* Each level draws its part of the line, half the gap above and below it, so the line stays joined
+   whatever the rows' heights. Green through the levels that have a file. */
+.sg-level::before {
+    content: "";
+    position: absolute;
+    left: calc(var(--sg-mark) / 2 - 1px);
+    top: -6px;
+    bottom: -6px;
+    width: 2px;
+    background: var(--ix-khaki-300);
+}
+
+.sg-level:first-child::before {
+    top: 50%;
+}
+
+.sg-level:last-child::before {
+    bottom: 50%;
+}
+
+.sg-level.is-filed::before {
+    background: var(--ix-green-500);
+}
+
+.sg-mark {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: var(--sg-mark);
+    height: var(--sg-mark);
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--ix-green-700);
+    background: var(--ix-white);
+    border: 2px dashed var(--ix-khaki-500);
+    border-radius: 50%;
+    box-shadow: 0 0 0 4px var(--ix-page);
+}
+
+.is-filed .sg-mark {
+    color: #fff;
+    background: linear-gradient(135deg, var(--ix-green-600), var(--ix-green-700));
+    border: 2px solid var(--ix-khaki-500);
+}
+
+.sg-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: 170px minmax(0, 1fr) auto;
+    gap: 10px 20px;
+    align-items: center;
+    padding: 14px 18px;
+    background: var(--ix-white);
+    border: 1px solid var(--ix-border);
+    border-left: 4px solid var(--ix-khaki-400);
+    border-radius: 14px;
+    box-shadow: 0 8px 22px -14px rgba(36, 61, 40, 0.35);
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.is-filed .sg-row {
+    border-left-color: var(--ix-green-600);
+}
+
+.is-empty .sg-row {
+    grid-template-columns: 170px minmax(0, 1fr);
+}
+
+.sg-level-name {
+    margin-bottom: 4px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--ix-green-700);
+}
+
+.sg-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 10px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ix-muted);
+    background: var(--ix-khaki-100);
+    border: 1px dashed var(--ix-khaki-500);
+    border-radius: 999px;
+}
+
+.sg-status.is-filed {
+    color: var(--ix-green-700);
+    background: #e8efe3;
+    border: 1px solid rgba(79, 125, 69, 0.35);
+}
+
+/* ---------- A stored file ---------- */
+.sg-file {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.sg-file-icon {
+    width: 40px;
+    height: 40px;
+    padding: 8px;
+    color: var(--ix-green-600);
+    background: #e8efe3;
+    border-radius: 10px;
+}
+
+.sg-file-text {
+    display: grid;
+    min-width: 0;
+}
+
+.sg-file-name {
+    overflow: hidden;
+    font-weight: 600;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--ix-text);
+}
+
+.sg-file-meta {
+    font-size: 0.8rem;
+    color: var(--ix-muted);
+}
+
+.sg-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.sg-actions form {
+    margin: 0;
+}
+
+.main-content .sg-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+    border-width: 1.5px;
+    border-radius: 999px;
+}
+
+.main-content .sg-actions .btn-primary {
+    box-shadow: 0 4px 10px rgba(47, 82, 51, 0.22);
+}
+
+.main-content .sg-btn-ghost {
+    --bs-btn-color: var(--ix-green-700);
+    --bs-btn-border-color: var(--ix-khaki-500);
+    --bs-btn-hover-color: var(--ix-green-900);
+    --bs-btn-hover-bg: var(--ix-khaki-100);
+    --bs-btn-hover-border-color: var(--ix-khaki-500);
+    --bs-btn-active-color: var(--ix-green-900);
+    --bs-btn-active-bg: var(--ix-khaki-300);
+    --bs-btn-active-border-color: var(--ix-khaki-500);
+}
+
+.main-content .sg-btn-danger {
+    --bs-btn-color: var(--ix-brick);
+    --bs-btn-border-color: #d9a79e;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: var(--ix-brick);
+    --bs-btn-hover-border-color: var(--ix-brick);
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #8c2f22;
+    --bs-btn-active-border-color: #8c2f22;
+    --bs-btn-focus-shadow-rgb: 163, 57, 42;
+}
+
+/* the file inputs are hidden, so their focus shows on the button or drop zone they belong to */
+.sg-actions form:has(.sg-file-input:focus-visible) .sg-btn-ghost,
+.sg-drop:has(.sg-file-input:focus-visible) .sg-drop-zone {
+    outline: 3px solid rgba(79, 125, 69, 0.45);
+    outline-offset: 2px;
+}
+
+/* ---------- An empty level ---------- */
+.sg-drop {
+    margin: 0;
+}
+
+.sg-drop-zone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 52px;
+    margin: 0;
+    padding: 10px 16px;
+    font-size: 0.88rem;
+    text-align: center;
+    color: var(--ix-muted);
+    background: var(--ix-khaki-100);
+    border: 2px dashed var(--ix-khaki-500);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.sg-drop-zone strong {
+    color: var(--ix-green-700);
+}
+
+.sg-drop-icon {
+    width: 22px;
+    height: 22px;
+    color: var(--ix-green-600);
+}
+
+.sg-drop-zone:hover {
+    color: var(--ix-text);
+    background: #eef3e9;
+    border-color: var(--ix-green-500);
+}
+
+/* ---------- Dragging a file over a level ---------- */
+.sg-level.is-dragover .sg-row {
+    border-color: var(--ix-green-500);
+    box-shadow: 0 0 0 4px rgba(79, 125, 69, 0.18);
+}
+
+.sg-level.is-dragover .sg-drop-zone {
+    color: var(--ix-green-900);
+    background: #e8efe3;
+    border-style: solid;
+    border-color: var(--ix-green-500);
+}
+
+.sg-level.is-filed.is-dragover .sg-row::after {
+    content: "Drop to replace this file";
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    color: var(--ix-green-700);
+    background: rgba(232, 239, 227, 0.94);
+    border: 2px dashed var(--ix-green-500);
+    border-radius: inherit;
+}
+
+/* ---------- Problems and progress ---------- */
+.sg-error {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--ix-brick);
+    background: #fbeeea;
+    border-radius: 8px;
+}
+
+.sg-error[hidden] {
+    display: none;
+}
+
+.sg-busy {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 0 16px;
+    font-weight: 600;
+    color: var(--ix-green-700);
+    background: rgba(253, 252, 247, 0.96);
+    border-radius: inherit;
+}
+
+.sg-busy-text {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.sg-level.is-busy .sg-busy {
+    display: flex;
+}
+
+.sg-spinner {
+    flex: 0 0 18px;
+    height: 18px;
+    border: 3px solid var(--ix-khaki-300);
+    border-top-color: var(--ix-green-600);
+    border-radius: 50%;
+    animation: sg-spin 0.8s linear infinite;
+}
+
+@keyframes sg-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* the level picked in the K to 6 steps above */
+.sg-level:target .sg-row {
+    animation: sg-flash 1.6s ease-out;
+}
+
+@keyframes sg-flash {
+    from {
+        background: var(--ix-khaki-100);
+        box-shadow: 0 0 0 4px var(--ix-khaki-500);
+    }
+}
+
+/* ---------- Smaller screens ---------- */
+@media (max-width: 991.98px) {
+    .sg-row,
+    .is-empty .sg-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .sg-level-info {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 10px;
+    }
+
+    .sg-level-name {
+        margin-bottom: 0;
+    }
+
+    .sg-actions {
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 768px) {
+    .sg-progress {
+        justify-items: start;
+        margin-left: 0;
+    }
+
+    .sg-note {
+        padding: 10px 1rem;
+    }
+
+    .sg-level {
+        --sg-mark: 36px;
+        gap: 10px;
+    }
+
+    .sg-mark {
+        font-size: 0.85rem;
+    }
+
+    .sg-row {
+        padding: 12px 14px;
+    }
+}
+
+@media (max-width: 576px) {
+    .sg-steps {
+        gap: 5px;
+    }
+
+    .sg-step {
+        width: 28px;
+        height: 28px;
+        font-size: 0.75rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sg-back,
+    .sg-step,
+    .sg-row,
+    .sg-drop-zone {
+        transition: none;
+    }
+
+    .sg-level:target .sg-row {
+        animation: none;
+    }
+}

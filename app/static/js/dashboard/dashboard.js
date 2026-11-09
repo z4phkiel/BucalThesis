@@ -33,6 +33,16 @@ document.addEventListener('DOMContentLoaded', function () {
     const forecastPlaceholder = forecastCard.innerHTML;
     const tablePlaceholder = metricsTable.innerHTML;
 
+    // The small cards, filled in from the same response as the forecast
+    const smallCards = [
+        { id: 'recentStudents', error: 'The recent enrollments could not be loaded.' },
+        { id: 'weekEvents', error: 'This week\'s events could not be loaded.' },
+    ].map(function (card) {
+        card.el = document.getElementById(card.id);
+        card.placeholder = card.el.innerHTML;
+        return card;
+    });
+
     let editableRows = [];      // filled in once the table has loaded
     let currentPage = 1;
     let tableOpen = false;
@@ -306,7 +316,7 @@ document.addEventListener('DOMContentLoaded', function () {
         forecastCard.querySelector('.card-body').appendChild(note);
     }
 
-    // Resolves to the table and forecast from the server
+    // Resolves to the table, forecast and small cards from the server
     function requestDashboardData() {
         return fetch(forecastCard.dataset.url, { cache: 'no-store' })
             .then(function (res) {
@@ -324,10 +334,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 const page = new DOMParser().parseFromString(html, 'text/html');
                 const table = page.getElementById('metricsTable');
                 const forecast = page.getElementById('forecastCard');
-                if (!table || !forecast) {
+                const cards = smallCards.map(function (card) {
+                    return page.getElementById(card.id);
+                });
+                if (!table || !forecast || cards.includes(null)) {
                     throw new Error('the response has no dashboard data');
                 }
-                return { table: table, forecast: forecast };
+                return { table: table, forecast: forecast, cards: cards };
             });
     }
 
@@ -337,6 +350,13 @@ document.addEventListener('DOMContentLoaded', function () {
             <button type="button" class="btn btn-primary btn-sm" data-retry-dashboard>Try again</button>
         </div>`;
         metricsTable.innerHTML = '<div class="dashboard-load-error p-4">The yearly metrics could not be loaded.</div>';
+        smallCards.forEach(function (card) {
+            card.el.innerHTML = '';
+            const message = document.createElement('p');
+            message.className = 'dashboard-load-error mb-0';
+            message.textContent = card.error;
+            card.el.appendChild(message);
+        });
     }
 
     function loadDashboard() {
@@ -345,11 +365,18 @@ document.addEventListener('DOMContentLoaded', function () {
         metricsTable.style.minHeight = '';
         pager.hidden = true;
         forecastCard.setAttribute('aria-busy', 'true');
+        smallCards.forEach(function (card) {
+            card.el.innerHTML = card.placeholder;
+            card.el.setAttribute('aria-busy', 'true');
+        });
 
         requestDashboardData()
             .then(function (data) {
                 metricsTable.innerHTML = data.table.innerHTML;
                 forecastCard.innerHTML = data.forecast.innerHTML;
+                smallCards.forEach(function (card, i) {
+                    card.el.innerHTML = data.cards[i].innerHTML;
+                });
                 editableRows = Array.from(metricsTable.querySelectorAll('tr')).filter(function (row) {
                     return row.querySelector('.metric-input');
                 });
@@ -364,6 +391,9 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .finally(function () {
                 forecastCard.removeAttribute('aria-busy');
+                smallCards.forEach(function (card) {
+                    card.el.removeAttribute('aria-busy');
+                });
             });
     }
 
