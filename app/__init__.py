@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from urllib.parse import quote_plus
 
 from dotenv import load_dotenv
@@ -11,22 +12,24 @@ from flask_wtf.csrf import CSRFProtect
 
 
 
-load_dotenv()
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+
+# Always the project-root .env, whatever folder the app is started from.
+# override=True: the file on disk wins over stale copies, such as what VS Code put into an older terminal.
+load_dotenv(os.path.join(os.path.dirname(BASE_DIR), '.env'), override=True)
 csrf = CSRFProtect()
 db = SQLAlchemy()
-
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 def create_app():
     app = Flask(__name__)
     
     # LOCAL CONFIG
-    # app.config['SECRET_KEY'] = 'sample_secret_key'
     # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root@localhost/bucal_db'
     # app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     #CLOUD DATABASE CONFIG
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'sample_secret_key')
+    # No fallback: a known key lets anyone forge a logged-in session cookie
+    app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
     app.config['SQLALCHEMY_DATABASE_URI'] = (
         f"mysql+pymysql://{os.environ['DB_USER']}:{quote_plus(os.environ['DB_PASSWORD'])}"
         f"@{os.environ['DB_HOST']}:{os.environ['DB_PORT']}/{os.environ['DB_NAME']}"
@@ -37,6 +40,14 @@ def create_app():
         "pool_recycle": 280,
     }
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+    # SESSION COOKIE
+    # Logged out after 30 idle minutes, since the cookie is re-signed on every request
+    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    # HTTPS only unless FLASK_DEBUG=1. Browsers still accept it from the local dev server,
+    # since they treat 127.0.0.1 and localhost as secure.
+    app.config['SESSION_COOKIE_SECURE'] = not app.debug
 
     # FILE UPLOAD LIMIT
     # Whole request, so 1 MB above the 10 MB file limit (checked in routes.py) to leave room for the form around the file

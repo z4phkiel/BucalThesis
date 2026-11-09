@@ -6,39 +6,27 @@
         {{ metrics_table_head() }}
         <tbody>
             {% for m in metrics %}
-            {% set start_year = m.school_year.split('-')[0] | trim | int(-1) %}
-            {% set locked = start_year != -1 and start_year <= 2024 %}
-            <tr data-metric-id="{{ m.id }}" data-update-url="{{ url_for('main.update_metric', metric_id=m.id) }}" data-school-year="{{ m.school_year }}"{% if locked %} class="metric-row-locked"{% endif %}>
+            <tr data-metric-id="{{ m.id }}" data-update-url="{{ url_for('main.update_metric', metric_id=m.id) }}" data-school-year="{{ m.school_year }}">
                 <td>
                     <strong>{{ m.school_year }}</strong>
-                    {% if locked %}
-                    <span class="metric-lock" title="This school year is locked and cannot be edited.">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
-                        <span class="visually-hidden">Locked</span>
-                    </span>
-                    {% endif %}
                 </td>
 
                 {% for field in ['enrollee_count', 'promotion_rate', 'cohort_survival_rate',
                                   'completion_rate', 'transition_rate', 'dropout_rate',
                                   'graduation_rate', 'retention_rate'] %}
                 <td>
-                    {% if locked %}
-                        {{ m[field] if m[field] is not none else '—' }}{{ '%' if field != 'enrollee_count' and m[field] is not none }}
-                    {% else %}
-                        <span class="metric-display" data-field="{{ field }}">{% if m[field] is none %}—{% elif field == 'enrollee_count' %}{{ m[field] }}{% else %}{{ m[field] }}%{% endif %}</span>
-                        <div class="input-group input-group-sm metric-edit-group d-none">
-                            <input type="number" step="0.01"
-                                   class="form-control metric-input"
-                                   data-field="{{ field }}"
-                                   aria-label="{{ field | replace('_', ' ') }} for {{ m.school_year }}"
-                                   autocomplete="off"
-                                   value="{{ m[field] if m[field] is not none else '' }}">
-                            {% if field != 'enrollee_count' %}
-                                <span class="input-group-text">%</span>
-                            {% endif %}
-                        </div>
-                    {% endif %}
+                    <span class="metric-display" data-field="{{ field }}"><span class="metric-value">{{ m[field] if m[field] is not none else '—' }}</span>{% if field != 'enrollee_count' %}<span class="metric-unit{% if m[field] is none %} is-blank{% endif %}">%</span>{% endif %}</span>
+                    <div class="input-group input-group-sm metric-edit-group d-none">
+                        <input type="number" step="0.01"
+                               class="form-control metric-input"
+                               data-field="{{ field }}"
+                               aria-label="{{ field | replace('_', ' ') }} for {{ m.school_year }}"
+                               autocomplete="off"
+                               value="{{ m[field] if m[field] is not none else '' }}">
+                        {% if field != 'enrollee_count' %}
+                            <span class="input-group-text">%</span>
+                        {% endif %}
+                    </div>
                 </td>
                 {% endfor %}
             </tr>
@@ -54,7 +42,7 @@
 <div id="forecastCard">
     <div class="card-body">
         <h5 class="card-title text-dark mb-3">Enrollment Forecast & Model Performance</h5>
-        <p class="text-muted small">Computed automatically using a lagged Multiple Linear Regression model based on prior academic year performance metrics.</p>
+        <p class="text-muted small">Computed automatically using a lagged Ridge regression model based on the prior year's enrollee count, retention rate and cohort survival rate.</p>
 
         <div class="row g-3">
             <div class="col-md-6">
@@ -76,23 +64,93 @@
                     {% endif %}
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="alert alert-secondary mb-0 h-100 d-flex justify-content-between align-items-center">
-                    <span><strong>Model Accuracy ($R^2$ Score):</strong></span>
+            <div class="col-md-6 d-flex flex-column gap-2">
+                <div class="alert alert-secondary mb-0 flex-grow-1 d-flex justify-content-between align-items-center">
+                    <span><strong>Model Accuracy (R<sup>2</sup> on unseen years):</strong></span>
                     <span class="fs-5 fw-bold text-dark">
                         {{ r2_score if r2_score is not none else 'N/A' }}
                     </span>
                 </div>
+                <a href="{{ url_for('main.statistics') }}" class="btn btn-sm metric-btn-ghost align-self-end">Detailed view</a>
             </div>
         </div>
         {% if pred_next_year is not none and mape is not none %}
             <p class="text-muted small mt-3 mb-0">
-                Based on {{ based_on_year }} data. On past years, predictions were off by about {{ mape }}% on average,
-                so expect roughly {{ (pred_next_year * (1 - mape / 100)) | round | int }}
-                to {{ (pred_next_year * (1 + mape / 100)) | round | int }} enrollees.
+                Based on {{ based_on_year }} data. Across {{ tested_years }} past years, each predicted using only the years before it,
+                the model missed by {{ mape }}% on average. Copying the previous year's count would have missed by {{ baseline_mape }}%.
+                {{ range_covered }} of those {{ tested_years }} predictions missed by {{ range_margin }} enrollees or fewer,
+                so expect roughly {{ range_low }} to {{ range_high }} enrollees.
+                {% if r2_score is not none and r2_score < 0 %}An R<sup>2</sup> below 0 means the model did worse than guessing the average of the earlier years.{% endif %}
             </p>
         {% elif forecast_note %}
         <p class="text-muted small mt-3 mb-0">{{ forecast_note }}</p>
         {% endif %}
     </div>
+</div>
+
+<div id="recentStudents">
+    {% if recent_students %}
+    <ul class="dash-list">
+        {% for s in recent_students %}
+        {# Same name, grade and gender format as the Masterlist #}
+        {% set full_name = s.last_name ~ ', ' ~ [s.first_name, s.middle_name, s.extension_name] | select | join(' ') %}
+        <li>
+            <a class="dash-item" href="{{ url_for('main.student_detail', student_id=s.id) }}">
+                <span class="recent-avatar" aria-hidden="true">{{ ((s.first_name or '')[:1] ~ (s.last_name or '')[:1]) | upper }}</span>
+                <span class="dash-item-text">
+                    <span class="dash-item-title" title="{{ full_name }}">{{ full_name }}</span>
+                    <span class="dash-item-meta">
+                        <span class="recent-grade">{{ s.grade_level.replace('_', ' ') if s.grade_level else '—' }}</span>
+                        <span aria-hidden="true">&middot;</span>
+                        {{ 'Age ' ~ s.age if s.age is not none else 'Age —' }}
+                        <span aria-hidden="true">&middot;</span>
+                        {{ s.sex | capitalize if s.sex else '—' }}
+                    </span>
+                </span>
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="dash-empty">No enrolled students yet.</p>
+    {% endif %}
+</div>
+
+<div id="weekEvents">
+    <p class="events-range">{{ today.strftime('%a, %b') }} {{ today.day }} &ndash; {{ week_end.strftime('%a, %b') }} {{ week_end.day }}</p>
+    {% if week_events %}
+    <ul class="dash-list">
+        {% for e in week_events[:4] %}
+        {% set start, end = e.event_date, (e.end_date or e.event_date) %}
+        {% set shown = [start, today] | max %}   {# an event already under way shows today on its tile #}
+        {% set ongoing = start <= today %}       {# the query already left out events that ended before today #}
+        {% if start == end %}
+            {% set days_away = (start - today).days %}
+            {% set when = 'Today' if days_away == 0 else ('Tomorrow' if days_away == 1 else start.strftime('%A')) %}
+        {% elif start < today %}
+            {% set when = 'Until ' ~ end.strftime('%a, %b') ~ ' ' ~ end.day %}
+        {% else %}
+            {% set when = start.strftime('%b') ~ ' ' ~ start.day ~ ' – ' ~ end.strftime('%b') ~ ' ' ~ end.day %}
+        {% endif %}
+        <li>
+            <a class="dash-item{{ ' is-ongoing' if ongoing }}" href="{{ url_for('main.calendar') }}">
+                <span class="event-tile {{ e.tag }}" aria-hidden="true"><span>{{ shown.strftime('%a') }}</span>{{ shown.day }}</span>
+                <span class="dash-item-text">
+                    <span class="dash-item-title" title="{{ e.description }}">{{ e.description or 'No description' }}</span>
+                    <span class="dash-item-meta">
+                        <span class="event-tag {{ e.tag }}">{{ e.tag | capitalize }}</span>
+                        <span aria-hidden="true">&middot;</span>
+                        {{ when }}
+                    </span>
+                </span>
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% if week_events | length > 4 %}
+    <a class="events-more" href="{{ url_for('main.calendar') }}">+{{ week_events | length - 4 }} more this week</a>
+    {% endif %}
+    {% else %}
+    <p class="dash-empty">No events this week.</p>
+    {% endif %}
 </div>

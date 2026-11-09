@@ -13,12 +13,17 @@
 
 <!-- PROGRESS BAR -->
 <div class="stepper-wrap">
+    <div class="stepper-current" aria-hidden="true">
+        <span id="stepCurrentStep" class="stepper-current-step"></span>
+        <span id="stepCurrentName" class="stepper-current-name"></span>
+    </div>
     <div class="stepper">
         <div class="stepper-track"><div class="stepper-fill" id="stepFill"></div></div>
         <button type="button" class="step-node"><span class="step-dot">1</span><span class="step-label">Learner Information</span></button>
-        <button type="button" class="step-node"><span class="step-dot">2</span><span class="step-label">Parent/Guardian's Information</span></button>
+        <button type="button" class="step-node"><span class="step-dot">2</span><span class="step-label">Parent/Guardian</span></button>
         <button type="button" class="step-node"><span class="step-dot">3</span><span class="step-label">Signatories</span></button>
     </div>
+    <div class="stepper-scroll" aria-hidden="true"><span id="stepScroll"></span></div>
 </div>
 <form action="{{ url_for('main.enrollment') }}" method="POST">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -671,7 +676,7 @@
 
         <div id="signature_preview" class="signature-preview-box" style="min-height: 45px; display: flex; align-items: flex-end; justify-content: center;"></div>
 
-        <input type="text" id="parent_guardian_name" name="parent_guardian_name" required
+        <input type="text" id="parent_guardian_name" name="parent_guardian_name" required aria-label="Printed name of parent/guardian"
                 class="form-control form-control-sm border-0 border-bottom rounded-0 text-center fw-bold shadow-none p-0"
                 placeholder="Enter Printed Name" style="font-size: 0.95rem;">
 
@@ -718,6 +723,20 @@
 </div>
 
 </form>
+
+<!-- Shown instead of the browser's warning bubble when a step isn't finished (progress-stepper.js) -->
+<div id="stepAlert" class="step-alert" role="alert">
+    <div class="step-alert-icon" aria-hidden="true">
+        <svg class="step-alert-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        <svg class="step-alert-done" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+    </div>
+    <div>
+        <div id="stepAlertTitle" class="step-alert-title"></div>
+        <div id="stepAlertMessage" class="step-alert-message"></div>
+    </div>
+    <button type="button" id="stepAlertShow" class="btn btn-sm step-alert-show">Show me</button>
+    <button type="button" id="stepAlertClose" class="btn-close" aria-label="Close"></button>
+</div>
 {% endblock %}
 
 

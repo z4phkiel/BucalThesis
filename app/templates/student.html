@@ -1,12 +1,29 @@
 {% extends 'dashboard.html' %}
 
+{% block head %}
+<title>Enrollment Form - {{ student.last_name }}, {{ student.first_name }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/student.css') }}">
+{% endblock %}
+
 {% block content %}
+
+{# Older or imported records can have these empty, and the "in" checks below fail on an empty value.
+   Splitting makes each check match a whole option, so "Visual Impairment" doesn't also match "Visual Impairment - Blind". #}
+{% set disabilities = (student.disabilities or '').replace(', ', ',').split(',') %}
+{% set modalities = (student.distance_learning_modalities or '').replace(', ', ',').split(',') %}
 
 <!--                                                                   -->
 <!--                                                                   -->
 <!-- DO NOT REMOVE ANY COMMENTS (ANG DAMING INPUTS NEED KO NG MARKING) -->
 <!--                                                                   -->
 <!--                                                                   -->
+
+{% if editing %}
+<form id="studentForm" class="student-form" method="POST" action="{{ url_for('main.edit_student', student_id=student.id) }}"{% if rejected %} data-unsaved{% endif %}>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+{% else %}
+<div class="student-form is-viewing">
+{% endif %}
 
 <div class="d-flex align-items-center justify-content-center gap-4 py-4 border-bottom mb-4">
     <img src="{{ url_for('static', filename='images/DepedLogo.webp') }}" alt="DepEd Logo" style="height: 90px; width: auto;">
@@ -23,14 +40,27 @@
                 <label for="school_year" class="me-3 fw-semibold" style="min-width: 110px;">School Year</label>
                 <input type="text" id="school_year" name="school_year" readonly
                     class="form-control form-control-sm text-center fw-bold"
-                    style="max-width: 100px;" value="{{student.school_year}}">
+                    style="max-width: 100px;" value="{{student.school_year or ''}}" data-locked>
             </div>
             <div class="d-flex align-items-center">
                 <label for="grade_level" class="me-3 fw-semibold" style="min-width: 110px;">Grade level to Enroll:</label>
+                {% if editing %}
+                <select id="grade_level" name="grade_level" required class="form-select form-select-sm fw-bold" style="max-width: 200px;">
+                    <option value="" disabled selected>-- Select Grade Level --</option>
+                    <option value="Kindergarten">Kindergarten</option>
+                    <option value="Grade_1">Grade 1</option>
+                    <option value="Grade_2">Grade 2</option>
+                    <option value="Grade_3">Grade 3</option>
+                    <option value="Grade_4">Grade 4</option>
+                    <option value="Grade_5">Grade 5</option>
+                    <option value="Grade_6">Grade 6</option>
+                </select>
+                {% else %}
                 <input type="text" id="grade_level" name="grade_level" readonly
                     class="form-control form-control-sm fw-bold"
                     style="max-width: 200px;"
-                    value="{{ student.grade_level }}">
+                    value="{{ student.grade_level.replace('_', ' ') if student.grade_level else '' }}" placeholder="N/A">
+                {% endif %}
             </div>
         </div>
     </div>
@@ -91,7 +121,7 @@
             <label for="psa_birth_cert_no" class="form-label small mb-1">PSA Birth Certificate No. (if available upon registration)</label>
             <input type="text" name="psa_birth_cert_no" id="psa_birth_cert_no"
                    class="form-control border-0 border-bottom rounded-0"
-                   value="{{student.psa_birth_cert_no if student.psa_birth_cert_no else 'N/A'}}" readonly>
+                   value="{{student.psa_birth_cert_no or ''}}" placeholder="N/A" readonly>
         </div>
         <div class="col-md-5">
             <!-- Learner Reference NO. -->
@@ -101,7 +131,7 @@
                    maxlength="12" pattern="[0-9]{12}"
                    title="LRN must be exactly 12 digits."
                    oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                   value="{{student.lrn_no}}" readonly>
+                   value="{{student.lrn_no or ''}}" readonly>
         </div>
     </div>
 
@@ -111,25 +141,25 @@
                 <!-- Last Name -->
                 <label for="last_name" class="form-label small mb-1">(LRN) Last Name</label>
                 <input type="text" name="last_name" id="last_name" required class="form-control cell-input" placeholder="Last Name"
-                    value="{{student.last_name}}" readonly>
+                    value="{{student.last_name or ''}}" readonly>
             </div>
             <div class="mb-3">
                 <!-- First Name -->
                 <label for="first_name" class="form-label small mb-1">First Name</label>
                 <input type="text" name="first_name" id="first_name" required class="form-control cell-input" placeholder="First Name"
-                    value="{{student.first_name}}" readonly>
+                    value="{{student.first_name or ''}}" readonly>
             </div>
             <div class="mb-3">
                 <!-- Middle Name -->
                 <label for="middle_name" class="form-label small mb-1">Middle Name</label>
                 <input type="text" name="middle_name" id="middle_name" required class="form-control cell-input" placeholder="Middle Name"
-                    value="{{student.middle_name}}" readonly>
+                    value="{{student.middle_name or ''}}" readonly>
             </div>
             <div class="mb-3">
                 <!-- Extension Name -->
                 <label for="extension_name" class="form-label small mb-1">Extension Name e.g. Jr., III (if applicable)</label>
-                <input type="text" name="extension_name" id="extension_name" class="form-control cell-input" style="max-width: 250px;" placeholder="Extension Name"
-                    value="{{student.extension_name if student.extension_name else 'N/A'}}" readonly>
+                <input type="text" name="extension_name" id="extension_name" class="form-control cell-input" style="max-width: 250px;"
+                    value="{{student.extension_name or ''}}" placeholder="N/A" readonly>
             </div>
         </div>
 
@@ -145,7 +175,7 @@
                     <!-- Place of Birth -->
                     <label for="birth_place" class="form-label small mb-1">Place of Birth (Municipality/City)</label>
                     <input type="text" name="birth_place" id="birth_place" readonly 
-                        class="form-control" value="{{student.birth_place}}">
+                        class="form-control" value="{{student.birth_place or ''}}">
                 </div>
             </div>
 
@@ -170,14 +200,14 @@
                             <!-- Age -->
                             <label for="age" class="form-label small mb-1">Age</label>
                             <input type="number" name="age" id="age" readonly class="form-control"
-                                value="{{student.age}}">
+                                value="{{student.age if student.age is not none else ''}}" data-locked{% if student.date_signed %} data-as-of="{{student.date_signed.isoformat()}}"{% endif %}>
                         </div>
                     </div>
                 </div>
                 <div class="col-6">
                     <label for="mother_tongue" class="form-label small mb-1">Mother Tongue</label>
                     <input type="text" name="mother_tongue" id="mother_tongue" readonly class="form-control"
-                            value="{{student.mother_tongue}}">
+                            value="{{student.mother_tongue or ''}}">
                 </div>
             </div>
 
@@ -198,7 +228,7 @@
                         <label for="ip_community" class="small mb-0 text-nowrap">If Yes, specify:</label>
                         <input type="text" name="ip_community" id="ip_community" readonly
                             class="form-control form-control-sm border-0 border-bottom rounded-0"
-                            value="{{student.ip_community if student.is_ip == 'yes' else 'N/A'}}">
+                            value="{{student.ip_community or ''}}" placeholder="N/A">
                     </div>
                 </div>
             </div>
@@ -216,10 +246,10 @@
                         <label class="form-check-label" for="4ps_no">No</label>
                     </div>
                 </div>
-                <label for="4ps_id_no" class="small mb-1">If Yes, write the 4Ps Household ID Number below</label>
-                <input type="text" name="4ps_id_no" id="4ps_id_no" readonly
+                <label for="four_ps_id_no" class="small mb-1">If Yes, write the 4Ps Household ID Number below</label>
+                <input type="text" name="four_ps_id_no" id="four_ps_id_no" readonly
                         class="form-control cell-input" maxlength="20" 
-                        value="{{student.four_ps_id_no if student.is_4ps == 'yes' else 'N/A'}}">
+                        value="{{student.four_ps_id_no or ''}}" placeholder="N/A">
             </div>
         </div>
     </div>
@@ -252,22 +282,22 @@
                 <td class="align-top ps-4" style="width: 25%;">
                     <div class="form-check mb-1">
                         <input class="form-check-input" type="checkbox" name="disabilities" value="Visual Impairment" id="dis_visual" 
-                            {% if "Visual Impairment" in student.disabilities %}checked{% endif %} disabled>
+                            {% if "Visual Impairment" in disabilities %}checked{% endif %} disabled>
                         <label class="form-check-label small" for="dis_visual">Visual Impairment</label>
                     </div>
                     <div class="form-check mb-1 ms-3">
                         <input class="form-check-input" type="checkbox" name="disabilities" value="Visual Impairment - Blind" id="dis_blind" 
-                            {% if "Visual Impairment - Blind" in student.disabilities %}checked{% endif %} disabled>
+                            {% if "Visual Impairment - Blind" in disabilities %}checked{% endif %} disabled>
                         <label class="form-check-label small" for="dis_blind">a. blind</label>
                     </div>
                     <div class="form-check mb-1 ms-3">
                         <input class="form-check-input" type="checkbox" name="disabilities" value="Visual Impairment - Low Vision" id="dis_low_vision"
-                            {% if "Visual Impairment - Low Vision" in student.disabilities %}checked{% endif %} disabled>
+                            {% if "Visual Impairment - Low Vision" in disabilities %}checked{% endif %} disabled>
                         <label class="form-check-label small" for="dis_low_vision">b. low vision</label>
                     </div>
                     <div class="form-check mb-1 mt-2">
                         <input class="form-check-input" type="checkbox" name="disabilities" value="Multiple Disorder" id="dis_multiple"
-                            {% if "Multiple Disorder" in student.disabilities %}checked{% endif %} disabled>
+                            {% if "Multiple Disorder" in disabilities %}checked{% endif %} disabled>
                         <label class="form-check-label small" for="dis_multiple">Multiple Disorder</label>
                     </div>
                 </td>
@@ -276,17 +306,17 @@
                 <td class="align-top" style="width: 25%;">
                     <div class="form-check mb-1">
                         <input class="form-check-input" type="checkbox" name="disabilities" value="Hearing Impairment" id="dis_hearing" 
-                            {% if "Hearing Impairment" in student.disabilities %}checked{% endif %} disabled>
+                            {% if "Hearing Impairment" in disabilities %}checked{% endif %} disabled>
                         <label class="form-check-label small" for="dis_hearing">Hearing Impairment</label>
                     </div>
                     <div class="form-check mb-1">
                         <input class="form-check-input" type="checkbox" name="disabilities" value="Autism Spectrum Disorder" id="dis_autism" 
-                            {% if "Autism Spectrum Disorder" in student.disabilities %}checked{% endif %} disabled>
+                            {% if "Autism Spectrum Disorder" in disabilities %}checked{% endif %} disabled>
                         <label class="form-check-label small" for="dis_autism">Autism Spectrum Disorder</label>
                     </div>
                     <div class="form-check mb-1">
                         <input class="form-check-input" type="checkbox" name="disabilities" value="Speech/Language Disorder" id="dis_speech" 
-                            {% if "Speech/Language Disorder" in student.disabilities %}checked{% endif %} disabled>
+                            {% if "Speech/Language Disorder" in disabilities %}checked{% endif %} disabled>
                         <label class="form-check-label small" for="dis_speech">Speech/Language Disorder</label>
                     </div>
                 </td>
@@ -295,17 +325,17 @@
                 <td class="align-top" style="width: 25%;">
                     <div class="form-check mb-1">
                         <input class="form-check-input" type="checkbox" name="disabilities" value="Learning Disability" id="dis_learning" 
-                            {% if "Learning Disability" in student.disabilities %}checked{% endif %} disabled>
+                            {% if "Learning Disability" in disabilities %}checked{% endif %} disabled>
                         <label class="form-check-label small" for="dis_learning">Learning Disability</label>
                     </div>
                     <div class="form-check mb-1">
                         <input class="form-check-input" type="checkbox" name="disabilities" value="Emotional-Behavioral Disorder" id="dis_emotional" 
-                            {% if "Emotional-Behavioral Disorder" in student.disabilities %}checked{% endif %} disabled>
+                            {% if "Emotional-Behavioral Disorder" in disabilities %}checked{% endif %} disabled>
                         <label class="form-check-label small" for="dis_emotional">Emotional- Behavioral Disorder</label>
                     </div>
                     <div class="form-check mb-1">
                         <input class="form-check-input" type="checkbox" name="disabilities" value="Cerebral Palsy" id="dis_cp" 
-                            {% if "Cerebral Palsy" in student.disabilities %}checked{% endif %} disabled>
+                            {% if "Cerebral Palsy" in disabilities %}checked{% endif %} disabled>
                         <label class="form-check-label small" for="dis_cp">Cerebral Palsy</label>
                     </div>
                 </td>
@@ -314,22 +344,22 @@
                 <td class="align-top" style="width: 25%;">
                     <div class="form-check mb-1">
                         <input class="form-check-input" type="checkbox" name="disabilities" value="Intellectual Disability" id="dis_intellectual" 
-                            {% if "Intellectual Disability" in student.disabilities %}checked{% endif %} disabled>
+                            {% if "Intellectual Disability" in disabilities %}checked{% endif %} disabled>
                         <label class="form-check-label small" for="dis_intellectual">Intellectual Disability</label>
                     </div>
                     <div class="form-check mb-1">
                         <input class="form-check-input" type="checkbox" name="disabilities" value="Orthopedic/Physical Handicap" id="dis_orthopedic" 
-                            {% if "Orthopedic/Physical Handicap" in student.disabilities %}checked{% endif %} disabled>
+                            {% if "Orthopedic/Physical Handicap" in disabilities %}checked{% endif %} disabled>
                         <label class="form-check-label small" for="dis_orthopedic">Orthopedic/Physical Handicap</label>
                     </div>
                     <div class="form-check mb-1">
                         <input class="form-check-input" type="checkbox" name="disabilities" value="Special Health Problem/Chronic Disease" id="dis_health" 
-                            {% if "Special Health Problem/Chronic Disease" in student.disabilities %}checked{% endif %} disabled>
+                            {% if "Special Health Problem/Chronic Disease" in disabilities %}checked{% endif %} disabled>
                         <label class="form-check-label small" for="dis_health">Special Health Problem/ Chronic Disease</label>
                     </div>
                     <div class="form-check mb-1 ms-3">
                         <input class="form-check-input" type="checkbox" name="disabilities" value="Special Health Problem - Cancer" id="dis_cancer" 
-                            {% if "Special Health Problem - Cancer" in student.disabilities %}checked{% endif %} disabled>
+                            {% if "Special Health Problem - Cancer" in disabilities %}checked{% endif %} disabled>
                         <label class="form-check-label small" for="dis_cancer">a. Cancer</label>
                     </div>
                 </td>
@@ -347,17 +377,17 @@
         <div class="col-md-3">
             <label for="current_house_no" class="form-label small mb-1">House No.</label>
             <input type="text" name="current_house_no" id="current_house_no" readonly 
-                class="form-control" value="{{student.current_house_no if student.current_house_no else 'N/A'}}">
+                class="form-control" value="{{student.current_house_no or ''}}" placeholder="N/A">
         </div>
         <div class="col-md-5">
             <label for="current_street_name" class="form-label small mb-1">Sitio/Street Name</label>
             <input type="text" name="current_street_name" id="current_street_name" readonly 
-                class="form-control" value="{{student.current_street_name if student.current_street_name else 'N/A'}}">
+                class="form-control" value="{{student.current_street_name or ''}}" placeholder="N/A">
         </div>
         <div class="col-md-4">
             <label for="current_barangay" class="form-label small mb-1">Barangay</label>
             <input type="text" name="current_barangay" id="current_barangay" readonly 
-                class="form-control" value="{{student.current_barangay if student.current_barangay else 'N/A'}}">
+                class="form-control" value="{{student.current_barangay or ''}}" placeholder="N/A">
         </div>
     </div>
 
@@ -365,22 +395,22 @@
         <div class="col-md-3">
             <label for="current_municipality_city" class="form-label small mb-1">Municipality/City</label>
             <input type="text" name="current_municipality_city" id="current_municipality_city" readonly 
-                class="form-control" value="{{student.current_municipality_city if student.current_municipality_city else 'N/A'}}">
+                class="form-control" value="{{student.current_municipality_city or ''}}" placeholder="N/A">
         </div>
         <div class="col-md-5">
             <label for="current_province" class="form-label small mb-1">Province</label>
             <input type="text" name="current_province" id="current_province" readonly 
-                class="form-control" value="{{student.current_province if student.current_province else 'N/A'}}">
+                class="form-control" value="{{student.current_province or ''}}" placeholder="N/A">
         </div>
         <div class="col-md-2">
             <label for="current_country" class="form-label small mb-1">Country</label>
             <input type="text" name="current_country" id="current_country" readonly 
-                class="form-control" value="{{student.current_country if student.current_country else 'N/A'}}">
+                class="form-control" value="{{student.current_country or ''}}" placeholder="N/A">
         </div>
         <div class="col-md-2">
             <label for="current_zip_code" class="form-label small mb-1">Zip Code</label>
-            <input type="text" name="current_zip_code" id="current_zip_code" readonly 
-                class="form-control" value="{{student.current_zip_code if student.current_zip_code else 'N/A'}}">
+            <input type="text" name="current_zip_code" id="current_zip_code" readonly maxlength="4" oninput="this.value = this.value.replace(/[^0-9]/g, '');"
+                class="form-control" value="{{student.current_zip_code or ''}}" placeholder="N/A">
         </div>
     </div>
 </div>
@@ -405,17 +435,17 @@
         <div class="col-md-3">
             <label for="perm_house_no" class="form-label small mb-1">House No./Street</label>
             <input type="text" name="perm_house_no" id="perm_house_no" readonly 
-                class="form-control" value="{{student.perm_house_no if student.perm_house_no else 'N/A'}}">
+                class="form-control" value="{{student.perm_house_no or ''}}" placeholder="N/A">
         </div>
         <div class="col-md-5">
             <label for="perm_street_name" class="form-label small mb-1">Street Name</label>
             <input type="text" name="perm_street_name" id="perm_street_name" readonly 
-                class="form-control" value="{{student.perm_street_name if student.perm_street_name else 'N/A'}}">
+                class="form-control" value="{{student.perm_street_name or ''}}" placeholder="N/A">
         </div>
         <div class="col-md-4">
             <label for="perm_barangay" class="form-label small mb-1">Barangay</label>
             <input type="text" name="perm_barangay" id="perm_barangay" readonly 
-                class="form-control" value="{{student.perm_barangay if student.perm_barangay else 'N/A'}}">
+                class="form-control" value="{{student.perm_barangay or ''}}" placeholder="N/A">
         </div>
     </div>
 
@@ -423,22 +453,22 @@
         <div class="col-md-3">
             <label for="perm_municipality_city" class="form-label small mb-1">Municipality/City</label>
             <input type="text" name="perm_municipality_city" id="perm_municipality_city" readonly 
-                class="form-control" value="{{student.perm_municipality_city if student.perm_municipality_city else 'N/A'}}">
+                class="form-control" value="{{student.perm_municipality_city or ''}}" placeholder="N/A">
         </div>
         <div class="col-md-5">
             <label for="perm_province" class="form-label small mb-1">Province</label>
             <input type="text" name="perm_province" id="perm_province" readonly 
-                class="form-control" value="{{student.perm_province if student.perm_province else 'N/A'}}">
+                class="form-control" value="{{student.perm_province or ''}}" placeholder="N/A">
         </div>
         <div class="col-md-2">
             <label for="perm_country" class="form-label small mb-1">Country</label>
             <input type="text" name="perm_country" id="perm_country" readonly 
-                class="form-control" value="{{student.perm_country if student.perm_country else 'N/A'}}">
+                class="form-control" value="{{student.perm_country or ''}}" placeholder="N/A">
         </div>
         <div class="col-md-2">
             <label for="perm_zip_code" class="form-label small mb-1">Zip Code</label>
-            <input type="text" name="perm_zip_code" id="perm_zip_code" readonly 
-                class="form-control" value="{{student.perm_zip_code if student.perm_zip_code else 'N/A'}}">
+            <input type="text" name="perm_zip_code" id="perm_zip_code" readonly maxlength="4" oninput="this.value = this.value.replace(/[^0-9]/g, '');"
+                class="form-control" value="{{student.perm_zip_code or ''}}" placeholder="N/A">
         </div>
     </div>
 </div>
@@ -455,22 +485,22 @@
             <div class="col-md-3">
                 <label for="father_last_name" class="form-label small mb-1">Last Name</label>
                 <input type="text" name="father_last_name" id="father_last_name" readonly
-                    class="form-control" value="{{student.father_last_name if student.father_last_name else 'N/A'}}">
+                    class="form-control" value="{{student.father_last_name or ''}}" placeholder="N/A">
             </div>
             <div class="col-md-3">
                 <label for="father_first_name" class="form-label small mb-1">First Name</label>
                 <input type="text" name="father_first_name" id="father_first_name" readonly
-                    class="form-control" value="{{student.father_first_name if student.father_first_name else 'N/A'}}">
+                    class="form-control" value="{{student.father_first_name or ''}}" placeholder="N/A">
             </div>
             <div class="col-md-3">
                 <label for="father_middle_name" class="form-label small mb-1">Middle Name</label>
                 <input type="text" name="father_middle_name" id="father_middle_name" readonly 
-                    class="form-control" value="{{student.father_middle_name if student.father_middle_name else 'N/A'}}">
+                    class="form-control" value="{{student.father_middle_name or ''}}" placeholder="N/A">
             </div>
             <div class="col-md-3">
                 <label for="father_contact_number" class="form-label small mb-1">Contact Number</label>
-                <input type="tel" name="father_contact_number" id="father_contact_number" readonly 
-                    class="form-control" value="{{student.father_contact_number if student.father_contact_number else 'N/A'}}">
+                <input type="tel" name="father_contact_number" id="father_contact_number" readonly pattern="[0-9]{4}-[0-9]{3}-[0-9]{4}" title="Please enter an 11-digit mobile number" 
+                    class="form-control" value="{{student.father_contact_number or ''}}" placeholder="N/A">
             </div>
         </div>
     </div>
@@ -482,22 +512,22 @@
             <div class="col-md-3">
                 <label for="mother_maiden_last_name" class="form-label small mb-1">Last Name</label>
                 <input type="text" name="mother_maiden_last_name" id="mother_maiden_last_name" readonly 
-                    class="form-control" value="{{student.mother_maiden_last_name if student.mother_maiden_last_name else 'N/A'}}">
+                    class="form-control" value="{{student.mother_maiden_last_name or ''}}" placeholder="N/A">
             </div>
             <div class="col-md-3">
                 <label for="mother_maiden_first_name" class="form-label small mb-1">First Name</label>
                 <input type="text" name="mother_maiden_first_name" id="mother_maiden_first_name" readonly 
-                    class="form-control" value="{{student.mother_maiden_first_name if student.mother_maiden_first_name else 'N/A'}}">
+                    class="form-control" value="{{student.mother_maiden_first_name or ''}}" placeholder="N/A">
             </div>
             <div class="col-md-3">
                 <label for="mother_maiden_middle_name" class="form-label small mb-1">Middle Name</label>
                 <input type="text" name="mother_maiden_middle_name" id="mother_maiden_middle_name" readonly 
-                    class="form-control" value="{{student.mother_maiden_middle_name if student.mother_maiden_middle_name else 'N/A'}}">
+                    class="form-control" value="{{student.mother_maiden_middle_name or ''}}" placeholder="N/A">
             </div>
             <div class="col-md-3">
                 <label for="mother_maiden_contact_number" class="form-label small mb-1">Contact Number</label>
-                <input type="tel" name="mother_maiden_contact_number" id="mother_maiden_contact_number" readonly 
-                    class="form-control" value="{{student.mother_maiden_contact_number if student.mother_maiden_contact_number else 'N/A'}}">
+                <input type="tel" name="mother_maiden_contact_number" id="mother_maiden_contact_number" readonly pattern="[0-9]{4}-[0-9]{3}-[0-9]{4}" title="Please enter an 11-digit mobile number" 
+                    class="form-control" value="{{student.mother_maiden_contact_number or ''}}" placeholder="N/A">
             </div>
         </div>
     </div>
@@ -509,28 +539,28 @@
             <div class="col-md-3">
                 <label for="legal_guardian_last_name" class="form-label small mb-1">Last Name</label>
                 <input type="text" name="legal_guardian_last_name" id="legal_guardian_last_name" readonly
-                    class="form-control" value="{{student.legal_guardian_last_name if student.legal_guardian_last_name else 'N/A'}}">
+                    class="form-control" value="{{student.legal_guardian_last_name or ''}}" placeholder="N/A">
             </div>
             <div class="col-md-3">
                 <label for="legal_guardian_first_name" class="form-label small mb-1">First Name</label>
                 <input type="text" name="legal_guardian_first_name" id="legal_guardian_first_name" readonly 
-                    class="form-control" value="{{student.legal_guardian_first_name if student.legal_guardian_first_name else 'N/A'}}">
+                    class="form-control" value="{{student.legal_guardian_first_name or ''}}" placeholder="N/A">
             </div>
             <div class="col-md-3">
                 <label for="legal_guardian_middle_name" class="form-label small mb-1">Middle Name</label>
                 <input type="text" name="legal_guardian_middle_name" id="legal_guardian_middle_name" readonly 
-                    class="form-control" value="{{student.legal_guardian_middle_name if student.legal_guardian_middle_name else 'N/A'}}">
+                    class="form-control" value="{{student.legal_guardian_middle_name or ''}}" placeholder="N/A">
             </div>
             <div class="col-md-3">
                 <label for="legal_guardian_contact_number" class="form-label small mb-1">Contact Number</label>
-                <input type="tel" name="legal_guardian_contact_number" id="legal_guardian_contact_number" readonly 
-                    class="form-control" value="{{student.legal_guardian_contact_number if student.legal_guardian_contact_number else 'N/A'}}">
+                <input type="tel" name="legal_guardian_contact_number" id="legal_guardian_contact_number" readonly pattern="[0-9]{4}-[0-9]{3}-[0-9]{4}" title="Please enter an 11-digit mobile number" 
+                    class="form-control" value="{{student.legal_guardian_contact_number or ''}}" placeholder="N/A">
             </div>
         </div>
     </div>
 </div>
 
-<div class="border p-2">
+<div class="border p-2 print-new-page">
     <!-- Header with top/bottom lines -->
     <div class="border-top border-bottom border-dark text-center py-1 my-2">
         <span class="fw-bold small">For Returning Learner (Balik-Aral) and Those Who will Transfer/Move In</span>
@@ -540,15 +570,21 @@
     <div class="row g-3 align-items-center mb-3">
         <div class="col-md-6 d-flex align-items-center gap-2">
             <label for="last_grade_completed" class="form-label small mb-0 text-nowrap">Last Grade Level Completed</label>
-            <input type="text" name="last_grade_completed" id="last_grade_completed" readonly
+            <input type="text" name="last_grade_completed" id="last_grade_completed" readonly maxlength="1" oninput="this.value = this.value.replace(/[^0-9]/g, '');"
                 class="form-control form-control-sm border-0 border-bottom rounded-0" 
-                value="{{student.last_grade_completed if student.last_grade_completed else 'N/A'}}">
+                value="{{student.last_grade_completed or ''}}" placeholder="N/A">
         </div>
         <div class="col-md-6 d-flex align-items-center gap-2">
             <label for="last_school_year_completed" class="form-label small mb-0 text-nowrap">Last School Year Completed</label>
-            <input type="text" name="last_school_year_completed" id="last_school_year_completed" readonly 
+            {% if editing %}
+            <select name="last_school_year_completed" id="last_school_year_completed" class="form-select form-select-sm border-0 border-bottom rounded-0">
+                <option value="" disabled selected>Select School Year</option>
+            </select>
+            {% else %}
+            <input type="text" name="last_school_year_completed" id="last_school_year_completed" readonly
                 class="form-control border-0 border-bottom rounded-0"
-                value="{{student.last_school_year_completed if student.last_school_year_completed else 'N/A'}}">
+                value="{{student.last_school_year_completed or ''}}" placeholder="N/A">
+            {% endif %}
         </div>
     </div>
 
@@ -558,14 +594,14 @@
             <label for="last_school_attended" class="form-label small mb-0 text-nowrap">Last School Attended</label>
             <input type="text" name="last_school_attended" id="last_school_attended" readonly
                    class="form-control form-control-sm border-0 border-bottom rounded-0" 
-                   value="{{student.last_school_attended if student.last_school_attended else 'N/A'}}">
+                   value="{{student.last_school_attended or ''}}" placeholder="N/A">
         </div>
         <div class="col-md-6 d-flex align-items-center justify-content-end gap-2">
             <label for="school_id" class="form-label small mb-0 text-nowrap">School ID</label>
-            <input type="text" name="school_id" id="school_id" readonly
+            <input type="text" name="school_id" id="school_id" readonly maxlength="6" oninput="this.value = this.value.replace(/[^0-9]/g, '');"
                    class="form-control form-control-sm"
                    style="max-width: 150px;"
-                   value="{{student.school_id if student.school_id else 'N/A'}}">
+                   value="{{student.school_id or ''}}" placeholder="N/A">
         </div>
     </div>
 </div>
@@ -579,12 +615,12 @@
         <div class="col-md-4 d-flex align-items-center gap-3">
             <span class="fw-bold small me-2">Semester</span>
             <div class="form-check form-check-inline mb-0">
-                <input class="form-check-input" type="radio" name="semester" id="first_semester"
+                <input class="form-check-input" type="radio" name="semester" id="first_semester" value="first_semester"
                     {% if student.semester == "first_semester" %}checked{% endif %} disabled>
                 <label class="form-check-label small" for="first_semester">1<sup>st</sup></label>
             </div>
             <div class="form-check form-check-inline mb-0">
-                <input class="form-check-input" type="radio" name="semester" id="second_semester"
+                <input class="form-check-input" type="radio" name="semester" id="second_semester" value="second_semester"
                     {% if student.semester == "second_semester" %}checked{% endif %} disabled>
                 <label class="form-check-label small" for="second_semester">2<sup>nd</sup></label>
             </div>
@@ -595,14 +631,14 @@
                 <label for="track" class="form-label small mb-0 fw-bold me-2" style="min-width: 50px;">Track</label>
                 <input type="text" name="track" id="track" readonly 
                     class="form-control form-control-sm border-0 border-bottom rounded-0 flex-grow-1"
-                    value="{{student.track if student.track else 'N/A'}}">
+                    value="{{student.track or ''}}" placeholder="N/A">
             </div>
 
             <div class="d-flex align-items-center gap-2">
                 <label for="strand" class="form-label small mb-0 fw-bold me-2" style="min-width: 50px;">Strand</label>
                 <input type="text" name="strand" id="strand" readonly 
                     class="form-control form-control-sm border-0 border-bottom rounded-0 flex-grow-1" 
-                    value="{{student.strand if student.strand else 'N/A'}}">
+                    value="{{student.strand or ''}}" placeholder="N/A">
             </div>
         </div>
     </div>
@@ -620,15 +656,15 @@
     <div class="row g-2 ps-4">
         <div class="col-md-3">
             <div class="form-check mb-2">
-                <input class="form-check-input" type="checkbox" id="modular_print" 
-                   {% if "Modular (Print)" in student.distance_learning_modalities %}checked{% endif %} disabled>
+                <input class="form-check-input" type="checkbox" name="distance_learning_modalities" value="Modular (Print)" id="modular_print"
+                   {% if "Modular (Print)" in modalities %}checked{% endif %} disabled>
                 <label class="form-check-label small fw-semibold" for="modular_print">
                     Modular (Print)
                 </label>
             </div>
             <div class="form-check mb-0">
-                <input class="form-check-input" type="checkbox" id="modular_digital"
-                    {% if "Modular (Digital)" in student.distance_learning_modalities %}checked{% endif %} disabled>
+                <input class="form-check-input" type="checkbox" name="distance_learning_modalities" value="Modular (Digital)" id="modular_digital"
+                    {% if "Modular (Digital)" in modalities %}checked{% endif %} disabled>
                 <label class="form-check-label small fw-semibold" for="modular_digital">
                     Modular (Digital)
                 </label>
@@ -637,15 +673,15 @@
 
         <div class="col-md-3">
             <div class="form-check mb-2">
-                <input class="form-check-input" type="checkbox" id="online"
-                    {% if "Online" in student.distance_learning_modalities %}checked{% endif %} disabled>
+                <input class="form-check-input" type="checkbox" name="distance_learning_modalities" value="Online" id="online"
+                    {% if "Online" in modalities %}checked{% endif %} disabled>
                 <label class="form-check-label small fw-semibold" for="online">
                     Online
                 </label>
             </div>
             <div class="form-check mb-0">
-                <input class="form-check-input" type="checkbox" id="educational_tv"
-                    {% if "Educational Television" in student.distance_learning_modalities %}checked{% endif %} disabled>
+                <input class="form-check-input" type="checkbox" name="distance_learning_modalities" value="Educational Television" id="educational_tv"
+                    {% if "Educational Television" in modalities %}checked{% endif %} disabled>
                 <label class="form-check-label small fw-semibold" for="educational_tv">
                     Educational Television
                 </label>
@@ -654,15 +690,15 @@
 
         <div class="col-md-3">
             <div class="form-check mb-2">
-                <input class="form-check-input" type="checkbox" id="radio_based"
-                    {% if "Radio-Based Instruction" in student.distance_learning_modalities %}checked{% endif %} disabled>
+                <input class="form-check-input" type="checkbox" name="distance_learning_modalities" value="Radio-Based Instruction" id="radio_based"
+                    {% if "Radio-Based Instruction" in modalities %}checked{% endif %} disabled>
                 <label class="form-check-label small fw-semibold" for="radio_based">
                     Radio-Based Instruction
                 </label>
             </div>
             <div class="form-check mb-0">
-                <input class="form-check-input" type="checkbox" id="homeschooling"
-                    {% if "Homeschooling" in student.distance_learning_modalities %}checked{% endif %} disabled>
+                <input class="form-check-input" type="checkbox" name="distance_learning_modalities" value="Homeschooling" id="homeschooling"
+                    {% if "Homeschooling" in modalities %}checked{% endif %} disabled>
                 <label class="form-check-label small fw-semibold" for="homeschooling">
                     Homeschooling
                 </label>
@@ -671,8 +707,8 @@
 
         <div class="col-md-3">
             <div class="form-check mb-2">
-                <input class="form-check-input" type="checkbox" id="blended"
-                    {% if "Blended" in student.distance_learning_modalities %}checked{% endif %} disabled>
+                <input class="form-check-input" type="checkbox" name="distance_learning_modalities" value="Blended" id="blended"
+                    {% if "Blended" in modalities %}checked{% endif %} disabled>
                 <label class="form-check-label small fw-semibold" for="blended">
                     Blended
                 </label>
@@ -689,8 +725,14 @@
     <div class="mt-5 row align-items-end justify-content-between">
     
         <div class="col-md-5 signature-section text-center">
+            {% if editing %}
+            <button type="button" id="open_sig_modal_btn" class="btn btn-sm btn-outline-primary mb-1">
+                + Add Signature
+            </button>
+            <input type="hidden" id="signature_data" name="signature_data">
+            {% endif %}
             <div id="signature_preview" class="signature-preview-box" style="min-height: 45px; display: flex; align-items: flex-end; justify-content: center;">
-                {% if student.signature_data %}
+                {% if student.signature_data and not editing %}
                     <img src="{{student.signature_data}}" alt="Signature" style="max-height: 45px;">
                 {% endif  %}
             </div>
@@ -698,7 +740,7 @@
             <input type="text" id="parent_guardian_name" name="parent_guardian_name" readonly
                     class="form-control form-control-sm border-0 border-bottom rounded-0 text-center fw-bold shadow-none p-0"
                     style="font-size: 0.95rem;"
-                    value="{{student.parent_guardian_name if student.parent_guardian_name else 'N/A'}}">
+                    value="{{student.parent_guardian_name or ''}}" placeholder="N/A">
 
             <p class="text-center small text-secondary mb-0 mt-1" style="font-size: 0.8rem;">
                 Signature Over Printed Name of Parent/Guardian
@@ -706,7 +748,7 @@
         </div>
 
         <div class="col-md-5 text-center">
-            <input type="text" id="date_signed" name="date_signed" readonly
+            <input type="text" id="date_signed" name="date_signed" readonly data-locked
                     class="form-control form-control-sm border-0 border-bottom rounded-0 text-center shadow-none p-0" 
                     style="font-size: 0.95rem; background-color: transparent;"
                     value="{{student.date_signed.strftime('%m/%d/%y') if student.date_signed else 'N/A'}}">
@@ -718,7 +760,60 @@
 
     </div>
 
+    {% if editing %}
+    <div id="sig_modal" class="modal-overlay" style="display:none;">
+        <div class="modal-content p-4 border rounded bg-white shadow" style="max-width: 450px; width: 90%;">
+            <h5 class="modal-title mb-3 fw-bold">Draw Your Signature</h5>
+            <canvas id="sig_canvas" width="400" height="180" class="border border-secondary mb-3 rounded w-100" style="touch-action: none; cursor: crosshair; background-color: #fff;"></canvas>
+
+            <div class="modal-actions d-flex gap-2 justify-content-end">
+                <button type="button" id="clear_sig_btn" class="btn btn-sm btn-secondary">Clear</button>
+                <button type="button" id="cancel_sig_btn" class="btn btn-sm btn-outline-dark">Cancel</button>
+                <button type="button" id="save_sig_btn" class="btn btn-sm btn-primary">Adopt & Save</button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
 </div>
+
+{% if editing %}
+<div class="metric-save-dock">
+    <div class="metric-save-modal" role="region" aria-label="Editing this enrollment form">
+        <div class="metric-save-content">
+            <div class="metric-save-text">
+                <div class="metric-save-title">Editing this form</div>
+                <div class="metric-save-summary">School year, age and date are set automatically.</div>
+            </div>
+            <div class="metric-save-actions">
+                <a href="{{ url_for('main.student_detail', student_id=student.id) }}" class="btn btn-sm metric-btn-ghost">Cancel</a>
+                <button type="submit" class="btn btn-primary btn-sm">Save changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+</form>
+{% else %}
+</div>
+
+<div class="form-fab">
+    <button type="button" class="metric-fab form-fab-toggle" aria-label="Form options: edit or print">
+        <span class="metric-fab-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.85 1 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </span>
+    </button>
+    <div class="form-fab-menu">
+        <a href="{{ url_for('main.edit_student', student_id=student.id) }}" class="form-fab-option">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+            Edit form
+        </a>
+        <button type="button" id="printFormBtn" class="form-fab-option">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Print form
+        </button>
+    </div>
+</div>
+{% endif %}
 
 
 
@@ -777,4 +872,18 @@
         </div>
     </div>
 </div> -->
+{% endblock %}
+
+
+{% block scripts %}
+{% if editing %}
+<script id="enrollment_form_data" type="application/json">{{ form_data | tojson }}</script>
+<script src="{{ url_for('static', filename='js/enrollment/form-init.js') }}"></script>
+<script src="{{ url_for('static', filename='js/enrollment/restore-form.js') }}"></script>
+<script src="{{ url_for('static', filename='js/enrollment/conditional-fields.js') }}"></script>
+<script src="{{ url_for('static', filename='js/enrollment/address-sync.js') }}"></script>
+<script src="{{ url_for('static', filename='js/enrollment/phone-formatter.js') }}"></script>
+<script src="{{ url_for('static', filename='js/enrollment/signature-pad.js') }}"></script>
+{% endif %}
+<script src="{{ url_for('static', filename='js/student/student-form.js') }}"></script>
 {% endblock %}

@@ -1,0 +1,520 @@
+/* Chart colors were checked for colorblind separation and contrast against the card surface */
+#statisticsPage {
+    --stat-actual: #3b6f35;
+    --stat-predicted: #c0851a;
+    --stat-peek: 52px;      /* how much of the table card shows at the bottom of the first screen */
+}
+
+/* this page belongs to the Dashboard section of the sidebar */
+.sidebar .nav-item:nth-child(1) .nav-link {
+    color: var(--ix-green-900);
+    font-weight: 700;
+    background-color: var(--ix-khaki-500);
+}
+
+/* ---------- First screen ----------
+   The hero is one screen tall. The areas above and below the graph share the spare height equally,
+   which keeps the graph at the center. If the top needs more room, the bottom gets what is left.
+   The table card then slides up into the empty bottom area by --stat-peek, so its top edge shows. */
+#pageContent:has(.stat-hero) {
+    padding-top: 0 !important;
+}
+
+.stat-hero {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 100vh;
+    padding-block: 12px;
+}
+
+.stat-hero::after {
+    content: "";
+    flex: 1 1 0;
+    min-height: var(--stat-peek);
+}
+
+.stat-top {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+#statTableCard {
+    margin-top: calc(var(--stat-peek) * -1);
+}
+
+/* the side padding stays at the card's usual size, so the graph keeps its full width */
+#statisticsPage .card-body {
+    padding: 0.6rem 1.5rem;
+}
+
+/* ---------- Heading row ---------- */
+.stat-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 16px;
+}
+
+#statisticsPage h2.text-dark {
+    margin-right: auto;
+    font-size: 1.35rem;
+}
+
+#statisticsPage .stat-head .btn {
+    --bs-btn-padding-y: 0.2rem;
+    --bs-btn-font-size: 0.8rem;
+}
+
+/* ---------- Shared text ---------- */
+.stat-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ix-green-700);
+}
+
+.stat-note {
+    font-size: 0.75rem;
+    color: var(--ix-muted);
+}
+
+/* ---------- Year filter ---------- */
+.stat-filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.stat-stepper {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.stat-stepper .form-select {
+    width: auto;
+    min-width: 10.5rem;
+    padding-block: 0.15rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--ix-green-900);
+    background-color: var(--ix-white);
+    border: 1.5px solid var(--ix-border);
+    border-radius: 8px;
+}
+
+.stat-stepper .form-select:focus {
+    border-color: var(--ix-green-500);
+    box-shadow: 0 0 0 4px rgba(79, 125, 69, 0.18);
+}
+
+.stat-step {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    color: var(--ix-green-700);
+    background: var(--ix-white);
+    border: 1.5px solid var(--ix-border);
+    border-radius: 8px;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+
+.stat-step:hover:not(:disabled) {
+    background: var(--ix-khaki-100);
+    border-color: var(--ix-khaki-500);
+}
+
+.stat-step:disabled {
+    opacity: 0.4;
+}
+
+.stat-step svg {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* ---------- Selected year summary ---------- */
+.stat-focus {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+/* label and note on the left, the number on the right */
+.stat-tile {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 12px;
+    align-items: center;
+    padding: 0.45rem 1rem;
+    background: var(--ix-white);
+    border: 1px solid var(--ix-border);
+    border-radius: 12px;
+    box-shadow: 0 8px 18px -12px rgba(36, 61, 40, 0.28);
+}
+
+.stat-tile .stat-label,
+.stat-tile .stat-note {
+    grid-column: 1;
+}
+
+.stat-value {
+    grid-row: 1 / span 2;
+    grid-column: 2;
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--ix-text);
+}
+
+.stat-key {
+    flex: 0 0 auto;
+    width: 22px;
+    height: 10px;
+}
+
+/* the difference is the point of the comparison, so it gets the page's strongest tile */
+.stat-tile-lead {
+    background: linear-gradient(135deg, var(--ix-green-600), var(--ix-green-900));
+    border: 0;
+    border-bottom: 3px solid var(--ix-khaki-500);
+}
+
+.stat-tile-lead .stat-label {
+    color: var(--ix-khaki-300);
+}
+
+.stat-tile-lead .stat-value {
+    color: #fff;
+}
+
+.stat-tile-lead .stat-note {
+    color: var(--ix-khaki-100);
+}
+
+/* ---------- Chart card ---------- */
+.stat-chart-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 18px;
+    margin-bottom: 2px;
+}
+
+#statisticsPage .stat-chart-title {
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.stat-average {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 14px;
+    align-items: baseline;
+    margin-left: auto;
+}
+
+.stat-metric {
+    display: flex;
+    gap: 5px;
+    align-items: baseline;
+    white-space: nowrap;
+}
+
+.stat-average-value {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--ix-green-700);
+}
+
+.stat-metric-value {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--ix-text);
+}
+
+.stat-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 14px;
+    margin: 0;
+    padding: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    list-style: none;
+    color: var(--ix-text);
+}
+
+.stat-legend li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.stat-legend-key {
+    width: 30px;
+    height: 12px;
+    overflow: visible;
+}
+
+/* the height follows the screen, so the first screen always fits; statistics.js draws to this size */
+.stat-chart {
+    position: relative;
+    height: clamp(210px, 44vh, 340px);
+    border-radius: 12px;
+}
+
+.stat-chart:focus-visible {
+    outline: 3px solid rgba(79, 125, 69, 0.45);
+    outline-offset: 2px;
+}
+
+.stat-svg {
+    display: block;
+    cursor: pointer;
+    touch-action: pan-y;
+}
+
+#statisticsPage .stat-caption {
+    margin: 2px 0 0;
+    font-size: 0.72rem;
+    line-height: 1.35;
+}
+
+/* ---------- Chart marks ---------- */
+.stat-grid {
+    stroke: var(--ix-border);
+    stroke-width: 1;
+}
+
+.stat-tick {
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    fill: var(--ix-muted);
+}
+
+.stat-tick-selected {
+    font-weight: 700;
+    fill: var(--ix-green-900);
+}
+
+.stat-band {
+    fill: var(--ix-khaki-100);
+    stroke: var(--ix-khaki-300);
+    stroke-width: 1;
+    transition: transform 0.25s ease;
+}
+
+.stat-line {
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.stat-line-actual {
+    stroke: var(--stat-actual);
+}
+
+.stat-line-predicted {
+    stroke: var(--stat-predicted);
+    stroke-dasharray: 6 5;
+}
+
+/* the surface-colored ring keeps a dot readable where it crosses a line */
+.stat-dot {
+    stroke-width: 2;
+}
+
+.stat-dot-actual {
+    fill: var(--stat-actual);
+    stroke: var(--ix-white);
+}
+
+.stat-dot-predicted {
+    fill: var(--ix-white);
+    stroke: var(--stat-predicted);
+}
+
+.stat-gap {
+    stroke: var(--ix-green-900);
+    stroke-width: 2;
+    stroke-linecap: round;
+}
+
+.stat-crosshair {
+    stroke: var(--ix-muted);
+    stroke-width: 1;
+    pointer-events: none;
+}
+
+.stat-point-label {
+    font-size: 12px;
+    font-weight: 700;
+    fill: var(--ix-text);
+    stroke: var(--ix-white);
+    stroke-width: 4px;
+    stroke-linejoin: round;
+    paint-order: stroke;
+    pointer-events: none;
+}
+
+.stat-gap-label {
+    font-size: 12px;
+    font-weight: 700;
+    fill: var(--ix-green-900);
+    stroke: var(--ix-khaki-100);
+    stroke-width: 4px;
+    stroke-linejoin: round;
+    paint-order: stroke;
+    pointer-events: none;
+}
+
+/* ---------- Tooltip ---------- */
+.stat-tooltip {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 5;
+    min-width: 160px;
+    padding: 8px 10px;
+    font-size: 0.8rem;
+    pointer-events: none;
+    background: #fff;
+    border: 1px solid var(--ix-border);
+    border-radius: 10px;
+    box-shadow: 0 12px 28px -8px rgba(36, 61, 40, 0.45);
+}
+
+.stat-tooltip[hidden] {
+    display: none;
+}
+
+.stat-tooltip-title {
+    margin-bottom: 4px;
+    font-weight: 700;
+    color: var(--ix-green-700);
+}
+
+.stat-tooltip-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+/* lines up with the rows above, which start with a 22px line key and an 8px gap */
+.stat-tooltip-row-plain {
+    padding-left: 30px;
+}
+
+.stat-tooltip-row strong {
+    min-width: 2.5rem;
+    color: var(--ix-text);
+}
+
+.stat-tooltip-row span {
+    color: var(--ix-muted);
+}
+
+/* ---------- Table ---------- */
+.stat-table-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+#statTableCard .stat-table-head .btn {
+    --bs-btn-padding-y: 0.15rem;
+    --bs-btn-font-size: 0.78rem;
+}
+
+#statTable > thead th {
+    padding: 8px 14px;
+    font-size: 0.68rem;
+}
+
+#statTable > tbody > tr > td {
+    padding: 6px 14px;
+    font-size: 0.85rem;
+}
+
+#statTable .badge {
+    font-size: 0.68rem;
+}
+
+#statTable th:nth-child(n+2),
+#statTable td:nth-child(n+2) {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+#statTable tbody tr {
+    cursor: pointer;
+}
+
+/* Bootstrap paints table stripes with box-shadow, so the second shadow keeps this cell's color */
+#statTable tbody tr.is-selected > * {
+    --bs-table-bg-state: var(--ix-khaki-300);
+    font-weight: 600;
+}
+
+.card #statTable > tbody > tr.is-selected > td:first-child {
+    box-shadow: inset 4px 0 0 var(--ix-green-600),
+                inset 0 0 0 9999px var(--bs-table-bg-state);
+}
+
+/* the badge is the same khaki as a selected row, so it needs its own color there */
+.main-content #statTable tr.is-selected .badge.bg-secondary {
+    background-color: var(--ix-white) !important;
+}
+
+.stat-year-btn {
+    padding: 0;
+    font: inherit;
+    font-weight: 700;
+    color: inherit;
+    background: none;
+    border: 0;
+}
+
+.stat-year-btn:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 767.98px) {
+    .stat-focus {
+        grid-template-columns: 1fr;
+    }
+
+    .stat-average {
+        margin-left: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .stat-band {
+        transition: none;
+    }
+}

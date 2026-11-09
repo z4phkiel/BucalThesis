@@ -5,14 +5,14 @@ from datetime import datetime, timedelta
 import base64
 import math
 import re
+import threading
+import time
 import zipfile
 import pandas as pd
 from PIL import Image
-from sklearn.linear_model import LinearRegression, Ridge
+from sklearn.linear_model import Ridge
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import LeaveOneOut, cross_val_predict
-from sklearn.metrics import mean_absolute_percentage_error
 import os
 import io
 from io import BytesIO
@@ -60,6 +60,41 @@ def restrict_mobile_access():
         abort(403)
 
 
+# LOGIN
+
+LOGIN_MAX_ATTEMPTS = 5
+LOGIN_WINDOW_SECONDS = 15 * 60
+# (ip, account) -> (attempt count, time of first attempt). Kept oldest first, so expired entries sit at the front.
+login_attempts = {}
+login_attempts_lock = threading.Lock()
+
+
+def count_login_attempt(key):
+    # Returns the minutes left in a lockout, or 0 if this attempt may go ahead.
+    # Counted before the password check, so guesses sent in parallel can't share one slot.
+    with login_attempts_lock:
+        now = time.monotonic()
+        while login_attempts:
+            oldest_key = next(iter(login_attempts))
+            if now - login_attempts[oldest_key][1] < LOGIN_WINDOW_SECONDS:
+                break
+            del login_attempts[oldest_key]
+
+        count, first_attempt = login_attempts.get(key, (0, now))
+        if count >= LOGIN_MAX_ATTEMPTS:
+            return math.ceil((LOGIN_WINDOW_SECONDS - (now - first_attempt)) / 60)
+        login_attempts[key] = (count + 1, first_attempt)
+        return 0
+
+
+@main_bp.before_request
+def end_session_of_deleted_user():
+    # The signed cookie can't know the account was removed, so check that it still exists
+    user_id = session.get('user_id')
+    if user_id is not None and db.session.get(User, user_id) is None:
+        session.clear()
+
+
 @main_bp.route("/login", methods=['GET', 'POST'])
 def login():
     # If the user is already logged in, skip the login page and send them to dashboard
@@ -73,8 +108,19 @@ def login():
         # Query the database for the user
         user = User.query.filter_by(username=username).first()
 
+        # Keyed on the account id when it exists, so case or accent variants of a username share one count
+        attempt_key = (request.remote_addr, user.id if user else username.lower())
+        wait_minutes = count_login_attempt(attempt_key)
+        if wait_minutes:
+            flash(f'Too many failed attempts. Try again in {wait_minutes} min.', 'danger')
+            return render_template('login.html'), 429
+
         # Check if user exists and password matches
         if user and user.check_password(password):
+            with login_attempts_lock:
+                login_attempts.pop(attempt_key, None)
+            session.clear()           # nothing from before login carries over
+            session.permanent = True  # applies the 30-minute PERMANENT_SESSION_LIFETIME
             session['user_id'] = user.id
             session['username'] = user.username
             session['role'] = user.role
@@ -114,7 +160,7 @@ def ensure_current_school_year_metric():
  
     existing = {m.school_year.replace(' ', '') for m in YearlyMetric.query.all()}
  
-    for start_year in range(LOCK_BOUNDARY_YEAR + 1, latest + 1):
+    for start_year in range(FIRST_AUTO_CREATED_YEAR, latest + 1):
         label = f"{start_year}-{start_year + 1}"
         if label not in existing:
             db.session.add(YearlyMetric(school_year=label))
@@ -131,22 +177,46 @@ def _parse_metric_payload(data):
     if not isinstance(data, dict):
         return None, 'Invalid data.'
 
+    # values = {}
+    # for field in METRIC_FIELDS:
+    #     if field not in data:
+    #         continue
+
+    #     value = data[field]
+
+    if any(field not in data for field in METRIC_FIELDS):
+        return None, "Invalid Data."
+
+    blank = [field for field in METRIC_FIELDS if data[field] is None]
+    if len(blank) == len(METRIC_FIELDS):
+        return {field: None for field in METRIC_FIELDS}, None
+    if blank:
+        names = ", ".join(field.replace('_',' ') for field in blank)
+        return None, f'Fill in every field, or leave the whole year blank. Missing: {names}.'
+
     values = {}
     for field in METRIC_FIELDS:
-        if field not in data:
-            continue
-
         value = data[field]
         label = field.replace('_', ' ').capitalize()
         if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
             return None, f'{label} must be a number.'
 
         if field == 'enrollee_count':
-            if value != int(value) or not 0 <= value <= MAX_ENROLLEE_COUNT:
-                return None, f'{label} must be a whole number that is not negative.'
+        #     if value != int(value) or not 0 <= value <= MAX_ENROLLEE_COUNT:
+        #         return None, f'{label} must be a whole number that is not negative.'
+        #     value = int(value)
+        # elif not 0 <= value <= MAX_RATE:
+        #     return None, f'{label} must be between 0 and {MAX_RATE}.'
+
+            if value != int(value) or not 1 <= value <= MAX_ENROLLEE_COUNT:
+                return None, f'{label} must be a whole number of at least 1. Leave the whole year blank if it is not submitted yet.'
             value = int(value)
+
         elif not 0 <= value <= MAX_RATE:
             return None, f'{label} must be between 0 and {MAX_RATE}.'
+        
+        elif value == 0 and field in NONZERO_RATES:
+            return None, f'{label} cannot be 0. Enter the real rate, or leave the whole year blank.'
 
         values[field] = value
     return values, None
@@ -158,12 +228,7 @@ def update_metric(metric_id):
         return {'error': 'Unauthorized'}, 401
  
     metric = YearlyMetric.query.get_or_404(metric_id)
- 
-    
-    start_year = int(metric.school_year.split('-')[0].strip())
-    if start_year <= LOCK_BOUNDARY_YEAR:
-        return {'error': 'This school year is locked and cannot be edited.'}, 403
- 
+
     values, error = _parse_metric_payload(request.get_json(silent=True) or {})
     if error:
         return {'error': error}, 400
@@ -174,49 +239,123 @@ def update_metric(metric_id):
     db.session.commit()
     return {'success': True}
 
-# LINEAR REGRESSION ALGORITHM
+# RIDGE REGRESSION ALGORITHM
 
 
-FORECAST_FEATURES = [
-    'enrollee_count', 'promotion_rate', 'cohort_survival_rate', 'completion_rate',
-    'transition_rate', 'dropout_rate', 'graduation_rate', 'retention_rate',
+# The model's inputs: this year's count, the share of students who stay, and how well the school holds students over time
+FORECAST_RATES = ['retention_rate', 'cohort_survival_rate']
+FORECAST_FEATURES = ['enrollee_count', *FORECAST_RATES]
+
+# A real school year can have 0% dropout, but not 0% on these
+NONZERO_RATES = [
+    'promotion_rate', 'cohort_survival_rate', 'completion_rate',
+    'transition_rate', 'graduation_rate', 'retention_rate',
 ]
+
+MIN_FORECAST_YEARS = 9      # usable years needed to forecast or score, which leaves at least 4 past predictions to score
+MIN_BACKTEST_YEARS = 5      # fewest earlier years a past prediction is trained on; must stay below MIN_FORECAST_YEARS
+RANGE_SHARE = 0.8          # share of past misses the forecast range is built to cover
+
+
+def _new_forecast_model():
+    return make_pipeline(StandardScaler(), Ridge(alpha=1.0))
+
+
+def _predicted_count(model, row):
+    """The model's prediction for one row, as a whole number of enrollees that can't be negative."""
+    return max(0, round(float(model.predict(row)[0])))
+
+
+def _forecast_frame(metrics_oldest_first):
+    """One row per calendar year, plus which of those years the model can use."""
+    df = pd.DataFrame([{
+        'school_year': m.school_year,
+        **{field: getattr(m, field) for field in METRIC_FIELDS},
+    } for m in metrics_oldest_first])
+    df[METRIC_FIELDS] = df[METRIC_FIELDS].apply(pd.to_numeric, errors='coerce')
+    df['start_year'] = df['school_year'].str.split('-').str[0].str.strip().astype(int)
+
+    # One row per calendar year, so shift() can't pair non-consecutive years. Blank rows sort first, so a duplicate keeps its submitted row
+    df = df.sort_values('enrollee_count', na_position='first', kind='stable')
+    df = df.drop_duplicates('start_year', keep='last').set_index('start_year').sort_index()
+    df = df.reindex(range(df.index.min(), df.index.max() + 1))
+
+    # A year's count and rates are submitted together, so they predict the next year's count
+    df['next_enrollee_count'] = df['enrollee_count'].shift(-1)
+
+    # Only the rates the model uses need to be filled in
+    has_count = df['enrollee_count'] > 0
+    is_complete = (df[FORECAST_RATES] > 0).all(axis=1)
+    train_df = df[has_count & is_complete & (df['next_enrollee_count'] > 0)]
+    return df, has_count, is_complete, train_df
+
+
+def _backtest(train_df):
+    """Predict each past year from a model trained only on the years before it, as a real forecast would be."""
+    X = train_df[FORECAST_FEATURES]
+    y = train_df['next_enrollee_count']
+
+    tests = []
+    for i in range(MIN_BACKTEST_YEARS, len(train_df)):
+        model = _new_forecast_model().fit(X.iloc[:i], y.iloc[:i])
+        predicted = _predicted_count(model, X.iloc[[i]])
+        actual = int(y.iloc[i])
+        tests.append({
+            'start_year': int(train_df.index[i]) + 1,
+            'predicted': predicted,
+            'actual': actual,
+            'previous_count': int(X['enrollee_count'].iloc[i]),
+            'earlier_average': float(y.iloc[:i].mean()),
+            'trained_on': i,
+            'difference': predicted - actual,
+            'percent_off': round(abs(predicted - actual) / actual * 100, 1),
+        })
+    return tests
+
+
+def _score_backtest(tests):
+    """The figures both pages report, all from the same past predictions."""
+    misses = sorted(abs(test['difference']) for test in tests)
+    covered = min(len(tests), math.ceil((len(tests) + 1) * RANGE_SHARE))
+    baseline = [abs(test['previous_count'] - test['actual']) / test['actual'] * 100 for test in tests]
+
+    # R2 against guessing the average of the earlier years, the fair rival, since the test years' own average wasn't known yet
+    model_error = sum(test['difference'] ** 2 for test in tests)
+    average_error = sum((test['actual'] - test['earlier_average']) ** 2 for test in tests)
+
+    return {
+        'mape': round(sum(test['percent_off'] for test in tests) / len(tests), 1),
+        'baseline_mape': round(sum(baseline) / len(baseline), 1),
+        'r2_score': round(1 - model_error / average_error, 2) if average_error else None,
+        'tested_years': len(tests),
+        'range_margin': misses[covered - 1],
+        'range_covered': covered,
+    }
 
 
 def forecast_values(metrics_oldest_first):
-    """Train the model on the yearly metrics and return what the forecast card shows."""
-    data = [{
-        'school_year': m.school_year,
-        **{field: getattr(m, field) for field in METRIC_FIELDS},
-    } for m in metrics_oldest_first]
-
+    """Train the model on the yearly metrics and return what the dashboard and statistics pages show."""
     pred_next_year = None
-    r2_score_val = None
-    mape = None
     based_on_year = None
     target_year = None
     forecast_note = None
     actual_year = None
     actual_count = None
+    range_low = None
+    range_high = None
+    tests = []
+    trained_years = 0
+    scores = dict.fromkeys(['mape', 'baseline_mape', 'r2_score', 'tested_years', 'range_margin', 'range_covered'])
 
-    
-
-    if data:
-        df = pd.DataFrame(data)
-        df[METRIC_FIELDS] = df[METRIC_FIELDS].apply(pd.to_numeric, errors='coerce').fillna(0)   # a blank field counts as 0
-        df['start_year'] = df['school_year'].str.split('-').str[0].str.strip().astype(int)
-
-        # One row per calendar year, so shift() can't pair non-consecutive years
-        df = df.drop_duplicates('start_year', keep='last').set_index('start_year').sort_index()
-        df = df.reindex(range(df.index.min(), df.index.max() + 1))
-
-        # A year's count and rates are submitted together, so they predict the next year's count
+    if metrics_oldest_first:
+        df, has_count, is_complete, train_df = _forecast_frame(metrics_oldest_first)
         features = FORECAST_FEATURES
+        trained_years = len(train_df)
+        tests = _backtest(train_df)
 
-        df['next_enrollee_count'] = df['enrollee_count'].shift(-1)
-
-        has_count = df['enrollee_count'] > 0
-        train_df = df[has_count & (df['next_enrollee_count'] > 0)]
+        # The same minimum as the forecast, so both pages report scores under one rule
+        if len(train_df) >= MIN_FORECAST_YEARS:
+            scores = _score_backtest(tests)
 
         if has_count.any():
             anchor = int(df.index[has_count][-1])   # latest recorded enrollment
@@ -230,35 +369,82 @@ def forecast_values(metrics_oldest_first):
             else:
                 actual_year = target_year
 
-            if len(train_df) <= len(features):
+            # if len(train_df) <= len(features):
+            #     forecast_note = (
+            #         f'Not enough complete years: the model has {len(features)} inputs '
+            #         f'but only {len(train_df)} usable years.'
+            #     )
+
+            if not is_complete.loc[anchor]:
                 forecast_note = (
-                    f'Not enough complete years: the model has {len(features)} inputs '
-                    f'but only {len(train_df)} usable years.'
+                    f'No forecast yet: S.Y. {based_on_year} has a blank or 0% retention or cohort survival rate. '
+                    'Complete that year to see the forecast.'
                 )
+
+            elif len(train_df) < MIN_FORECAST_YEARS:
+                forecast_note = (
+                    f'Not enough complete years: the forecast needs {MIN_FORECAST_YEARS} usable years '
+                    f'but there are only {len(train_df)}.'
+                )
+
             else:
                 X = train_df[features]
                 y = train_df['next_enrollee_count']
 
-                model = make_pipeline(StandardScaler(), Ridge(alpha=1.0))
-
-                cv_pred = cross_val_predict(model, X, y, cv=LeaveOneOut())
-                mape = round(float(mean_absolute_percentage_error(y, cv_pred)) * 100, 2)
-
-                model.fit(X, y)
-                r2_score_val = round(float(model.score(X, y)), 4)
-
-                pred_next_year = round(float(model.predict(df.loc[[anchor], features])[0]))
+                model = _new_forecast_model().fit(X, y)
+                pred_next_year = _predicted_count(model, df.loc[[anchor], features])
+                range_low = max(0, pred_next_year - scores['range_margin'])
+                range_high = pred_next_year + scores['range_margin']
 
     return {
         'pred_next_year': pred_next_year,
-        'r2_score': r2_score_val,
-        'mape': mape,
         'based_on_year': based_on_year,
         'target_year': target_year,
         'forecast_note': forecast_note,
         'actual_year': actual_year,
         'actual_count': actual_count,
+        'range_low': range_low,
+        'range_high': range_high,
+        'tests': tests,
+        'trained_years': trained_years,
+        **scores,
     }
+
+
+def prediction_history(metrics_oldest_first):
+    """The dashboard's forecast and scores, plus each year's actual count beside its past prediction."""
+    forecast = forecast_values(metrics_oldest_first)
+    history = {**forecast, 'years': [], 'min_years': MIN_BACKTEST_YEARS}
+    if not metrics_oldest_first:
+        return history
+
+    df, has_count, _, _ = _forecast_frame(metrics_oldest_first)
+    actual = {int(year): int(df.loc[year, 'enrollee_count']) for year in df.index[has_count]}
+    tested = {test['start_year']: test for test in forecast['tests']}
+
+    forecast_year = None
+    if forecast['pred_next_year'] is not None:
+        forecast_year = int(forecast['target_year'].split('-')[0])
+
+    known = sorted({*actual, *tested, *([forecast_year] if forecast_year else [])})
+    if not known:
+        return history
+
+    # Every calendar year stays on the list, so a missing year shows as a gap in the chart
+    for year in range(known[0], known[-1] + 1):
+        test = tested.get(year, {})
+        is_forecast = year == forecast_year
+        history['years'].append({
+            'year': f'{year}-{year + 1}',
+            'actual': actual.get(year),
+            'predicted': forecast['pred_next_year'] if is_forecast else test.get('predicted'),
+            'trained_on': forecast['trained_years'] if is_forecast else test.get('trained_on'),
+            'is_forecast': is_forecast,
+            'difference': test.get('difference'),
+            'percent_off': test.get('percent_off'),
+            'range': [forecast['range_low'], forecast['range_high']] if is_forecast else None,
+        })
+    return history
 
 
 @main_bp.route("/")
@@ -279,7 +465,33 @@ def dashboard_data():
     metrics = YearlyMetric.query.order_by(YearlyMetric.school_year.desc()).all()
     all_metrics_asc = YearlyMetric.query.order_by(YearlyMetric.school_year.asc()).all()
 
-    return render_template('dashboard_data.html', metrics=metrics, **forecast_values(all_metrics_asc))
+    # Newest first, as on the Masterlist. Only the columns the card shows: a full row carries the signature image.
+    recent_students = Enrollment.query.with_entities(
+        Enrollment.id, Enrollment.last_name, Enrollment.first_name, Enrollment.middle_name,
+        Enrollment.extension_name, Enrollment.grade_level, Enrollment.age, Enrollment.sex,
+    ).order_by(Enrollment.id.desc()).limit(4).all()
+
+    # Today and the next 6 days (school time), including events already under way
+    today = school_today()
+    week_end = today + timedelta(days=6)
+    week_events = CalendarEvent.query.filter(
+        CalendarEvent.event_date <= week_end,
+        db.func.coalesce(CalendarEvent.end_date, CalendarEvent.event_date) >= today,
+    ).order_by(CalendarEvent.event_date.asc(), CalendarEvent.id.asc()).all()
+
+    return render_template('dashboard_data.html', metrics=metrics, recent_students=recent_students,
+                           today=today, week_end=week_end, week_events=week_events,
+                           **forecast_values(all_metrics_asc))
+
+
+@main_bp.route("/statistics")
+def statistics():
+    if 'user_id' not in session:
+        return redirect(url_for('main.login'))
+
+    metrics = YearlyMetric.query.order_by(YearlyMetric.school_year.asc()).all()
+    return render_template('statistics.html', **prediction_history(metrics))
+
 
 @main_bp.route("/test_signatures")
 def test_signatures():
@@ -417,11 +629,13 @@ def signature_problem(signature):
     return None
 
 
-def validate_enrollment(form):
-    """Check a submitted enrollment. Returns (values for the Enrollment model, list of errors)."""
+def validate_enrollment(form, age_on=None):
+    """Check a submitted enrollment. Returns (values for the Enrollment model, list of errors).
+    The age is worked out for the date age_on, or for today if it isn't given."""
     errors = []
     values = {}
     today = school_today()
+    age_on = age_on or today
 
     def text(name):
         return form.get(name, '').strip()
@@ -473,11 +687,11 @@ def validate_enrollment(form):
     else:
         try:
             birthdate = datetime.strptime(birthdate_text, '%Y-%m-%d').date()
-            if birthdate > today or birthdate.year < EARLIEST_BIRTH_YEAR:
+            if birthdate > age_on or birthdate.year < EARLIEST_BIRTH_YEAR:
                 errors.append('Birthdate must be a real date that is not in the future.')
             else:
                 values['birthdate'] = birthdate
-                values['age'] = today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthdate.day))
+                values['age'] = age_on.year - birthdate.year - ((age_on.month, age_on.day) < (birthdate.month, birthdate.day))
         except ValueError:
             errors.append('Birthdate is not a valid date.')
 
@@ -600,7 +814,7 @@ def enrollment():
 # Enrolled Student View
 # ENROLLED
 
-LOCK_BOUNDARY_YEAR = 2024
+FIRST_AUTO_CREATED_YEAR = 2025      # blank rows are only added from this year on, so earlier gaps stay as they are
 SCHOOL_YEAR_ROLLOVER_MONTH = 6
 
 @main_bp.route("/enrolled")
@@ -622,6 +836,54 @@ def student_detail(student_id):
 
     student = Enrollment.query.get_or_404(student_id)
     return render_template('student.html', student=student)
+
+
+def student_form_data(student):
+    """A saved record in the shape of a submitted form, so the edit page fills in the same way as a rejected form."""
+    data = {name: ['' if getattr(student, name) is None else str(getattr(student, name))] for name in ENROLLMENT_LABELS}
+    data['birthdate'] = [student.birthdate.isoformat() if student.birthdate else '']
+    data['disabilities'] = (student.disabilities or '').replace(', ', ',').split(',')
+    data['distance_learning_modalities'] = (student.distance_learning_modalities or '').replace(', ', ',').split(',')
+    data['signature_data'] = [student.signature_data or '']
+    return data
+
+
+@main_bp.route("/enrolled/<int:student_id>/edit", methods=['GET', 'POST'])
+def edit_student(student_id):
+    if 'user_id' not in session:
+        return redirect(url_for('main.login'))
+
+    student = Enrollment.query.get_or_404(student_id)
+
+    if request.method == 'GET':
+        return render_template('student.html', student=student, editing=True, form_data=student_form_data(student))
+
+    def show_rejected(status):
+        # A field missing from the submission was left empty, so it comes back empty and not as it was saved
+        typed = {**dict.fromkeys(student_form_data(student), ['']), **enrollment_form_data(request.form)}
+        return render_template('student.html', student=student, editing=True, rejected=True, form_data=typed), status
+
+    # The age stays the student's age when the form was signed, not their age on the day it is corrected
+    values, errors = validate_enrollment(request.form, age_on=student.date_signed)
+    if errors:
+        flash('Please correct the following: ' + ' '.join(errors), 'danger')
+        return show_rejected(400)
+
+    # These record when the form was first submitted, so correcting it later doesn't change them
+    del values['school_year'], values['date_signed']
+
+    try:
+        for name, value in values.items():
+            setattr(student, name, value)
+        db.session.commit()
+        flash('Enrollment form updated.', 'success')
+        return redirect(url_for('main.student_detail', student_id=student.id))
+
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception("Failed to update the enrollment.")
+        flash('Could not save the changes. Please try again.', 'danger')
+        return show_rejected(500)
 
 
 # Grade View
@@ -661,21 +923,8 @@ def is_real_document(extension, data):
 
 @main_bp.route("/grades")
 def grades():
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
-    students = Enrollment.query.order_by(
-        Enrollment.last_name.asc(),
-        Enrollment.first_name.asc()
-    ).all()
-
-    return render_template(
-        'grades.html',
-        students=students,
-        student=None,
-        grade_levels=GRADE_LEVELS,
-        reports= {},
-        )
+    # The student list moved to the Masterlist. This stays so old links and bookmarks still work.
+    return redirect(url_for('main.enrolled'))
 
 @main_bp.route("/grades/<int:student_id>")
 def student_grades(student_id):

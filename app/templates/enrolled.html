@@ -3,14 +3,14 @@
 {% block content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/enrolled.css') }}">
 
-<div class="d-flex align-items-center justify-content-between mb-4">
+<div class="d-flex align-items-center justify-content-between mb-3">
     <h3 class="fw-bold mb-0">Enrolled Students</h3>
 </div>
 
 <!-- Search Bar -->
-<div class="card border-0 shadow-sm mb-4">
+<div class="card student-search shadow-sm mb-3">
     <div class="card-body">
-        <label for="studentSearch" class="form-label fw-semibold">
+        <label for="studentSearch" class="form-label">
             Search Students
         </label>
         <input
@@ -24,7 +24,7 @@
 </div>
 
 
-<div class="table-responsive">
+<div id="studentTable" class="table-responsive">
     <table class="table table-striped table-hover align-middle">
         <thead class="table-light">
             <tr>
@@ -32,40 +32,56 @@
                 <th>Student Name</th>
                 <th>LRN</th>
                 <th>Grade Level</th>
+                <th>Gender</th>
                 <th>Date Enrolled</th>
+                <th class="text-center">Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for student in students %}
+            {% set full_name = student.last_name ~ ', ' ~ [student.first_name, student.middle_name, student.extension_name] | select | join(' ') %}
             <tr class="student-row">
                 <td>{{ loop.index }}</td>
-                <td>
-                    <a class="student-name" href="{{ url_for('main.student_detail', student_id=student.id) }}">
-                        {{ student.last_name }}, {{ student.first_name }} {{ student.middle_name }}
-                        {%- if student.extension_name %} {{ student.extension_name }}{% endif %}
-                    </a>
-                </td>
+                <td class="student-name" title="{{ full_name }}">{{ full_name }}</td>
                 <td class="student-lrn">{{ student.lrn_no or '—' }}</td>
                 <td>{{ student.grade_level.replace('_', ' ') if student.grade_level else '—' }}</td>
+                <td>{{ student.sex | capitalize if student.sex else '—' }}</td>
                 <td>{{ student.date_signed.strftime('%B %d, %Y') if student.date_signed else '—' }}</td>
+                <td class="text-center">
+                    <div class="dropdown">
+                        <!-- Fixed positioning lets the menu open past the table's edge instead of being cut off -->
+                        <button type="button" class="student-actions" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" aria-label="Actions for {{ full_name }}">
+                            <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13" cy="8" r="1.5"/></svg>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end student-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('main.student_detail', student_id=student.id) }}">View enrollment form</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.student_grades', student_id=student.id) }}">View grades</a></li>
+                        </ul>
+                    </div>
+                </td>
             </tr>
             {% else %}
             <tr>
-                <td colspan="5" class="text-center text-muted py-4">
+                <td colspan="7" class="text-center text-muted py-4">
                     No enrolled students found.
                 </td>
             </tr>
             {% endfor %}
 
             <!-- Search Results Message -->
-            <tr id="noSearchResults" style="display: none;">
-                <td colspan="5" class="text-center text-muted py-4">
+            <tr id="noSearchResults" hidden>
+                <td colspan="7" class="text-center text-muted py-4">
                     No matching students found.
                 </td>
             </tr>
         </tbody>
     </table>
 </div>
+
+<nav id="studentPager" class="table-pager" aria-label="Student pages" hidden>
+    <ul id="studentPagerList" class="pagination pagination-sm"></ul>
+    <span id="studentPagerSummary" class="table-pager-summary" aria-live="polite"></span>
+</nav>
 {% endblock %}
 
 

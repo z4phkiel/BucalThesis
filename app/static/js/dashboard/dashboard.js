@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const TYPING_PAUSE_MS = 700;    // how long after the last keystroke the save prompt starts
     const LOADING_BAR_MS = 600;     // matches the metric-loading-fill animation in index.css
     const SAVED_NOTICE_MS = 1800;
+    const METRICS_PER_PAGE = 10;    // an even number, so every page starts on the same table stripe
     const PANEL_MS = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 300;   // matches .metrics-panel in index.css
 
     const fabLabel = document.getElementById('metricEditFabLabel');
@@ -26,10 +27,24 @@ document.addEventListener('DOMContentLoaded', function () {
     const forecastCard = document.getElementById('forecastCard');
     const metricsPanel = document.getElementById('metricsPanel');
     const metricsTable = document.getElementById('metricsTable');
+    const pager = document.getElementById('metricsPager');
+    const pagerSummary = document.getElementById('metricsPagerSummary');
+    const pagerList = document.getElementById('metricsPagerList');
     const forecastPlaceholder = forecastCard.innerHTML;
     const tablePlaceholder = metricsTable.innerHTML;
 
+    // The small cards, filled in from the same response as the forecast
+    const smallCards = [
+        { id: 'recentStudents', error: 'The recent enrollments could not be loaded.' },
+        { id: 'weekEvents', error: 'This week\'s events could not be loaded.' },
+    ].map(function (card) {
+        card.el = document.getElementById(card.id);
+        card.placeholder = card.el.innerHTML;
+        return card;
+    });
+
     let editableRows = [];      // filled in once the table has loaded
+    let currentPage = 1;
     let tableOpen = false;
     let panelTimer = null;
     let editing = false;
@@ -53,6 +68,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (open) {
             metricsCard.classList.remove('d-none');
             void metricsPanel.offsetHeight;     // starts the animation from the closed height
+            holdTableHeight();
         }
         metricsPanel.classList.toggle('is-open', open);
 
@@ -61,6 +77,75 @@ document.addEventListener('DOMContentLoaded', function () {
             metricsCard.classList.toggle('d-none', !open);
         }, PANEL_MS);
         updateFab();
+    }
+
+    function pageCount() {
+        return Math.max(1, Math.ceil(editableRows.length / METRICS_PER_PAGE));
+    }
+
+    // Measured on a full page, so a shorter last page doesn't move the page controls or the card below
+    function holdTableHeight() {
+        if (currentPage < pageCount() && metricsTable.offsetHeight) {
+            metricsTable.style.minHeight = `${metricsTable.offsetHeight}px`;
+        }
+    }
+
+    function pageButton(label, page) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'page-link';
+        button.textContent = label;
+        button.dataset.page = page;
+
+        const item = document.createElement('li');
+        item.className = 'page-item';
+        item.appendChild(button);
+        return item;
+    }
+
+    function buildPager() {
+        pagerList.replaceChildren(pageButton('Previous', 'previous'));
+        for (let page = 1; page <= pageCount(); page++) {
+            pagerList.appendChild(pageButton(String(page), page));
+        }
+        pagerList.appendChild(pageButton('Next', 'next'));
+        pager.hidden = pageCount() < 2;
+    }
+
+    function updatePager() {
+        const first = (currentPage - 1) * METRICS_PER_PAGE + 1;
+        const last = Math.min(currentPage * METRICS_PER_PAGE, editableRows.length);
+        pagerSummary.textContent = `Showing ${first} to ${last} of ${editableRows.length} school years`;
+
+        pagerList.querySelectorAll('.page-link').forEach(function (button) {
+            const target = button.dataset.page;
+            const isCurrent = Number(target) === currentPage;
+            const isDisabled = (target === 'previous' && currentPage === 1) ||
+                (target === 'next' && currentPage === pageCount());
+
+            button.disabled = isDisabled;
+            button.parentElement.classList.toggle('active', isCurrent);
+            button.parentElement.classList.toggle('disabled', isDisabled);
+            if (isCurrent) {
+                button.setAttribute('aria-current', 'page');
+            } else {
+                button.removeAttribute('aria-current');
+            }
+        });
+    }
+
+    // Other pages' rows are only hidden, so their unsaved edits stay in place and still get saved
+    function showPage(page) {
+        currentPage = Math.min(Math.max(page, 1), pageCount());
+        const first = (currentPage - 1) * METRICS_PER_PAGE;
+        editableRows.forEach(function (row, i) {
+            row.hidden = i < first || i >= first + METRICS_PER_PAGE;
+        });
+        updatePager();
+    }
+
+    function showRowsPage(row) {
+        showPage(Math.floor(editableRows.indexOf(row) / METRICS_PER_PAGE) + 1);
     }
 
     function rowInputs(row) {
@@ -72,13 +157,15 @@ document.addEventListener('DOMContentLoaded', function () {
         row.querySelectorAll('.metric-edit-group').forEach(function (group) {
             group.classList.toggle('d-none', mode === 'display');
         });
-        row.querySelectorAll('.metric-display').forEach(function (span) {
-            span.classList.toggle('d-none', mode === 'edit');
+        row.querySelectorAll('.metric-display').forEach(function (display) {
+            display.classList.toggle('d-none', mode === 'edit');
             if (mode === 'display') {
-                const field = span.dataset.field;
-                const input = row.querySelector(`.metric-input[data-field="${field}"]`);
-                const isPercent = field !== 'enrollee_count';
-                span.textContent = input.value === '' ? '—' : (input.value + (isPercent ? '%' : ''));
+                const input = row.querySelector(`.metric-input[data-field="${display.dataset.field}"]`);
+                const unit = display.querySelector('.metric-unit');
+                display.querySelector('.metric-value').textContent = input.value === '' ? '—' : input.value;
+                if (unit) {
+                    unit.classList.toggle('is-blank', input.value === '');
+                }
             }
         });
     }
@@ -185,7 +272,8 @@ document.addEventListener('DOMContentLoaded', function () {
     function saveRow(row) {
         const payload = {};
         rowInputs(row).forEach(function (input) {
-            payload[input.dataset.field] = parseFloat(input.value) || 0;    // a blank field counts as 0
+            // payload[input.dataset.field] = parseFloat(input.value) || 0;    // a blank field counts as 0
+            payload[input.dataset.field] = input.value === '' ? null : Number(input.value);
         });
 
         return fetch(row.dataset.updateUrl, {
@@ -228,7 +316,7 @@ document.addEventListener('DOMContentLoaded', function () {
         forecastCard.querySelector('.card-body').appendChild(note);
     }
 
-    // Resolves to the table and forecast from the server
+    // Resolves to the table, forecast and small cards from the server
     function requestDashboardData() {
         return fetch(forecastCard.dataset.url, { cache: 'no-store' })
             .then(function (res) {
@@ -246,10 +334,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 const page = new DOMParser().parseFromString(html, 'text/html');
                 const table = page.getElementById('metricsTable');
                 const forecast = page.getElementById('forecastCard');
-                if (!table || !forecast) {
+                const cards = smallCards.map(function (card) {
+                    return page.getElementById(card.id);
+                });
+                if (!table || !forecast || cards.includes(null)) {
                     throw new Error('the response has no dashboard data');
                 }
-                return { table: table, forecast: forecast };
+                return { table: table, forecast: forecast, cards: cards };
             });
     }
 
@@ -259,20 +350,39 @@ document.addEventListener('DOMContentLoaded', function () {
             <button type="button" class="btn btn-primary btn-sm" data-retry-dashboard>Try again</button>
         </div>`;
         metricsTable.innerHTML = '<div class="dashboard-load-error p-4">The yearly metrics could not be loaded.</div>';
+        smallCards.forEach(function (card) {
+            card.el.innerHTML = '';
+            const message = document.createElement('p');
+            message.className = 'dashboard-load-error mb-0';
+            message.textContent = card.error;
+            card.el.appendChild(message);
+        });
     }
 
     function loadDashboard() {
         forecastCard.innerHTML = forecastPlaceholder;
         metricsTable.innerHTML = tablePlaceholder;
+        metricsTable.style.minHeight = '';
+        pager.hidden = true;
         forecastCard.setAttribute('aria-busy', 'true');
+        smallCards.forEach(function (card) {
+            card.el.innerHTML = card.placeholder;
+            card.el.setAttribute('aria-busy', 'true');
+        });
 
         requestDashboardData()
             .then(function (data) {
                 metricsTable.innerHTML = data.table.innerHTML;
                 forecastCard.innerHTML = data.forecast.innerHTML;
+                smallCards.forEach(function (card, i) {
+                    card.el.innerHTML = data.cards[i].innerHTML;
+                });
                 editableRows = Array.from(metricsTable.querySelectorAll('tr')).filter(function (row) {
                     return row.querySelector('.metric-input');
                 });
+                buildPager();
+                showPage(1);
+                holdTableHeight();
                 updateFab();
             })
             .catch(function (err) {
@@ -281,6 +391,9 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .finally(function () {
                 forecastCard.removeAttribute('aria-busy');
+                smallCards.forEach(function (card) {
+                    card.el.removeAttribute('aria-busy');
+                });
             });
     }
 
@@ -321,11 +434,13 @@ document.addEventListener('DOMContentLoaded', function () {
         setSaving(true);
 
         const failures = [];
+        let firstFailedRow = null;
         for (let i = 0; i < rows.length; i++) {
             const error = await saveRow(rows[i]);
             rows[i].classList.toggle('has-error', Boolean(error));
             if (error) {
                 failures.push(`${rows[i].dataset.schoolYear}: ${error}`);
+                firstFailedRow = firstFailedRow || rows[i];
             }
             saveProgress.firstElementChild.style.width = `${((i + 1) / rows.length) * 100}%`;
         }
@@ -341,6 +456,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (failures.length) {
             saveError.textContent = failures.join(' ');
             saveError.hidden = false;
+            showRowsPage(firstFailedRow);   // the rejected year may be on another page
             return;
         }
 
@@ -388,7 +504,7 @@ document.addEventListener('DOMContentLoaded', function () {
     fab.addEventListener('click', function () {
         if (!editing) {
             setEditing(true);
-            rowInputs(editableRows[0])[0].focus();
+            rowInputs(editableRows[(currentPage - 1) * METRICS_PER_PAGE])[0].focus();
             return;
         }
 
@@ -425,6 +541,27 @@ document.addEventListener('DOMContentLoaded', function () {
         if (event.key === 'Enter' && event.target.matches('.metric-input') && changedRows().length) {
             event.preventDefault();
             promptToSave(0);
+        }
+    });
+
+    pagerList.addEventListener('click', function (event) {
+        const button = event.target.closest('.page-link');
+        if (!button || button.disabled) {
+            return;
+        }
+
+        const target = button.dataset.page;
+        if (target === 'previous') {
+            showPage(currentPage - 1);
+        } else if (target === 'next') {
+            showPage(currentPage + 1);
+        } else {
+            showPage(Number(target));
+        }
+
+        // Previous or Next can become disabled, which would drop keyboard focus
+        if (button.disabled) {
+            pagerList.querySelector('[aria-current="page"]').focus();
         }
     });
 
