@@ -585,6 +585,11 @@ body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(5) .nav-link {
     box-shadow: inset 4px 0 0 var(--ix-green-600), 0 6px 14px rgba(0, 0, 0, 0.25);
 }
 
+/* the page already open: clicking it does nothing (page-skeleton.js), so it doesn't look clickable */
+.sidebar .nav-link[aria-current="page"] {
+    cursor: default;
+}
+
 /* ==========================================================
    Sidebar: Logout pinned to the bottom
    ========================================================== */
@@ -1141,17 +1146,6 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
     font-size: 1.7rem;
 }
 
-.skel-title-linkage {
-    margin-bottom: 1.5rem;
-    font-size: calc(1.3rem + 0.6vw);
-}
-
-@media (min-width: 1200px) {
-    .skel-title-linkage {
-        font-size: 1.75rem;
-    }
-}
-
 .skel-button {
     flex: 0 0 auto;
     width: 112px;
@@ -1216,9 +1210,11 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
     border-radius: 999px;
 }
 
-/* the Masterlist keeps its heading and search card short, so more students fit on the screen */
+/* the Masterlist keeps its heading and search card short, so more students fit on the screen.
+   Linkage/Files uses the same sizes and gaps. */
 .skel-head-slim,
-.skel-card-slim {
+.skel-card-slim,
+.skel-card-linkage {
     margin-bottom: 1rem;
 }
 
@@ -1379,15 +1375,6 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
     text-align: center;
 }
 
-.skel-table-compact th {
-    padding: 14px 16px;
-    font-size: 0.76rem;
-}
-
-.skel-table-compact td {
-    padding: 12px 16px;
-}
-
 .skel-table-tight th {
     padding: 8px 12px;
     font-size: 0.7rem;
@@ -1408,7 +1395,7 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
 .skel-row-action {
     display: inline-block;
     width: 84px;
-    height: 29px;
+    height: 26px;
     margin-left: 6px;
     vertical-align: middle;
     border-radius: 999px;
@@ -1423,13 +1410,13 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
 }
 
 .skel-input {
-    height: 46px;
+    height: 34px;
     border-radius: 8px;
 }
 
 .skel-help {
     width: 38%;
-    margin: -11px 0 23px;
+    margin: -11px 0 21px;
 }
 
 .skel-pictures {
@@ -1451,7 +1438,7 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
 
 .skel-picture-body {
     display: grid;
-    gap: 14px;
+    gap: 12px;
     padding: 1.5rem;
 }
 
@@ -1459,7 +1446,7 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.5rem;
-    margin-top: 6px;
+    margin-top: 4px;
 }
 
 .skel-picture-actions .skel-row-action {

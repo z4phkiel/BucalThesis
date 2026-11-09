@@ -168,9 +168,11 @@
 
 <template data-skeleton-path="{{ url_for('main.linkagefiles') }}">
     <span class="visually-hidden">Loading linkage and files</span>
-    <div class="skel-title skel-title-linkage">Linkage/Files</div>
-    {{ search_card('Search Linkages') }}
-    <div class="skel-card">
+    <div class="skel-head skel-head-slim">
+        <div class="skel-title skel-title-list">Linkage/Files</div>
+    </div>
+    {{ search_card('Search Linkages', 'skel-card-slim') }}
+    <div class="skel-card skel-card-linkage">
         <div class="skel-card-body">
             <div class="skel-section-title">Important Links</div>
             {{ upload_form() }}
@@ -179,11 +181,11 @@
                     {'label': 'Title', 'width': '25%', 'bars': ['64%', '78%', '56%']},
                     {'label': 'Link', 'width': '40%', 'bars': ['72%', '58%', '66%']},
                     {'label': 'Actions', 'width': 'auto', 'align': 'end', 'pills': 2},
-                ], 3, 'skel-table-compact skel-table-striped') }}
+                ], 3, 'skel-table-tight skel-table-striped') }}
             </div>
         </div>
     </div>
-    <div class="skel-card">
+    <div class="skel-card skel-card-linkage">
         <div class="skel-card-body">
             <div class="skel-section-title">Important Files</div>
             {{ upload_form() }}
@@ -195,11 +197,11 @@
                     {'label': 'Size', 'width': '9.5%', 'bars': ['62%', '54%']},
                     {'label': 'Uploaded', 'width': '15.5%', 'bars': ['58%', '52%']},
                     {'label': 'Actions', 'width': 'auto', 'align': 'end', 'pills': 3},
-                ], 3, 'skel-table-compact skel-table-striped') }}
+                ], 3, 'skel-table-tight skel-table-striped') }}
             </div>
         </div>
     </div>
-    <div class="skel-card">
+    <div class="skel-card skel-card-linkage">
         <div class="skel-card-body">
             <div class="skel-section-title">Important Pictures</div>
             {{ upload_form() }}

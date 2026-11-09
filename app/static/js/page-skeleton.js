@@ -4,6 +4,20 @@ document.addEventListener('DOMContentLoaded', function () {
     const SHOW_DELAY_MS = 120;      // pages that respond quickly never flash a placeholder
     const GIVE_UP_MS = 20000;       // brings the current page back if loading was stopped or never finishes
 
+    // Ctrl, Shift or middle clicks open a new tab or window, so they never replace this page
+    function isPlainClick(event) {
+        return event.button === 0 && !(event.ctrlKey || event.metaKey || event.shiftKey || event.altKey);
+    }
+
+    // The sidebar link to the page already open would only reload it and lose a half-filled form,
+    // a search or a sort, so a plain click (or Enter) on it does nothing. Registered first, so the
+    // placeholder below sees it as handled.
+    document.addEventListener('click', function (event) {
+        if (isPlainClick(event) && event.target.closest('.sidebar a[aria-current="page"]')) {
+            event.preventDefault();
+        }
+    });
+
     const host = document.getElementById('pageSkeleton');
     if (!host) {
         return;
@@ -78,8 +92,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function skeletonForClick(event) {
-        if (event.defaultPrevented || event.button !== 0 ||
-            event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+        if (event.defaultPrevented || !isPlainClick(event)) {
             return null;
         }
 

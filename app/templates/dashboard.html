@@ -15,31 +15,16 @@
         </div>
 
         <ul class="nav flex-column gap-1 flex-grow-1 text-center">
+            {# aria-current marks the page already open; page-skeleton.js ignores plain clicks on it #}
+            {% for endpoint, label in [('main.index', 'Dashboard'), ('main.enrollment', 'Enrollment Form'), ('main.enrolled', 'Masterlist'),
+                                       ('main.calendar', 'Calendar'), ('main.linkagefiles', 'Linkage/Files')] %}
+            {% set href = url_for(endpoint) %}
             <li class="nav-item">
-                <a href="{{ url_for('main.index') }}" class="nav-link">
-                    Dashboard
+                <a href="{{ href }}" class="nav-link"{% if request.path == href %} aria-current="page"{% endif %}>
+                    {{ label }}
                 </a>
             </li>
-            <li class="nav-item">
-                <a href="{{ url_for('main.enrollment') }}" class="nav-link">
-                    Enrollment Form
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ url_for('main.enrolled') }}" class="nav-link">
-                    Masterlist
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ url_for('main.calendar') }}" class="nav-link">
-                    Calendar
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ url_for('main.linkagefiles') }}" class="nav-link">
-                    Linkage/Files
-                </a>
-            </li>
+            {% endfor %}
             <li class="p-3">
                 <a href="{{ url_for('main.logout') }}" class="btn btn-danger w-100">
                     Logout
