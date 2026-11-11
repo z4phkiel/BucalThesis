@@ -1,6 +1,8 @@
-// Masterlist: search, page controls, and fitting the rows to the screen so the page doesn't need scrolling
+// Masterlist: search, sorting, page controls, and fitting the rows to the screen so the page doesn't need scrolling
 document.addEventListener('DOMContentLoaded', function () {
     const MIN_ROWS = 5;
+    const GRADE_ORDER = ['Kindergarten', 'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6'];
+    const NEXT_SORT = { none: 'ascending', ascending: 'descending', descending: 'none' };
 
     const rows = Array.from(document.querySelectorAll('.student-row'));
     if (!rows.length) {
@@ -15,6 +17,19 @@ document.addEventListener('DOMContentLoaded', function () {
     const pagerList = document.getElementById('studentPagerList');
     const pagerSummary = document.getElementById('studentPagerSummary');
     const rowHeight = rows[0].getBoundingClientRect().height;
+    const sortHeads = Array.from(frame.querySelectorAll('th[aria-sort]'));
+    const collator = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true });
+
+    // Each row's sort values, read once. A missing grade or gender is null. position is the server's order, newest enrolled first.
+    const sortData = new Map(rows.map(function (row, i) {
+        const grade = GRADE_ORDER.indexOf(row.dataset.grade.replace('_', ' '));
+        return [row, {
+            name: row.querySelector('.student-name').textContent,
+            grade: grade < 0 ? null : grade,
+            sex: row.dataset.sex || null,
+            position: i,
+        }];
+    }));
 
     let matches = rows;
     let pageSize = MIN_ROWS;
@@ -119,13 +134,56 @@ document.addEventListener('DOMContentLoaded', function () {
         frame.style.minHeight = `${tableChrome + Math.min(rows.length, size) * rowHeight}px`;
     }
 
-    search.addEventListener('input', function () {
-        const term = this.value.trim().toLowerCase();
+    // Keeps the rows' current order, so search results stay sorted
+    function filterRows() {
+        const term = search.value.trim().toLowerCase();
         matches = rows.filter(function (row) {
             const name = row.querySelector('.student-name').textContent.toLowerCase();
             const lrn = row.querySelector('.student-lrn').textContent.toLowerCase();
             return name.includes(term) || lrn.includes(term);
         });
+    }
+
+    // A missing value goes last in either direction. Ties go by name, then by enrollment order.
+    function compareBy(key, sign) {
+        return function (rowA, rowB) {
+            const a = sortData.get(rowA);
+            const b = sortData.get(rowB);
+            if (a[key] === null || b[key] === null) {
+                if (a[key] !== b[key]) {
+                    return a[key] === null ? 1 : -1;
+                }
+            } else {
+                const order = typeof a[key] === 'number' ? a[key] - b[key] : collator.compare(a[key], b[key]);
+                if (order) {
+                    return sign * order;
+                }
+            }
+            return collator.compare(a.name, b.name) || a.position - b.position;
+        };
+    }
+
+    search.addEventListener('input', function () {
+        filterRows();
+        showPage(1);
+    });
+
+    // Each click on a header goes A to Z, then Z to A, then back to newest enrolled first
+    frame.querySelector('thead').addEventListener('click', function (event) {
+        const button = event.target.closest('.sort-btn');
+        if (!button) {
+            return;
+        }
+        const head = button.closest('th');
+        const next = NEXT_SORT[head.getAttribute('aria-sort')];
+        sortHeads.forEach(function (other) {
+            other.setAttribute('aria-sort', 'none');
+        });
+        head.setAttribute('aria-sort', next);
+
+        rows.sort(next === 'none' ? compareBy('position', 1) : compareBy(button.dataset.sort, next === 'ascending' ? 1 : -1));
+        noResults.before(...rows);
+        filterRows();
         showPage(1);
     });
 

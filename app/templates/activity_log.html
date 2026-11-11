@@ -1,0 +1,26 @@
+{# The activity card's entries, requested by activity-log.js each time the card opens or a filter is picked.
+   Each links to the entry in its page's Activity Log tab, which has the details. #}
+{% if logs %}
+<ul class="dash-list">
+    {% for log in logs %}
+    {% set short, day, clock = when(log.created_at) %}
+    <li>
+        <a class="activity-item" href="{{ url_for(pages[log.area]) }}#activity-{{ log.id }}">
+            <span class="activity-badge {{ log.action | lower }}">{{ log.action }}</span>
+            <span class="dash-item-text">
+                <span class="activity-text">{{ log.description }}</span>
+                <span class="dash-item-meta">
+                    {{ activity_areas.get(log.area, log.area) }}
+                    <span aria-hidden="true">&middot;</span>
+                    {{ log.username }}
+                    <span aria-hidden="true">&middot;</span>
+                    <time datetime="{{ log.created_at.isoformat(timespec='seconds') }}Z" title="{{ day }}, {{ clock }}">{{ short }}</time>
+                </span>
+            </span>
+        </a>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p class="dash-empty">No activity yet.</p>
+{% endif %}

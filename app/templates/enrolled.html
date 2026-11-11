@@ -2,11 +2,27 @@
 
 {% block content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/enrolled.css') }}">
+{% from 'activity_tabs.html' import activity_tabs with context %}
+
+{# A header that enrolled.js sorts by; a plain header when there are no students to sort #}
+{% macro sort_header(key, label) -%}
+{% if students -%}
+<th aria-sort="none">
+    <button type="button" class="sort-btn" data-sort="{{ key }}">
+        {{ label }}
+        <svg viewBox="0 0 8 13" aria-hidden="true"><path class="sort-up" d="M4 0 8 5H0z"/><path class="sort-down" d="M4 13 0 8h8z"/></svg>
+    </button>
+</th>
+{%- else -%}
+<th>{{ label }}</th>
+{%- endif %}
+{%- endmacro %}
 
 <div class="d-flex align-items-center justify-content-between mb-3">
     <h3 class="fw-bold mb-0">Enrolled Students</h3>
 </div>
 
+{% call activity_tabs('masterlist', 'Students') %}
 <!-- Search Bar -->
 <div class="card student-search shadow-sm mb-3">
     <div class="card-body">
@@ -29,10 +45,10 @@
         <thead class="table-light">
             <tr>
                 <th>#</th>
-                <th>Student Name</th>
+                {{ sort_header('name', 'Student Name') }}
                 <th>LRN</th>
-                <th>Grade Level</th>
-                <th>Gender</th>
+                {{ sort_header('grade', 'Grade Level') }}
+                {{ sort_header('sex', 'Gender') }}
                 <th>Date Enrolled</th>
                 <th class="text-center">Actions</th>
             </tr>
@@ -40,7 +56,7 @@
         <tbody>
             {% for student in students %}
             {% set full_name = student.last_name ~ ', ' ~ [student.first_name, student.middle_name, student.extension_name] | select | join(' ') %}
-            <tr class="student-row">
+            <tr class="student-row" data-grade="{{ student.grade_level or '' }}" data-sex="{{ student.sex or '' }}">
                 <td>{{ loop.index }}</td>
                 <td class="student-name" title="{{ full_name }}">{{ full_name }}</td>
                 <td class="student-lrn">{{ student.lrn_no or '—' }}</td>
@@ -82,6 +98,7 @@
     <ul id="studentPagerList" class="pagination pagination-sm"></ul>
     <span id="studentPagerSummary" class="table-pager-summary" aria-live="polite"></span>
 </nav>
+{% endcall %}
 {% endblock %}
 
 

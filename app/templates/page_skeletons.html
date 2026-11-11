@@ -53,6 +53,30 @@
 </div>
 {% endmacro %}
 
+{# The Masterlist, Calendar and Linkage/Files tab strip (activity_tabs.html). .page-tabs is in activity-log.css,
+   which no page stylesheet restyles, so the placeholder uses the real look. #}
+{% macro page_tabs(main_label) %}
+<div class="page-tabs" aria-hidden="true">
+    <span class="page-tab active">{{ main_label }}</span>
+    <span class="page-tab">Activity Log</span>
+</div>
+{% endmacro %}
+
+{# Archives: one card per kind of item; each table ends with the same Archived and Actions columns #}
+{% macro archive_section(title, columns) %}
+<div class="skel-card skel-card-linkage">
+    <div class="skel-card-body">
+        <div class="skel-section-title">{{ title }}</div>
+        <div class="skel-table-frame">
+            {{ table(columns + [
+                {'label': 'Archived', 'width': '14%', 'bars': ['62%', '54%']},
+                {'label': 'Actions', 'width': 'auto', 'align': 'end', 'pills': 2},
+            ], 2, 'skel-table-tight skel-table-striped') }}
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
 <div id="pageSkeleton" class="p-4" role="status" aria-busy="true" hidden></div>
 
 <template data-skeleton-path="{{ url_for('main.index') }}">
@@ -111,6 +135,7 @@
     <div class="skel-head skel-head-slim">
         <div class="skel-title skel-title-list">Enrolled Students</div>
     </div>
+    {{ page_tabs('Students') }}
     {{ search_card('Search Students', 'skel-card-slim') }}
     <div class="skel-table-card">
         {{ table([
@@ -128,6 +153,7 @@
 <template data-skeleton-path="{{ url_for('main.calendar') }}">
     <span class="visually-hidden">Loading the calendar</span>
     <div class="skel-title skel-title-calendar">Calendar</div>
+    {{ page_tabs('Calendar') }}
     <div class="skel-cal">
         <div class="skel-cal-card">
             <div class="skel-cal-head">
@@ -168,9 +194,12 @@
 
 <template data-skeleton-path="{{ url_for('main.linkagefiles') }}">
     <span class="visually-hidden">Loading linkage and files</span>
-    <div class="skel-title skel-title-linkage">Linkage/Files</div>
-    {{ search_card('Search Linkages') }}
-    <div class="skel-card">
+    <div class="skel-head skel-head-slim">
+        <div class="skel-title skel-title-list">Linkage/Files</div>
+    </div>
+    {{ page_tabs('Links & Files') }}
+    {{ search_card('Search Linkages', 'skel-card-slim') }}
+    <div class="skel-card skel-card-linkage">
         <div class="skel-card-body">
             <div class="skel-section-title">Important Links</div>
             {{ upload_form() }}
@@ -179,11 +208,11 @@
                     {'label': 'Title', 'width': '25%', 'bars': ['64%', '78%', '56%']},
                     {'label': 'Link', 'width': '40%', 'bars': ['72%', '58%', '66%']},
                     {'label': 'Actions', 'width': 'auto', 'align': 'end', 'pills': 2},
-                ], 3, 'skel-table-compact skel-table-striped') }}
+                ], 3, 'skel-table-tight skel-table-striped') }}
             </div>
         </div>
     </div>
-    <div class="skel-card">
+    <div class="skel-card skel-card-linkage">
         <div class="skel-card-body">
             <div class="skel-section-title">Important Files</div>
             {{ upload_form() }}
@@ -195,11 +224,11 @@
                     {'label': 'Size', 'width': '9.5%', 'bars': ['62%', '54%']},
                     {'label': 'Uploaded', 'width': '15.5%', 'bars': ['58%', '52%']},
                     {'label': 'Actions', 'width': 'auto', 'align': 'end', 'pills': 3},
-                ], 3, 'skel-table-compact skel-table-striped') }}
+                ], 3, 'skel-table-tight skel-table-striped') }}
             </div>
         </div>
     </div>
-    <div class="skel-card">
+    <div class="skel-card skel-card-linkage">
         <div class="skel-card-body">
             <div class="skel-section-title">Important Pictures</div>
             {{ upload_form() }}
@@ -222,4 +251,31 @@
             </div>
         </div>
     </div>
+</template>
+
+<template data-skeleton-path="{{ url_for('main.archives') }}">
+    <span class="visually-hidden">Loading the archives</span>
+    <div class="skel-title skel-title-list">Archives</div>
+    <p class="skel-intro">Deleted items stay here until they are restored or deleted permanently.</p>
+    {% set file_columns = [
+        {'label': 'Title', 'width': '24%', 'bars': ['64%', '78%']},
+        {'label': 'File', 'width': '24%', 'bars': ['72%', '58%']},
+        {'label': 'Size', 'width': '10%', 'bars': ['62%', '54%']},
+    ] %}
+    {{ archive_section('Report Cards', [
+        {'label': 'Student', 'width': '24%', 'bars': ['64%', '78%']},
+        {'label': 'Grade Level', 'width': '14%', 'bars': ['52%', '45%']},
+        {'label': 'File', 'width': '20%', 'bars': ['72%', '58%']},
+    ]) }}
+    {{ archive_section('Calendar Events', [
+        {'label': 'Description', 'width': '28%', 'bars': ['72%', '58%']},
+        {'label': 'Tag', 'width': '10%', 'bars': ['60%', '52%']},
+        {'label': 'Date', 'width': '20%', 'bars': ['64%', '70%']},
+    ]) }}
+    {{ archive_section('Links', [
+        {'label': 'Title', 'width': '24%', 'bars': ['64%', '78%']},
+        {'label': 'Link', 'width': '34%', 'bars': ['72%', '58%']},
+    ]) }}
+    {{ archive_section('Files', file_columns) }}
+    {{ archive_section('Pictures', file_columns) }}
 </template>

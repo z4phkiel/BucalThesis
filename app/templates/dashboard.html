@@ -6,40 +6,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <link rel="stylesheet" href="{{url_for('static', filename='css/index.css')}}">
+    <link rel="stylesheet" href="{{url_for('static', filename='css/activity-log.css')}}">
     {% block head %}{% endblock %}
 </head>
 <body>
     <div class="d-flex flex-column bg-dark vh-100 position-fixed top-0 start-0 sidebar">
         <div class="p-3 border-bottom border-secondary text-center">
             <span class="fs-5 fw-semibold text-white">Bucal II Elementary 108039</span>
+            <button type="button" id="activityToggle" class="activity-toggle" aria-controls="activityCard" aria-expanded="false" title="Activity log">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                <span class="visually-hidden">Activity log</span>
+            </button>
         </div>
 
         <ul class="nav flex-column gap-1 flex-grow-1 text-center">
+            {# aria-current marks the page already open; page-skeleton.js ignores plain clicks on it #}
+            {% for endpoint, label in [('main.index', 'Dashboard'), ('main.enrollment', 'Enrollment Form'), ('main.enrolled', 'Masterlist'),
+                                       ('main.calendar', 'Calendar'), ('main.linkagefiles', 'Linkage/Files'), ('main.archives', 'Archives')] %}
+            {% set href = url_for(endpoint) %}
             <li class="nav-item">
-                <a href="{{ url_for('main.index') }}" class="nav-link">
-                    Dashboard
+                <a href="{{ href }}" class="nav-link"{% if request.path == href %} aria-current="page"{% endif %}>
+                    {{ label }}
                 </a>
             </li>
-            <li class="nav-item">
-                <a href="{{ url_for('main.enrollment') }}" class="nav-link">
-                    Enrollment Form
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ url_for('main.enrolled') }}" class="nav-link">
-                    Masterlist
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ url_for('main.calendar') }}" class="nav-link">
-                    Calendar
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ url_for('main.linkagefiles') }}" class="nav-link">
-                    Linkage/Files
-                </a>
-            </li>
+            {% endfor %}
             <li class="p-3">
                 <a href="{{ url_for('main.logout') }}" class="btn btn-danger w-100">
                     Logout
@@ -47,6 +37,23 @@
             </li>
         </ul>
     </div>
+
+    <!-- Activity log: the bell above opens it, and activity-log.js loads the latest entries each time it opens -->
+    {% from 'dashboard_placeholders.html' import list_placeholder %}
+    <section id="activityCard" class="activity-card" aria-labelledby="activityTitle" data-url="{{ url_for('main.activity_log') }}" hidden>
+        <div class="activity-head">
+            <h2 id="activityTitle" class="activity-title">Activity Log</h2>
+            <button type="button" class="btn-close" data-activity-close aria-label="Close the activity log"></button>
+        </div>
+        <div class="activity-filters" role="group" aria-label="Show activity from">
+            <button type="button" data-area="" aria-pressed="true">All</button>
+            {% for area, label in activity_areas.items() %}
+            <button type="button" data-area="{{ area }}" aria-pressed="false">{{ label }}</button>
+            {% endfor %}
+        </div>
+        <div id="activityList" class="activity-body" aria-live="polite"></div>
+        <template id="activityPlaceholder">{{ list_placeholder('square') }}</template>
+    </section>
 
     <section class="main-content min-vh-100 bg-light">
         <div id="pageContent" class="p-4">
@@ -171,5 +178,6 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
     <script src="{{ url_for('static', filename='js/flash-messages.js') }}"></script>
     <script src="{{ url_for('static', filename='js/page-skeleton.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/activity-log.js') }}"></script>
 </body>
 </html>

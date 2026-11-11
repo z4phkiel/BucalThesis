@@ -134,6 +134,55 @@
 .table-responsive > .table > thead.table-light th:nth-child(6) { width: 150px; }
 .table-responsive > .table > thead.table-light th:nth-child(7) { width: 84px; }
 
+/* ---------- Sortable headers: the arrow pointing the sort direction lights up ---------- */
+.sort-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    border-radius: 4px;
+    transition: color 0.15s ease;
+}
+
+.sort-btn svg {
+    flex: none;
+    width: 7px;
+    height: 11px;
+    fill: currentColor;
+}
+
+.sort-btn path {
+    opacity: 0.45;
+    transition: opacity 0.15s ease;
+}
+
+.sort-btn:hover,
+th[aria-sort="ascending"] .sort-btn,
+th[aria-sort="descending"] .sort-btn {
+    color: var(--en-khaki-300);
+}
+
+th[aria-sort="ascending"] .sort-up,
+th[aria-sort="descending"] .sort-down {
+    opacity: 1;
+}
+
+th[aria-sort="ascending"] .sort-down,
+th[aria-sort="descending"] .sort-up {
+    opacity: 0.2;
+}
+
+.sort-btn:focus-visible {
+    outline: 2px solid var(--en-khaki-500);
+    outline-offset: 3px;
+}
+
 /* ---------- Body rows: one line each, so every row is the same height ---------- */
 .table-responsive > .table > tbody > tr > td {
     height: 32px;

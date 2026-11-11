@@ -3,17 +3,19 @@
 
 {% block content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/linkagefiles.css') }}">
-<h1 class="h3 mb-4">Linkage/Files</h1>
+<h1 class="h3 mb-3">Linkage/Files</h1>
 
-<div class="card shadow-sm mb-4">
+{% from 'activity_tabs.html' import activity_tabs with context %}
+{% call activity_tabs('linkage', 'Links & Files') %}
+<div class="card linkage-search shadow-sm mb-3">
     <div class="card-body">
-        <label for="linkageSearch" class="form-label fw-semibold">Search Linkages</label>
+        <label for="linkageSearch" class="form-label">Search Linkages</label>
         <input type="search" id="linkageSearch" class="form-control" placeholder="Search links, files and pictures..." autocomplete="off">
     </div>
 </div>
 
 <!-- Important links: add, edit, delete -->
-<div class="card shadow-sm mb-4" data-search-section>
+<div class="card shadow-sm mb-3" data-search-section>
     <div class="card-body">
         <h2 class="h5 mb-3">Important Links</h2>
 
@@ -51,7 +53,7 @@
                                     data-title="{{ link.title }}"
                                     data-url="{{ link.url }}">Edit</button>
                             <form action="{{ url_for('main.delete_link', link_id=link.id) }}" method="POST"
-                                  class="d-inline" onsubmit="return confirm('Delete this link?');">
+                                  class="d-inline" onsubmit="return confirm('Move this link to the Archives?');">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                             </form>
@@ -72,7 +74,7 @@
 </div>
 
 <!-- Important files (PDF, DOCX, XLSX): upload, download, edit, delete -->
-<div class="card shadow-sm mb-4" data-search-section>
+<div class="card shadow-sm mb-3" data-search-section>
     <div class="card-body">
         <h2 class="h5 mb-3">Important Files</h2>
 
@@ -106,12 +108,12 @@
                     <tr class="search-item" data-search="{{ f.title }} {{ f.filename }}">
                         <td>{{ f.title }}</td>
                         <td>{{ f.filename }}</td>
-                        <td>
+                        <td class="text-nowrap">
                             {% if f.size is none %}—
                             {% elif f.size >= 1048576 %}{{ (f.size / 1048576) | round(1) }} MB
                             {% else %}{{ (f.size / 1024) | round(1) }} KB{% endif %}
                         </td>
-                        <td>{{ f.uploaded_at.strftime('%b %d, %Y') if f.uploaded_at else '—' }}</td>
+                        <td class="text-nowrap">{{ f.uploaded_at.strftime('%b %d, %Y') if f.uploaded_at else '—' }}</td>
                         <td class="text-end text-nowrap">
                             <a href="{{ url_for('main.download_file', file_id=f.id) }}" class="btn btn-sm btn-success">Download</a>
                             <button type="button" class="btn btn-sm btn-outline-primary"
@@ -120,7 +122,7 @@
                                     data-title="{{ f.title }}"
                                     data-filename="{{ f.filename }}">Edit</button>
                             <form action="{{ url_for('main.delete_file', file_id=f.id) }}" method="POST"
-                                  class="d-inline" onsubmit="return confirm('Delete this file?');">
+                                  class="d-inline" onsubmit="return confirm('Move this file to the Archives?');">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                             </form>
@@ -141,7 +143,7 @@
 </div>
 
 <!-- Important Pictures: upload, preview, delete -->
-<div class="card shadow-sm mb-4" data-search-section>
+<div class="card shadow-sm mb-3" data-search-section>
     <div class="card-body">
         <h2 class="h5 mb-3">Important Pictures</h2>
 
@@ -149,7 +151,7 @@
         <form action="{{ url_for('main.upload_picture') }}"
               method="POST"
               enctype="multipart/form-data"
-              class="row g-2 mb-2">
+              class="row g-2 mb-1">
 
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
@@ -248,7 +250,7 @@
                         <form action="{{ url_for('main.delete_picture', picture_id=picture.id) }}"
                               method="POST"
                               class="flex-fill"
-                              onsubmit="return confirm('Are you sure you want to delete this picture?');">
+                              onsubmit="return confirm('Move this picture to the Archives?');">
 
                             <input type="hidden"
                                    name="csrf_token"
@@ -283,6 +285,7 @@
 </div>
     </div>
 </div>
+{% endcall %}
 
 <!-- Edit link (one shared popup, filled in by the script below) -->
 <div class="modal fade" id="editLinkModal" tabindex="-1" aria-hidden="true">

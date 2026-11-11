@@ -318,7 +318,7 @@ document.addEventListener('DOMContentLoaded', function(){
         }
         
         async function remove(id) {
-            if (!confirm('Delete this entry?')) return;
+            if (!confirm('Move this entry to the Archives?')) return;
             try {
             await api(`${API}/${id}`, 'DELETE');
             events = events.filter(e => e.id !== id);

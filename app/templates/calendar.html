@@ -6,7 +6,9 @@
 <link rel="stylesheet" href="../static/css/calendar.css">
  
 <h1>Calendar</h1>
- 
+
+{% from 'activity_tabs.html' import activity_tabs with context %}
+{% call activity_tabs('calendar', 'Calendar') %}
 <div class="cal-wrap">
     <div class="cal-card">
         <div class="cal-head">
@@ -33,7 +35,8 @@
         </div>
     </div>
 </div>
- 
+{% endcall %}
+
 <div class="cal-modal-bg" id="calModalBg">
     <div class="cal-modal">
         <h3 id="modalDate"></h3>
