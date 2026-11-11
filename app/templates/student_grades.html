@@ -98,7 +98,7 @@
           </label>
         </form>
         <form method="POST" action="{{ url_for('main.delete_report_card', report_id=report.id) }}"
-              data-confirm="Delete the {{ level }} file &quot;{{ report.original_filename }}&quot;? This cannot be undone.">
+              data-confirm="Move the {{ level }} file &quot;{{ report.original_filename }}&quot; to the Archives?">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="submit" class="btn btn-sm sg-btn-danger">
             <svg class="sg-icon"><use href="#sg-i-trash"/></svg> Delete

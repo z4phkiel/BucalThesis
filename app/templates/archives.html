@@ -1,0 +1,117 @@
+{% extends 'dashboard.html' %}
+
+{% block head %}
+{# Reuses the Linkage/Files title, tables, row buttons and popups. Linked in the head, not the page body,
+   because index.css marks the Linkage tab as the open page when linkagefiles.css is linked from the body. #}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/linkagefiles.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/archives.css') }}">
+{% endblock %}
+
+{% block content %}
+{% macro size(bytes) -%}
+{% if bytes is none %}—{% elif bytes >= 1048576 %}{{ (bytes / 1048576) | round(1) }} MB{% else %}{{ (bytes / 1024) | round(1) }} KB{% endif %}
+{%- endmacro %}
+
+{# One card per kind of item. The caller fills in the item's own cells; the date and actions are the same for all.
+   name is the field the delete popup shows, so it is clear what is about to go. #}
+{% macro section(kind, title, items, columns, name) %}
+<section class="card shadow-sm mb-3" aria-labelledby="{{ kind }}-title">
+    <div class="card-body">
+        <h2 id="{{ kind }}-title" class="h5 mb-3">{{ title }}</h2>
+        <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        {% for column in columns %}<th>{{ column }}</th>{% endfor %}
+                        <th>Archived</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        {{ caller(item) }}
+                        <td class="text-nowrap">{{ item.archived_at.strftime('%b %d, %Y') }}</td>
+                        <td class="text-end text-nowrap">
+                            <form action="{{ url_for('main.restore_archived', kind=kind, item_id=item.id) }}" method="POST" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-outline-primary">Restore</button>
+                            </form>
+                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                    data-bs-toggle="modal" data-bs-target="#deleteForeverModal"
+                                    data-action="{{ url_for('main.delete_archived', kind=kind, item_id=item.id) }}"
+                                    data-name="{{ item[name] or 'This item' }}">Delete permanently</button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="{{ columns | length + 2 }}" class="text-center text-muted py-4">No archived {{ title | lower }}.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endmacro %}
+
+<h1 class="h3 mb-1">Archives</h1>
+<p class="archives-intro">Deleted items stay here until they are restored or deleted permanently.</p>
+
+{% call(r) section('report-cards', 'Report Cards', report_cards, ['Student', 'Grade Level', 'File'], 'original_filename') %}
+<td>{{ [r.last_name, r.first_name] | select | join(', ') or '—' }}</td>
+<td>{{ r.grade_level }}</td>
+<td><a href="{{ url_for('main.download_report_card', report_id=r.id) }}">{{ r.original_filename }}</a></td>
+{% endcall %}
+
+{% call(e) section('events', 'Calendar Events', events, ['Description', 'Tag', 'Date'], 'description') %}
+<td>{{ e.description or '—' }}</td>
+<td>{{ e.tag | capitalize }}</td>
+<td class="text-nowrap">
+    {{ e.event_date.strftime('%b %d, %Y') }}{% if e.end_date and e.end_date != e.event_date %} – {{ e.end_date.strftime('%b %d, %Y') }}{% endif %}
+</td>
+{% endcall %}
+
+{% call(link) section('links', 'Links', links, ['Title', 'Link'], 'title') %}
+<td>{{ link.title }}</td>
+<td><a href="{{ link.url }}" target="_blank" rel="noopener noreferrer">{{ link.url }}</a></td>
+{% endcall %}
+
+{% call(f) section('files', 'Files', files, ['Title', 'File', 'Size'], 'title') %}
+<td>{{ f.title }}</td>
+<td><a href="{{ url_for('main.download_file', file_id=f.id) }}">{{ f.filename }}</a></td>
+<td class="text-nowrap">{{ size(f.size) }}</td>
+{% endcall %}
+
+{% call(p) section('pictures', 'Pictures', pictures, ['Title', 'File', 'Size'], 'title') %}
+<td>{{ p.title }}</td>
+<td><a href="{{ url_for('main.view_picture', picture_id=p.id) }}" target="_blank">{{ p.filename }}</a></td>
+<td class="text-nowrap">{{ size(p.size) }}</td>
+{% endcall %}
+
+<!-- Permanent delete: one shared popup, filled in by archives.js with the row that was clicked -->
+<div class="modal fade" id="deleteForeverModal" tabindex="-1" aria-labelledby="deleteForeverTitle" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="POST" class="modal-content">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteForeverTitle">Delete permanently?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="archives-confirm-name" id="deleteForeverName"></p>
+                <p>This removes it from the database for good. It cannot be restored afterwards.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-danger">Delete permanently</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/archives/archives.js') }}"></script>
+{% endblock %}

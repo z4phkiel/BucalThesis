@@ -116,6 +116,20 @@ class YearlyMetric(db.Model):
     def __repr__(self):
         return f'<YearlyMetric {self.school_year}>'
 
+class ActivityLog(db.Model):
+    """One add, change or delete on the Masterlist, Calendar or Linkage/Files, shown in the sidebar's activity card."""
+    __tablename__ = 'activity_log'
+
+    id = db.Column(db.Integer, primary_key=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    username = db.Column(db.String(50), nullable=False)     # a copy, so the entry still says who after the account is gone
+    area = db.Column(db.String(20), nullable=False)         # masterlist / calendar / linkage
+    action = db.Column(db.String(10), nullable=False)       # POST / UPDATE / DELETE
+    description = db.Column(db.String(255), nullable=False)
+
+    def __repr__(self):
+        return f'<ActivityLog {self.action} {self.area}>'
+
 class Grades(db.Model):
     __tablename__ = 'student_grades'
 
@@ -136,6 +150,7 @@ class Grades(db.Model):
     mime_type = db.Column(db.String(100), nullable=True)
 
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    archived_at = db.Column(db.DateTime, nullable=True)     # NULL = active; set when deleted, which moves it to the Archives
 
     __table_args__ = (
         db.UniqueConstraint(
@@ -154,6 +169,7 @@ class CalendarEvent(db.Model):
     link_url = db.Column(db.String(2048), nullable=True)
     description = db.Column(db.Text, default='')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    archived_at = db.Column(db.DateTime, nullable=True)     # NULL = active; set when deleted, which moves it to the Archives
  
     def to_dict(self):
         return {
@@ -173,6 +189,7 @@ class LinkItem(db.Model):
     title = db.Column(db.String(150), nullable=False)
     url = db.Column(db.String(500), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    archived_at = db.Column(db.DateTime, nullable=True)     # NULL = active; set when deleted, which moves it to the Archives
  
     def __repr__(self):
         return f'<LinkItem {self.title}>'
@@ -187,6 +204,7 @@ class FileItem(db.Model):
     content_type = db.Column(db.String(150))
     size = db.Column(db.Integer)
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    archived_at = db.Column(db.DateTime, nullable=True)     # NULL = active; set when deleted, which moves it to the Archives
  
     data = deferred(db.Column(db.LargeBinary().with_variant(MEDIUMBLOB(), 'mysql'), nullable=False))
  
@@ -214,6 +232,7 @@ class PictureItem(db.Model):
     )
 
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    archived_at = db.Column(db.DateTime, nullable=True)     # NULL = active; set when deleted, which moves it to the Archives
 
     def __repr__(self):
         return f'<PictureItem {self.title}>'

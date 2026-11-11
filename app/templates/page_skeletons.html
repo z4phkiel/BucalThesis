@@ -53,6 +53,21 @@
 </div>
 {% endmacro %}
 
+{# Archives: one card per kind of item; each table ends with the same Archived and Actions columns #}
+{% macro archive_section(title, columns) %}
+<div class="skel-card skel-card-linkage">
+    <div class="skel-card-body">
+        <div class="skel-section-title">{{ title }}</div>
+        <div class="skel-table-frame">
+            {{ table(columns + [
+                {'label': 'Archived', 'width': '14%', 'bars': ['62%', '54%']},
+                {'label': 'Actions', 'width': 'auto', 'align': 'end', 'pills': 2},
+            ], 2, 'skel-table-tight skel-table-striped') }}
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
 <div id="pageSkeleton" class="p-4" role="status" aria-busy="true" hidden></div>
 
 <template data-skeleton-path="{{ url_for('main.index') }}">
@@ -224,4 +239,31 @@
             </div>
         </div>
     </div>
+</template>
+
+<template data-skeleton-path="{{ url_for('main.archives') }}">
+    <span class="visually-hidden">Loading the archives</span>
+    <div class="skel-title skel-title-list">Archives</div>
+    <p class="skel-intro">Deleted items stay here until they are restored or deleted permanently.</p>
+    {% set file_columns = [
+        {'label': 'Title', 'width': '24%', 'bars': ['64%', '78%']},
+        {'label': 'File', 'width': '24%', 'bars': ['72%', '58%']},
+        {'label': 'Size', 'width': '10%', 'bars': ['62%', '54%']},
+    ] %}
+    {{ archive_section('Report Cards', [
+        {'label': 'Student', 'width': '24%', 'bars': ['64%', '78%']},
+        {'label': 'Grade Level', 'width': '14%', 'bars': ['52%', '45%']},
+        {'label': 'File', 'width': '20%', 'bars': ['72%', '58%']},
+    ]) }}
+    {{ archive_section('Calendar Events', [
+        {'label': 'Description', 'width': '28%', 'bars': ['72%', '58%']},
+        {'label': 'Tag', 'width': '10%', 'bars': ['60%', '52%']},
+        {'label': 'Date', 'width': '20%', 'bars': ['64%', '70%']},
+    ]) }}
+    {{ archive_section('Links', [
+        {'label': 'Title', 'width': '24%', 'bars': ['64%', '78%']},
+        {'label': 'Link', 'width': '34%', 'bars': ['72%', '58%']},
+    ]) }}
+    {{ archive_section('Files', file_columns) }}
+    {{ archive_section('Pictures', file_columns) }}
 </template>

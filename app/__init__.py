@@ -71,12 +71,25 @@ def create_app():
     return app
 
 
+# create_all() only makes new tables, so columns added to existing tables go here: table -> {column: definition}
+ARCHIVED_AT = {'archived_at': 'DATETIME NULL'}
+NEW_COLUMNS = {
+    'calendar_events': {'end_date': 'DATE NULL', **ARCHIVED_AT},
+    'student_grades': ARCHIVED_AT,
+    'link_item': ARCHIVED_AT,
+    'file_item': ARCHIVED_AT,
+    'picture_item': ARCHIVED_AT,
+}
+
+
 def add_missing_columns():
-    # create_all() only makes new tables, so columns added to existing tables go here
-    columns = {c['name'] for c in inspect(db.engine).get_columns('calendar_events')}
-    if 'end_date' not in columns:
-        with db.engine.begin() as connection:
-            connection.execute(text('ALTER TABLE calendar_events ADD COLUMN end_date DATE NULL'))
+    inspector = inspect(db.engine)
+    with db.engine.begin() as connection:
+        for table, columns in NEW_COLUMNS.items():
+            existing = {c['name'] for c in inspector.get_columns(table)}
+            for name, definition in columns.items():
+                if name not in existing:
+                    connection.execute(text(f'ALTER TABLE {table} ADD COLUMN {name} {definition}'))
 
 
     

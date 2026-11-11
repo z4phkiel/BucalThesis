@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, request, url_for, session, flash, current_app, send_file, jsonify, abort
-from app.models import User, Enrollment, YearlyMetric, Grades, CalendarEvent, LinkItem, FileItem, PictureItem # Make sure to import your User model instead of or alongside myTask
+from app.models import User, Enrollment, YearlyMetric, Grades, CalendarEvent, LinkItem, FileItem, PictureItem, ActivityLog # Make sure to import your User model instead of or alongside myTask
 from app import db
 from datetime import datetime, timedelta
 import base64
@@ -31,6 +31,82 @@ def keep_private_pages_out_of_browser_history(response):
     if 'user_id' in session and response.mimetype in ('text/html', 'application/json'):
         response.headers['Cache-Control'] = 'no-store'
     return response
+
+
+# SOFT DELETE
+# Deleting a report card, calendar event, link, file or picture only sets its archived_at, which moves it
+# to the Archives page. Only that page deletes for good.
+
+def active(model):
+    """Rows that are not in the Archives."""
+    return model.query.filter_by(archived_at=None)
+
+
+# ACTIVITY LOG
+# Every add (POST), change (UPDATE) and delete (DELETE) on the Masterlist, Calendar and Linkage/Files.
+# The sidebar's bell opens a card that loads the latest entries from /activity-log.
+
+ACTIVITY_AREAS = {'masterlist': 'Masterlist', 'calendar': 'Calendar', 'linkage': 'Linkage/Files'}
+ACTIVITY_SHOWN = 30
+NAME_IN_LOG_LENGTH = 60
+
+
+def log_activity(area, action, description):
+    """Adds the entry to the session, so it is saved by the same commit as the change, or not at all."""
+    db.session.add(ActivityLog(username=session.get('username', ''), area=area, action=action,
+                               description=description[:255]))
+
+
+def named(text):
+    """A title or description, quoted and kept short for a log entry."""
+    text = ' '.join((text or '').split())
+    if len(text) > NAME_IN_LOG_LENGTH:
+        text = text[:NAME_IN_LOG_LENGTH - 3] + '...'
+    return f'"{text}"' if text else ''
+
+
+def full_name(student):
+    return ', '.join(filter(None, [student.last_name, student.first_name]))
+
+
+def event_label(event):
+    """e.g. exam "Quarterly Exam" on Nov 13, 2026"""
+    start, end = event.event_date, event.end_date or event.event_date
+    dates = start.strftime('%b %d, %Y') + ('' if end == start else ' to ' + end.strftime('%b %d, %Y'))
+    return ' '.join(filter(None, [event.tag, named(event.description), 'on', dates]))
+
+
+def activity_time(logged_at):
+    """(short, full): 'Just now', '5 min ago' or '3 hr ago' within a day, and the date and time at the school."""
+    local = logged_at + timedelta(hours=8)
+    full = f"{local:%b} {local.day}, {local.year}, {int(local.strftime('%I'))}:{local:%M %p}"
+    seconds = (datetime.utcnow() - logged_at).total_seconds()
+    if seconds < 60:
+        return 'Just now', full
+    if seconds < 3600:
+        return f'{int(seconds // 60)} min ago', full
+    if seconds < 86400:
+        return f'{int(seconds // 3600)} hr ago', full
+    return full, full
+
+
+@main_bp.app_context_processor
+def activity_areas():
+    # The card's filter buttons are in the layout, so every page needs the area names
+    return {'activity_areas': ACTIVITY_AREAS}
+
+
+@main_bp.route("/activity-log")
+def activity_log():
+    if 'user_id' not in session:
+        return {'error': 'Unauthorized'}, 401
+
+    area = request.args.get('area', '')
+    logs = ActivityLog.query
+    if area in ACTIVITY_AREAS:
+        logs = logs.filter_by(area=area)
+    logs = logs.order_by(ActivityLog.id.desc()).limit(ACTIVITY_SHOWN).all()
+    return render_template('activity_log.html', logs=logs, when=activity_time)
 
 
 
@@ -474,7 +550,7 @@ def dashboard_data():
     # Today and the next 6 days (school time), including events already under way
     today = school_today()
     week_end = today + timedelta(days=6)
-    week_events = CalendarEvent.query.filter(
+    week_events = active(CalendarEvent).filter(
         CalendarEvent.event_date <= week_end,
         db.func.coalesce(CalendarEvent.end_date, CalendarEvent.event_date) >= today,
     ).order_by(CalendarEvent.event_date.asc(), CalendarEvent.id.asc()).all()
@@ -875,6 +951,7 @@ def edit_student(student_id):
     try:
         for name, value in values.items():
             setattr(student, name, value)
+        log_activity('masterlist', 'UPDATE', f'Edited the enrollment form of {full_name(student)}')
         db.session.commit()
         flash('Enrollment form updated.', 'success')
         return redirect(url_for('main.student_detail', student_id=student.id))
@@ -934,7 +1011,7 @@ def student_grades(student_id):
     student = Enrollment.query.get_or_404(student_id)
 
     reports = {
-        level: Grades.query.filter_by(
+        level: active(Grades).filter_by(
             student_id=student.id,
             grade_level=level
         ).first()
@@ -1017,6 +1094,16 @@ def upload_report_card(student_id, level):
         grade_level=level,
     ).first()
 
+    # One row per student and level (unique_student_grade_level), so an archived one would be overwritten
+    if existing_report and existing_report.archived_at:
+        flash(
+            f"The {level} report card is in the Archives. Restore it or delete it permanently there first.",
+            "warning",
+        )
+        return redirect(
+            url_for("main.student_grades", student_id=student.id)
+        )
+
     try:
         if existing_report:
             existing_report.original_filename = filename
@@ -1028,6 +1115,7 @@ def upload_report_card(student_id, level):
             existing_report.uploaded_at = datetime.utcnow()
 
             message = f"{level} report card replaced successfully."
+            log_activity("masterlist", "UPDATE", f"Replaced the {level} report card of {full_name(student)}")
         else:
             report = Grades(
                 student_id=student.id,
@@ -1039,6 +1127,7 @@ def upload_report_card(student_id, level):
             )
             db.session.add(report)
             message = f"{level} report card uploaded successfully."
+            log_activity("masterlist", "POST", f"Uploaded the {level} report card of {full_name(student)}")
 
         db.session.commit()
         flash(message, "success")
@@ -1111,22 +1200,26 @@ def download_report_card(report_id):
     methods=["POST"]
 )
 def delete_report_card(report_id):
-    """Delete the report-card row and its binary contents from MySQL."""
+    """Move the report card to the Archives."""
     if "user_id" not in session:
         return redirect(url_for("main.login"))
 
-    report = Grades.query.get_or_404(report_id)
+    report = active(Grades).filter_by(id=report_id).first_or_404()
     student_id = report.student_id
 
+    # Only the name columns: a full student row carries the signature image
+    student = Enrollment.query.with_entities(Enrollment.last_name, Enrollment.first_name).filter_by(id=student_id).one()
+
     try:
-        db.session.delete(report)
+        report.archived_at = datetime.utcnow()
+        log_activity("masterlist", "DELETE", f"Moved the {report.grade_level} report card of {full_name(student)} to the Archives")
         db.session.commit()
-        flash("Report card deleted successfully.", "success")
+        flash("Report card moved to the Archives.", "success")
 
     except Exception:
         db.session.rollback()
         current_app.logger.exception(
-            "Failed to delete report card from the database."
+            "Failed to archive the report card."
         )
         flash("Could not delete the report card. Please try again.", "danger")
 
@@ -1198,7 +1291,7 @@ def calendar_events():
         return {'error': 'Unauthorized'}, 401
  
     if request.method == 'GET':
-        events = CalendarEvent.query.order_by(CalendarEvent.event_date.asc(), CalendarEvent.id.asc()).all()
+        events = active(CalendarEvent).order_by(CalendarEvent.event_date.asc(), CalendarEvent.id.asc()).all()
         return jsonify([e.to_dict() for e in events])
  
     values, error = _parse_calendar_payload(request.get_json(silent=True) or {})
@@ -1207,6 +1300,7 @@ def calendar_events():
  
     event = CalendarEvent(**values)
     db.session.add(event)
+    log_activity('calendar', 'POST', f'Added {event_label(event)}')
     db.session.commit()
     return jsonify(event.to_dict()), 201
  
@@ -1216,10 +1310,11 @@ def calendar_event_detail(event_id):
     if 'user_id' not in session:
         return {'error': 'Unauthorized'}, 401
  
-    event = CalendarEvent.query.get_or_404(event_id)
+    event = active(CalendarEvent).filter_by(id=event_id).first_or_404()
  
     if request.method == 'DELETE':
-        db.session.delete(event)
+        event.archived_at = datetime.utcnow()
+        log_activity('calendar', 'DELETE', f'Moved {event_label(event)} to the Archives')
         db.session.commit()
         return {'success': True}
  
@@ -1232,6 +1327,7 @@ def calendar_event_detail(event_id):
     event.tag = values['tag']
     event.link_url = values['link_url']
     event.description = values['description']
+    log_activity('calendar', 'UPDATE', f'Edited {event_label(event)}')
     db.session.commit()
     return jsonify(event.to_dict())
 
@@ -1303,9 +1399,9 @@ def linkagefiles():
     if 'user_id' not in session:
         return redirect(url_for('main.login'))
 
-    links = LinkItem.query.order_by(LinkItem.created_at.desc()).all()
-    files = FileItem.query.order_by(FileItem.uploaded_at.desc()).all()
-    pictures = PictureItem.query.order_by(PictureItem.uploaded_at.desc()).all()
+    links = active(LinkItem).order_by(LinkItem.created_at.desc()).all()
+    files = active(FileItem).order_by(FileItem.uploaded_at.desc()).all()
+    pictures = active(PictureItem).order_by(PictureItem.uploaded_at.desc()).all()
 
     return render_template(
         'linkagefiles.html',
@@ -1331,6 +1427,7 @@ def add_link():
         flash(f'Titles can be up to {MAX_TITLE_LENGTH} characters and links up to {MAX_LINK_LENGTH}.', 'danger')
     else:
         db.session.add(LinkItem(title=title, url=url))
+        log_activity('linkage', 'POST', f'Added link {named(title)}')
         db.session.commit()
         flash('Link added.', 'success')
     return redirect(url_for('main.linkagefiles'))
@@ -1341,7 +1438,7 @@ def edit_link(link_id):
     if 'user_id' not in session:
         return redirect(url_for('main.login'))
  
-    link = LinkItem.query.get_or_404(link_id)
+    link = active(LinkItem).filter_by(id=link_id).first_or_404()
     title = request.form.get('title', '').strip()
     url = clean_url(request.form.get('url'))
  
@@ -1352,6 +1449,7 @@ def edit_link(link_id):
     else:
         link.title = title
         link.url = url
+        log_activity('linkage', 'UPDATE', f'Edited link {named(title)}')
         db.session.commit()
         flash('Link updated.', 'success')
     return redirect(url_for('main.linkagefiles'))
@@ -1362,10 +1460,11 @@ def delete_link(link_id):
     if 'user_id' not in session:
         return redirect(url_for('main.login'))
  
-    link = LinkItem.query.get_or_404(link_id)
-    db.session.delete(link)
+    link = active(LinkItem).filter_by(id=link_id).first_or_404()
+    link.archived_at = datetime.utcnow()
+    log_activity('linkage', 'DELETE', f'Moved link {named(link.title)} to the Archives')
     db.session.commit()
-    flash('Link deleted.', 'success')
+    flash('Link moved to the Archives.', 'success')
     return redirect(url_for('main.linkagefiles'))
  
  
@@ -1387,6 +1486,7 @@ def upload_file():
         return redirect(url_for('main.linkagefiles'))
     db.session.add(FileItem(title=title, filename=filename, content_type=content_type,
                             size=len(data), data=data))
+    log_activity('linkage', 'POST', f'Uploaded file {named(title)}')
     db.session.commit()
     flash('File uploaded.', 'success')
     return redirect(url_for('main.linkagefiles'))
@@ -1397,7 +1497,7 @@ def edit_file(file_id):
     if 'user_id' not in session:
         return redirect(url_for('main.login'))
  
-    item = FileItem.query.get_or_404(file_id)
+    item = active(FileItem).filter_by(id=file_id).first_or_404()
     title = request.form.get('title', '').strip()
     upload = request.files.get('file')
  
@@ -1418,8 +1518,10 @@ def edit_file(file_id):
         item.data = data
         item.content_type = content_type
         item.size = len(data)
- 
+
     item.title = title
+    replaced = f' and replaced it with {named(item.filename)}' if upload and upload.filename else ''
+    log_activity('linkage', 'UPDATE', f'Edited file {named(title)}{replaced}')
     db.session.commit()
     flash('File updated.', 'success')
     return redirect(url_for('main.linkagefiles'))
@@ -1430,10 +1532,11 @@ def delete_file(file_id):
     if 'user_id' not in session:
         return redirect(url_for('main.login'))
  
-    item = FileItem.query.get_or_404(file_id)
-    db.session.delete(item)
+    item = active(FileItem).filter_by(id=file_id).first_or_404()
+    item.archived_at = datetime.utcnow()
+    log_activity('linkage', 'DELETE', f'Moved file {named(item.title)} to the Archives')
     db.session.commit()
-    flash('File deleted.', 'success')
+    flash('File moved to the Archives.', 'success')
     return redirect(url_for('main.linkagefiles'))
  
  
@@ -1538,6 +1641,7 @@ def upload_picture():
         )
 
         db.session.add(picture)
+        log_activity('linkage', 'POST', f'Uploaded picture {named(title)}')
         db.session.commit()
 
         flash('Picture uploaded successfully.', 'success')
@@ -1577,22 +1681,104 @@ def delete_picture(picture_id):
     if 'user_id' not in session:
         return redirect(url_for('main.login'))
 
-    picture = PictureItem.query.get_or_404(picture_id)
+    picture = active(PictureItem).filter_by(id=picture_id).first_or_404()
 
     try:
-        db.session.delete(picture)
+        picture.archived_at = datetime.utcnow()
+        log_activity('linkage', 'DELETE', f'Moved picture {named(picture.title)} to the Archives')
         db.session.commit()
 
-        flash('Picture deleted successfully.', 'success')
+        flash('Picture moved to the Archives.', 'success')
 
     except Exception:
         db.session.rollback()
         current_app.logger.exception(
-            "Failed to delete picture from the database."
+            "Failed to archive the picture."
         )
         flash('Could not delete the picture. Please try again.', 'danger')
 
     return redirect(url_for('main.linkagefiles'))
+
+
+# ARCHIVES
+
+# The kind in an archive URL: (model, name used in messages, activity log area, column that names the item)
+ARCHIVE_KINDS = {
+    'report-cards': (Grades, 'Report card', 'masterlist', 'original_filename'),
+    'events': (CalendarEvent, 'Event', 'calendar', 'description'),
+    'links': (LinkItem, 'Link', 'linkage', 'title'),
+    'files': (FileItem, 'File', 'linkage', 'title'),
+    'pictures': (PictureItem, 'Picture', 'linkage', 'title'),
+}
+
+
+def archived(model):
+    """Rows in the Archives, most recently deleted first."""
+    return model.query.filter(model.archived_at.isnot(None)).order_by(model.archived_at.desc())
+
+
+@main_bp.route("/archives")
+def archives():
+    if 'user_id' not in session:
+        return redirect(url_for('main.login'))
+
+    # Only the columns the page shows: a full report card row carries the file itself
+    report_cards = archived(Grades).outerjoin(Enrollment, Grades.student_id == Enrollment.id).with_entities(
+        Grades.id, Grades.grade_level, Grades.original_filename, Grades.archived_at,
+        Enrollment.last_name, Enrollment.first_name,
+    ).all()
+
+    return render_template(
+        'archives.html',
+        report_cards=report_cards,
+        events=archived(CalendarEvent).all(),
+        links=archived(LinkItem).all(),
+        files=archived(FileItem).all(),
+        pictures=archived(PictureItem).all(),
+    )
+
+
+def change_archived(kind, item_id, restore):
+    """Restores an archived item, or deletes it for good. An item that isn't archived is never touched."""
+    if kind not in ARCHIVE_KINDS:
+        abort(404)
+    model, label, area, name_column = ARCHIVE_KINDS[kind]
+
+    # Queries, so a report card's file is never loaded: only its name, for the log
+    rows = model.query.filter(model.id == item_id, model.archived_at.isnot(None))
+    name = named(rows.with_entities(getattr(model, name_column)).scalar())
+    changed = rows.update({'archived_at': None}) if restore else rows.delete()
+
+    # Nothing changed when the item already left the Archives, e.g. a second click or another open tab
+    if not changed:
+        flash('That item is no longer in the Archives.', 'warning')
+        return redirect(url_for('main.archives'))
+
+    item = f'{label.lower()} {name}'.strip()     # an event can have no description, so no name
+    if restore:
+        log_activity(area, 'UPDATE', f'Restored {item} from the Archives')
+    else:
+        log_activity(area, 'DELETE', f'Permanently deleted {item}')
+    db.session.commit()
+    flash(f'{label} restored.' if restore else f'{label} deleted permanently.', 'success')
+    return redirect(url_for('main.archives'))
+
+
+@main_bp.route("/archives/<kind>/<int:item_id>/restore", methods=['POST'])
+def restore_archived(kind, item_id):
+    if 'user_id' not in session:
+        return redirect(url_for('main.login'))
+
+    return change_archived(kind, item_id, restore=True)
+
+
+@main_bp.route("/archives/<kind>/<int:item_id>/delete", methods=['POST'])
+def delete_archived(kind, item_id):
+    if 'user_id' not in session:
+        return redirect(url_for('main.login'))
+
+    return change_archived(kind, item_id, restore=False)
+
 
 @main_bp.route('/welcome')
 def landing():

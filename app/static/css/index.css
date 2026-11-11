@@ -578,7 +578,8 @@ body:has(link[href*="enrollment.css"]) .sidebar .nav-item:nth-child(2) .nav-link
 body:has(link[href*="enrolled.css"]) .sidebar .nav-item:nth-child(3) .nav-link,
 body:has(link[href*="calendar.css"]) .sidebar .nav-item:nth-child(4) .nav-link,
 body:has(link[href*="linkage"]) .sidebar .nav-item:nth-child(5) .nav-link,
-body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(5) .nav-link {
+body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(5) .nav-link,
+.sidebar .nav-link[aria-current="page"] {
     background-color: var(--ix-khaki-500);
     color: var(--ix-green-900);
     font-weight: 700;
@@ -624,7 +625,8 @@ body:has(link[href*="enrollment.css"]) .sidebar .nav-item:nth-child(2) .nav-link
 body:has(link[href*="enrolled.css"]) .sidebar .nav-item:nth-child(3) .nav-link,
 body:has(link[href*="calendar.css"]) .sidebar .nav-item:nth-child(4) .nav-link,
 body:has(link[href*="linkage"]) .sidebar .nav-item:nth-child(5) .nav-link,
-body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(5) .nav-link {
+body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(5) .nav-link,
+.sidebar .nav-link[aria-current="page"] {
     box-shadow: inset 5px 0 0 var(--ix-green-600);
 }
 
@@ -642,7 +644,8 @@ body:has(link[href*="enrollment.css"]) .sidebar .nav-item:nth-child(2) .nav-link
 body:has(link[href*="enrolled.css"]) .sidebar .nav-item:nth-child(3) .nav-link,
 body:has(link[href*="calendar.css"]) .sidebar .nav-item:nth-child(4) .nav-link,
 body:has(link[href*="linkage"]) .sidebar .nav-item:nth-child(5) .nav-link,
-body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(5) .nav-link {
+body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(5) .nav-link,
+.sidebar .nav-link[aria-current="page"] {
     box-shadow: inset var(--ix-nav-marker) 0 0 var(--ix-green-600);
 }
 
@@ -652,6 +655,7 @@ body:has(link[href*="enrolled.css"]) .sidebar .nav-item:nth-child(3) .nav-link,
 body:has(link[href*="calendar.css"]) .sidebar .nav-item:nth-child(4) .nav-link,
 body:has(link[href*="linkage"]) .sidebar .nav-item:nth-child(5) .nav-link,
 body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(5) .nav-link,
+.sidebar .nav-link[aria-current="page"],
 .sidebar .nav-link.active {
     box-shadow: none;
 }
@@ -1235,6 +1239,14 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
 .skel-card-slim .skel-search {
     flex: 1 1 auto;
     height: 34px;
+}
+
+/* Archives: the line under the title */
+.skel-intro {
+    margin: 0.25rem 0 1rem 2px;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--ix-muted);
 }
 
 /* ---------- Dashboard ---------- */
