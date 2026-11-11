@@ -72,7 +72,7 @@
     height: 70%;
     transform: translateY(-50%);
     border-radius: 6px;
-    background: linear-gradient(180deg, var(--ix-khaki-500), var(--ix-green-500));
+    background: var(--ix-khaki-500);
 }
 
 /* ---------- Student card ---------- */
@@ -97,7 +97,7 @@
     font-weight: 800;
     letter-spacing: 0.04em;
     color: var(--ix-green-900);
-    background: linear-gradient(135deg, var(--ix-khaki-300), var(--ix-khaki-500));
+    background: var(--ix-khaki-300);
     border: 3px solid var(--ix-white);
     border-radius: 50%;
     box-shadow: 0 0 0 2px var(--ix-khaki-500);
@@ -207,7 +207,7 @@
 }
 
 .sg-step:focus-visible {
-    outline: 3px solid rgba(79, 125, 69, 0.45);
+    outline: 3px solid rgba(37, 99, 235, 0.45);
     outline-offset: 2px;
 }
 
@@ -287,7 +287,7 @@
 
 .is-filed .sg-mark {
     color: #fff;
-    background: linear-gradient(135deg, var(--ix-green-600), var(--ix-green-700));
+    background: var(--ix-green-700);
     border: 2px solid var(--ix-khaki-500);
 }
 
@@ -302,7 +302,7 @@
     border: 1px solid var(--ix-border);
     border-left: 4px solid var(--ix-khaki-400);
     border-radius: 14px;
-    box-shadow: 0 8px 22px -14px rgba(36, 61, 40, 0.35);
+    box-shadow: 0 8px 22px -14px rgba(23, 37, 84, 0.35);
     transition: border-color 0.15s, box-shadow 0.15s;
 }
 
@@ -338,8 +338,8 @@
 
 .sg-status.is-filed {
     color: var(--ix-green-700);
-    background: #e8efe3;
-    border: 1px solid rgba(79, 125, 69, 0.35);
+    background: #eff6ff;
+    border: 1px solid rgba(37, 99, 235, 0.35);
 }
 
 /* ---------- A stored file ---------- */
@@ -355,7 +355,7 @@
     height: 40px;
     padding: 8px;
     color: var(--ix-green-600);
-    background: #e8efe3;
+    background: #eff6ff;
     border-radius: 10px;
 }
 
@@ -399,7 +399,7 @@
 }
 
 .main-content .sg-actions .btn-primary {
-    box-shadow: 0 4px 10px rgba(47, 82, 51, 0.22);
+    box-shadow: 0 4px 10px rgba(30, 64, 175, 0.22);
 }
 
 .main-content .sg-btn-ghost {
@@ -415,20 +415,20 @@
 
 .main-content .sg-btn-danger {
     --bs-btn-color: var(--ix-brick);
-    --bs-btn-border-color: #d9a79e;
+    --bs-btn-border-color: #fca5a5;
     --bs-btn-hover-color: #fff;
     --bs-btn-hover-bg: var(--ix-brick);
     --bs-btn-hover-border-color: var(--ix-brick);
     --bs-btn-active-color: #fff;
-    --bs-btn-active-bg: #8c2f22;
-    --bs-btn-active-border-color: #8c2f22;
-    --bs-btn-focus-shadow-rgb: 163, 57, 42;
+    --bs-btn-active-bg: #991b1b;
+    --bs-btn-active-border-color: #991b1b;
+    --bs-btn-focus-shadow-rgb: 185, 28, 28;
 }
 
 /* the file inputs are hidden, so their focus shows on the button or drop zone they belong to */
 .sg-actions form:has(.sg-file-input:focus-visible) .sg-btn-ghost,
 .sg-drop:has(.sg-file-input:focus-visible) .sg-drop-zone {
-    outline: 3px solid rgba(79, 125, 69, 0.45);
+    outline: 3px solid rgba(37, 99, 235, 0.45);
     outline-offset: 2px;
 }
 
@@ -467,19 +467,19 @@
 
 .sg-drop-zone:hover {
     color: var(--ix-text);
-    background: #eef3e9;
+    background: #eff6ff;
     border-color: var(--ix-green-500);
 }
 
 /* ---------- Dragging a file over a level ---------- */
 .sg-level.is-dragover .sg-row {
     border-color: var(--ix-green-500);
-    box-shadow: 0 0 0 4px rgba(79, 125, 69, 0.18);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
 }
 
 .sg-level.is-dragover .sg-drop-zone {
     color: var(--ix-green-900);
-    background: #e8efe3;
+    background: #eff6ff;
     border-style: solid;
     border-color: var(--ix-green-500);
 }
@@ -492,7 +492,7 @@
     place-items: center;
     font-weight: 700;
     color: var(--ix-green-700);
-    background: rgba(232, 239, 227, 0.94);
+    background: rgba(239, 246, 255, 0.94);
     border: 2px dashed var(--ix-green-500);
     border-radius: inherit;
 }
@@ -505,7 +505,7 @@
     font-size: 0.85rem;
     font-weight: 500;
     color: var(--ix-brick);
-    background: #fbeeea;
+    background: #fef2f2;
     border-radius: 8px;
 }
 
@@ -524,7 +524,7 @@
     padding: 0 16px;
     font-weight: 600;
     color: var(--ix-green-700);
-    background: rgba(253, 252, 247, 0.96);
+    background: rgba(255, 255, 255, 0.96);
     border-radius: inherit;
 }
 

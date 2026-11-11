@@ -1,16 +1,16 @@
 :root {
-    --green-900: #243d28;
-    --green-700: #2f5233;
-    --green-600: #3f6b3a;
-    --green-500: #4f7d45;
-    --khaki-500: #c9b98f;
-    --khaki-400: #d6c9a3;
-    --khaki-300: #e3d9b8;
-    --khaki-100: #f6f2e4;
-    --white: #fdfcf7;
-    --text: #26312a;
-    --muted: #6d7566;
-    --border: #e1dcc6;
+    --green-900: #172554;
+    --green-700: #1e40af;
+    --green-600: #1d4ed8;
+    --green-500: #2563eb;
+    --khaki-500: #f59e0b;
+    --khaki-400: #fbbf24;
+    --khaki-300: #fde68a;
+    --khaki-100: #fffbeb;
+    --white: #ffffff;
+    --text: #1e293b;
+    --muted: #475569;
+    --border: #cbd5e1;
 }
 
 *, *::before, *::after {
@@ -65,18 +65,18 @@ a { color: inherit; }
 
 .btn:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 4px rgba(201, 185, 143, 0.7);
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.7);
 }
 
 .btn-green {
     color: #fff;
-    background: linear-gradient(135deg, var(--green-500), var(--green-700));
-    box-shadow: 0 8px 18px rgba(47, 82, 51, 0.35);
+    background: var(--green-600);
+    box-shadow: 0 8px 18px rgba(30, 64, 175, 0.35);
 }
 
 .btn-green:hover {
     filter: brightness(1.08);
-    box-shadow: 0 12px 24px rgba(47, 82, 51, 0.45);
+    box-shadow: 0 12px 24px rgba(30, 64, 175, 0.45);
 }
 
 .btn-khaki {
@@ -91,7 +91,7 @@ a { color: inherit; }
 
 .btn-outline {
     color: #fff;
-    border-color: rgba(253, 252, 247, 0.65);
+    border-color: rgba(255, 255, 255, 0.65);
 }
 
 .btn-outline:hover {
@@ -110,17 +110,17 @@ a { color: inherit; }
     position: sticky;
     top: 0;
     z-index: 50;
-    background: rgba(253, 252, 247, 0.92);
+    background: rgba(255, 255, 255, 0.92);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border);
-    box-shadow: 0 6px 20px -12px rgba(36, 61, 40, 0.35);
+    box-shadow: 0 6px 20px -12px rgba(23, 37, 84, 0.35);
 }
 
 .site-header::after {
     content: "";
     display: block;
     height: 3px;
-    background: linear-gradient(90deg, var(--green-700), var(--khaki-500), var(--green-700));
+    background: var(--khaki-500);
 }
 
 .header-inner {
@@ -178,9 +178,9 @@ a { color: inherit; }
 .btn-login {
     padding: 10px 22px;
     color: #fff;
-    background: linear-gradient(135deg, var(--green-500), var(--green-700));
+    background: var(--green-600);
     border-radius: 999px;
-    box-shadow: 0 6px 14px rgba(47, 82, 51, 0.3);
+    box-shadow: 0 6px 14px rgba(30, 64, 175, 0.3);
 }
 
 .btn-login:hover {
@@ -191,10 +191,7 @@ a { color: inherit; }
 .hero {
     padding: 88px 0 104px;
     color: #fff;
-    background:
-        radial-gradient(circle at 12% 18%, rgba(227, 217, 184, 0.35), transparent 40%),
-        radial-gradient(circle at 88% 85%, rgba(201, 185, 143, 0.30), transparent 45%),
-        linear-gradient(135deg, var(--green-900) 0%, var(--green-600) 55%, #8a8a5c 100%);
+    background: var(--green-900);
     border-radius: 0 0 48px 48px;
 }
 
@@ -215,7 +212,7 @@ a { color: inherit; }
     text-transform: uppercase;
     color: var(--khaki-300);
     background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(227, 217, 184, 0.45);
+    border: 1px solid rgba(253, 230, 138, 0.45);
     border-radius: 999px;
 }
 
@@ -236,7 +233,7 @@ a { color: inherit; }
     max-width: 520px;
     margin: 0 0 30px;
     font-size: 1.08rem;
-    color: rgba(253, 252, 247, 0.88);
+    color: rgba(255, 255, 255, 0.88);
 }
 
 .hero-actions {
@@ -267,7 +264,7 @@ a { color: inherit; }
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--green-500);
+    color: var(--green-600);
 }
 
 .section-head h2,
@@ -285,7 +282,7 @@ a { color: inherit; }
     width: 56px;
     height: 4px;
     margin: 14px auto 0;
-    background: linear-gradient(90deg, var(--khaki-500), var(--green-500));
+    background: var(--khaki-500);
     border-radius: 4px;
 }
 
@@ -314,13 +311,13 @@ a { color: inherit; }
     border: 1px solid var(--border);
     border-top: 5px solid var(--khaki-500);
     border-radius: 16px;
-    box-shadow: 0 12px 30px -14px rgba(36, 61, 40, 0.3);
+    box-shadow: 0 12px 30px -14px rgba(23, 37, 84, 0.3);
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 18px 36px -14px rgba(36, 61, 40, 0.4);
+    box-shadow: 0 18px 36px -14px rgba(23, 37, 84, 0.4);
 }
 
 .card h3 {
@@ -351,9 +348,9 @@ a { color: inherit; }
     justify-content: center;
     width: 52px;
     height: 52px;
-    background: linear-gradient(135deg, var(--green-500), var(--green-700));
+    background: var(--green-600);
     border-radius: 14px;
-    box-shadow: 0 8px 16px rgba(47, 82, 51, 0.28);
+    box-shadow: 0 8px 16px rgba(30, 64, 175, 0.28);
 }
 
 .icon svg {
@@ -376,7 +373,7 @@ a { color: inherit; }
     border: 1px solid var(--border);
     border-left: 8px solid var(--khaki-500);
     border-radius: 20px;
-    box-shadow: 0 18px 40px -16px rgba(36, 61, 40, 0.35);
+    box-shadow: 0 18px 40px -16px rgba(23, 37, 84, 0.35);
 }
 
 .fb-icon {
@@ -386,9 +383,9 @@ a { color: inherit; }
     flex-shrink: 0;
     width: 76px;
     height: 76px;
-    background: linear-gradient(135deg, var(--green-500), var(--green-700));
+    background: var(--green-600);
     border-radius: 20px;
-    box-shadow: 0 10px 20px rgba(47, 82, 51, 0.3);
+    box-shadow: 0 10px 20px rgba(30, 64, 175, 0.3);
 }
 
 .fb-icon svg {
@@ -414,8 +411,8 @@ a { color: inherit; }
 /* ---------- Footer ---------- */
 .site-footer {
     padding: 36px 0;
-    color: rgba(253, 252, 247, 0.85);
-    background: linear-gradient(180deg, var(--green-900), var(--green-700));
+    color: rgba(255, 255, 255, 0.85);
+    background: var(--green-900);
     border-top: 4px solid var(--khaki-500);
 }
 
@@ -452,7 +449,7 @@ a { color: inherit; }
 
 .footer-brand span {
     font-size: 0.82rem;
-    color: rgba(253, 252, 247, 0.7);
+    color: rgba(255, 255, 255, 0.7);
 }
 
 .footer-links {
@@ -465,7 +462,7 @@ a { color: inherit; }
     font-size: 0.9rem;
     font-weight: 600;
     text-decoration: none;
-    color: rgba(253, 252, 247, 0.9);
+    color: rgba(255, 255, 255, 0.9);
 }
 
 .footer-links a:hover {
@@ -556,14 +553,9 @@ a { color: inherit; }
    Hero background photo
    ========================================================== */
 .hero {
+    /* a one-color layer is the flat navy tint over the photo */
     background:
-        radial-gradient(circle at 12% 18%, rgba(227, 217, 184, 0.28), transparent 40%),
-        radial-gradient(circle at 88% 85%, rgba(201, 185, 143, 0.30), transparent 45%),
-        linear-gradient(135deg,
-            rgba(36, 61, 40, 0.93) 0%,
-            rgba(47, 82, 51, 0.82) 45%,
-            rgba(63, 107, 58, 0.62) 75%,
-            rgba(138, 138, 92, 0.55) 100%),
+        linear-gradient(rgba(23, 37, 84, 0.84), rgba(23, 37, 84, 0.84)),
         url("../images/school.jpg") center / cover no-repeat;
     background-color: var(--green-900);
 }

@@ -1,18 +1,18 @@
 
 :root {
-    --lf-green-900: #243d28;
-    --lf-green-700: #2f5233;
-    --lf-green-600: #3f6b3a;
-    --lf-green-500: #4f7d45;
-    --lf-khaki-500: #c9b98f;
-    --lf-khaki-400: #d6c9a3;
-    --lf-khaki-300: #e3d9b8;
-    --lf-khaki-100: #f6f2e4;
-    --lf-white: #fdfcf7;
-    --lf-text: #26312a;
-    --lf-muted: #7a8272;
-    --lf-border: #e8e3cf;
-    --lf-brick: #a3392a;
+    --lf-green-900: #172554;
+    --lf-green-700: #1e40af;
+    --lf-green-600: #1d4ed8;
+    --lf-green-500: #2563eb;
+    --lf-khaki-500: #f59e0b;
+    --lf-khaki-400: #fbbf24;
+    --lf-khaki-300: #fde68a;
+    --lf-khaki-100: #fffbeb;
+    --lf-white: #ffffff;
+    --lf-text: #1e293b;
+    --lf-muted: #5e6e82;
+    --lf-border: #e2e8f0;
+    --lf-brick: #b91c1c;
 }
 
 /* ---------- Page title (same size as the Masterlist's) ---------- */
@@ -34,7 +34,7 @@
     height: 70%;
     transform: translateY(-50%);
     border-radius: 6px;
-    background: linear-gradient(180deg, var(--lf-khaki-500), var(--lf-green-500));
+    background: var(--lf-khaki-500);
 }
 
 /* ---------- Search bar: one slim line, the same as the Masterlist's ---------- */
@@ -59,7 +59,7 @@
     padding: 6px 14px 6px 38px;
     font-size: 0.85rem;
     color: var(--lf-text);
-    background-color: #faf8ef;
+    background-color: #f8fafc;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%232f5233' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M21 21l-4.3-4.3'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: 13px center;
@@ -69,7 +69,7 @@
 }
 
 .main-content #linkageSearch::placeholder {
-    color: #a3a998;
+    color: #94a3b8;
 }
 
 .main-content #linkageSearch:hover {
@@ -79,7 +79,7 @@
 .main-content #linkageSearch:focus {
     background-color: #fff;
     border-color: var(--lf-green-500);
-    box-shadow: 0 0 0 4px rgba(79, 125, 69, 0.18);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
 }
 
 /* ---------- Section headings inside the cards ---------- */
@@ -98,7 +98,7 @@
 }
 
 .card-body > form.row .form-control::placeholder {
-    color: #a3a998;
+    color: #94a3b8;
 }
 
 /* file picker button; its margins cancel the field's padding, so it fills the field's height */
@@ -151,7 +151,7 @@
     text-transform: uppercase;
     white-space: nowrap;
     color: #fff;
-    background: linear-gradient(135deg, var(--lf-green-600), var(--lf-green-700));
+    background: var(--lf-green-700);
     border-bottom: 3px solid var(--lf-khaki-500);
 }
 
@@ -182,7 +182,7 @@
 
 .card .table td a:not(.btn):hover,
 .card .table td a:not(.btn):focus-visible {
-    color: var(--lf-green-500);
+    color: var(--lf-green-700);
     background-size: 100% 2px;
     outline: none;
 }
@@ -230,20 +230,20 @@
     --bs-btn-active-color: #fff;
     --bs-btn-active-bg: var(--lf-green-900);
     --bs-btn-active-border-color: var(--lf-green-900);
-    --bs-btn-focus-shadow-rgb: 79, 125, 69;
+    --bs-btn-focus-shadow-rgb: 37, 99, 235;
 }
 
 /* Delete: brick outline */
 .card .table .btn-outline-danger {
     --bs-btn-color: var(--lf-brick);
-    --bs-btn-border-color: #d9a79e;
+    --bs-btn-border-color: #fca5a5;
     --bs-btn-hover-color: #fff;
     --bs-btn-hover-bg: var(--lf-brick);
     --bs-btn-hover-border-color: var(--lf-brick);
     --bs-btn-active-color: #fff;
-    --bs-btn-active-bg: #8c2f22;
-    --bs-btn-active-border-color: #8c2f22;
-    --bs-btn-focus-shadow-rgb: 163, 57, 42;
+    --bs-btn-active-bg: #991b1b;
+    --bs-btn-active-border-color: #991b1b;
+    --bs-btn-focus-shadow-rgb: 185, 28, 28;
 }
 
 /* ---------- Edit popups ---------- */
@@ -257,7 +257,7 @@
     border: 0;
     border-top: 6px solid var(--lf-khaki-500);
     border-radius: 18px;
-    box-shadow: 0 30px 60px -15px rgba(20, 40, 25, 0.55);
+    box-shadow: 0 30px 60px -15px rgba(15, 23, 42, 0.55);
 }
 
 .modal .modal-header {
@@ -285,7 +285,7 @@
 
 .modal .form-control {
     padding: 10px 14px;
-    background-color: #faf8ef;
+    background-color: #f8fafc;
     border: 1.5px solid var(--lf-border);
     border-radius: 10px;
 }
@@ -293,7 +293,7 @@
 .modal .form-control:focus {
     background-color: #fff;
     border-color: var(--lf-green-500);
-    box-shadow: 0 0 0 4px rgba(79, 125, 69, 0.18);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
 }
 
 .modal .form-text {
@@ -323,7 +323,7 @@
     --bs-btn-active-color: var(--lf-green-900);
     --bs-btn-active-bg: var(--lf-khaki-400);
     --bs-btn-active-border-color: var(--lf-khaki-500);
-    --bs-btn-focus-shadow-rgb: 201, 185, 143;
+    --bs-btn-focus-shadow-rgb: 245, 158, 11;
 }
 
 /* Save changes: green (also covers the popup, which sits outside index.css's page area) */
@@ -337,8 +337,8 @@
     --bs-btn-active-color: #fff;
     --bs-btn-active-bg: var(--lf-green-900);
     --bs-btn-active-border-color: var(--lf-green-900);
-    --bs-btn-focus-shadow-rgb: 79, 125, 69;
-    box-shadow: 0 8px 18px rgba(47, 82, 51, 0.28);
+    --bs-btn-focus-shadow-rgb: 37, 99, 235;
+    box-shadow: 0 8px 18px rgba(30, 64, 175, 0.28);
 }
 
 /* ---------- Picture cards: the same text and button sizes as the table rows ---------- */

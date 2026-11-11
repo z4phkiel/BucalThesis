@@ -42,7 +42,7 @@
 
 .activity-toggle:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(201, 185, 143, 0.55);
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.55);
 }
 
 /* ---------- Card: floats beside the sidebar, styled like the dashboard's cards ---------- */
@@ -60,7 +60,7 @@
     border: 1px solid var(--ix-border);
     border-top: 5px solid var(--ix-khaki-500);
     border-radius: 16px;
-    box-shadow: 0 24px 48px -12px rgba(20, 40, 25, 0.45);
+    box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.45);
     animation: activity-in 0.15s ease-out;
 }
 
@@ -123,7 +123,7 @@
 .activity-filters button:focus-visible,
 .activity-retry:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(79, 125, 69, 0.3);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3);
 }
 
 .activity-body {
@@ -168,7 +168,7 @@
 
 .activity-item:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(79, 125, 69, 0.3);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3);
 }
 
 /* POST / UPDATE / DELETE, in the calendar's tag colors */
@@ -183,9 +183,9 @@
     border-radius: 6px;
 }
 
-.activity-badge.post   { color: var(--ix-green-700); background: #dfeadb; }
-.activity-badge.update { color: #6e5f2a; background: var(--ix-khaki-300); }
-.activity-badge.delete { color: var(--ix-brick); background: #f6e0da; }
+.activity-badge.post   { color: var(--ix-green-700); background: #dbeafe; }
+.activity-badge.update { color: #92400e; background: var(--ix-khaki-300); }
+.activity-badge.delete { color: var(--ix-brick); background: #fee2e2; }
 
 /* the whole description shows, over two or more lines if needed */
 .activity-text {
@@ -234,7 +234,7 @@ button.page-tab:hover {
 
 .page-tab:focus-visible {
     outline: none;
-    box-shadow: inset 0 0 0 2px rgba(79, 125, 69, 0.35);
+    box-shadow: inset 0 0 0 2px rgba(37, 99, 235, 0.35);
 }
 
 /* ---------- The Activity Log tab's card ---------- */
@@ -274,7 +274,7 @@ button.page-tab:hover {
     text-transform: uppercase;
     white-space: nowrap;
     color: #fff;
-    background: linear-gradient(135deg, var(--ix-green-600), var(--ix-green-700));
+    background: var(--ix-green-700);
     border-bottom: 3px solid var(--ix-khaki-500);
 }
 
@@ -342,7 +342,7 @@ button.page-tab:hover {
 
 .activity-changes del {
     color: var(--ix-muted);
-    text-decoration-color: rgba(163, 57, 42, 0.6);
+    text-decoration-color: rgba(185, 28, 28, 0.6);
 }
 
 .activity-changes ins {
@@ -350,7 +350,7 @@ button.page-tab:hover {
     font-weight: 600;
     color: var(--ix-green-900);
     text-decoration: none;
-    background: #e8efe3;
+    background: #eff6ff;
     border-radius: 4px;
 }
 

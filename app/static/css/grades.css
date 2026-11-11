@@ -1,17 +1,17 @@
 
 :root {
-    --gr-green-900: #243d28;
-    --gr-green-700: #2f5233;
-    --gr-green-600: #3f6b3a;
-    --gr-green-500: #4f7d45;
-    --gr-khaki-500: #c9b98f;
-    --gr-khaki-400: #d6c9a3;
-    --gr-khaki-300: #e3d9b8;
-    --gr-khaki-100: #f6f2e4;
-    --gr-white: #fdfcf7;
-    --gr-text: #26312a;
-    --gr-muted: #7a8272;
-    --gr-border: #e8e3cf;
+    --gr-green-900: #172554;
+    --gr-green-700: #1e40af;
+    --gr-green-600: #1d4ed8;
+    --gr-green-500: #2563eb;
+    --gr-khaki-500: #f59e0b;
+    --gr-khaki-400: #fbbf24;
+    --gr-khaki-300: #fde68a;
+    --gr-khaki-100: #fffbeb;
+    --gr-white: #ffffff;
+    --gr-text: #1e293b;
+    --gr-muted: #5e6e82;
+    --gr-border: #e2e8f0;
 }
 
 /* ---------- Page heading ---------- */
@@ -32,7 +32,7 @@ div.mb-4 > h3.fw-bold.mb-1::before {
     height: 70%;
     transform: translateY(-50%);
     border-radius: 6px;
-    background: linear-gradient(180deg, var(--gr-khaki-500), var(--gr-green-500));
+    background: var(--gr-khaki-500);
 }
 
 div.mb-4 > h3.fw-bold.mb-1 + p.text-muted {
@@ -48,7 +48,7 @@ div.mb-4 > h3.fw-bold.mb-1 + p.text-muted {
     border: 1px solid var(--gr-border) !important;
     border-top: 5px solid var(--gr-khaki-500) !important;
     border-radius: 16px;
-    box-shadow: 0 12px 30px -12px rgba(36, 61, 40, 0.28) !important;
+    box-shadow: 0 12px 30px -12px rgba(23, 37, 84, 0.28) !important;
 }
 
 .card.border-0:has(> .table-responsive) {
@@ -69,7 +69,7 @@ div.mb-4 > h3.fw-bold.mb-1 + p.text-muted {
     padding: 12px 16px 12px 46px;
     font-size: 0.95rem;
     color: var(--gr-text);
-    background-color: #faf8ef;
+    background-color: #f8fafc;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%232f5233' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M21 21l-4.3-4.3'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: 16px center;
@@ -79,7 +79,7 @@ div.mb-4 > h3.fw-bold.mb-1 + p.text-muted {
 }
 
 .card.border-0 #studentSearch::placeholder {
-    color: #a3a998;
+    color: #94a3b8;
 }
 
 .card.border-0 #studentSearch:hover {
@@ -89,7 +89,7 @@ div.mb-4 > h3.fw-bold.mb-1 + p.text-muted {
 .card.border-0 #studentSearch:focus {
     background-color: #fff;
     border-color: var(--gr-green-500);
-    box-shadow: 0 0 0 4px rgba(79, 125, 69, 0.18);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
 }
 
 /* ---------- Table ---------- */
@@ -124,7 +124,7 @@ div.mb-4 > h3.fw-bold.mb-1 + p.text-muted {
     text-transform: uppercase;
     white-space: nowrap;
     color: #fff;
-    background: linear-gradient(135deg, var(--gr-green-600), var(--gr-green-700));
+    background: var(--gr-green-700);
     border-bottom: 3px solid var(--gr-khaki-500);
 }
 
@@ -179,7 +179,7 @@ div.mb-4 > h3.fw-bold.mb-1 + p.text-muted {
     --bs-btn-active-color: #fff;
     --bs-btn-active-bg: var(--gr-green-900);
     --bs-btn-active-border-color: var(--gr-green-900);
-    --bs-btn-focus-shadow-rgb: 201, 185, 143;
+    --bs-btn-focus-shadow-rgb: 245, 158, 11;
     min-width: 8.5rem;
     padding: 7px 16px;
     font-size: 0.85rem;
@@ -187,13 +187,13 @@ div.mb-4 > h3.fw-bold.mb-1 + p.text-muted {
     letter-spacing: 0.02em;
     white-space: nowrap;
     border-radius: 999px;
-    box-shadow: 0 6px 14px rgba(47, 82, 51, 0.25);
+    box-shadow: 0 6px 14px rgba(30, 64, 175, 0.25);
     transition: transform 0.15s, box-shadow 0.2s, background-color 0.2s;
 }
 
 .card.border-0 .table td .btn.btn-primary:hover {
     transform: translateY(-1px);
-    box-shadow: 0 10px 20px rgba(47, 82, 51, 0.35);
+    box-shadow: 0 10px 20px rgba(30, 64, 175, 0.35);
 }
 
 /* ---------- Empty / no-result messages ---------- */

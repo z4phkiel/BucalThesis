@@ -1,16 +1,16 @@
 
 :root {
-    --en-green-900: #243d28;
-    --en-green-700: #2f5233;
-    --en-green-600: #3f6b3a;
-    --en-green-500: #4f7d45;
-    --en-khaki-500: #c9b98f;
-    --en-khaki-300: #e3d9b8;
-    --en-khaki-100: #f6f2e4;
-    --en-white: #fdfcf7;
-    --en-text: #26312a;
-    --en-muted: #7a8272;
-    --en-border: #e8e3cf;
+    --en-green-900: #172554;
+    --en-green-700: #1e40af;
+    --en-green-600: #1d4ed8;
+    --en-green-500: #2563eb;
+    --en-khaki-500: #f59e0b;
+    --en-khaki-300: #fde68a;
+    --en-khaki-100: #fffbeb;
+    --en-white: #ffffff;
+    --en-text: #1e293b;
+    --en-muted: #5e6e82;
+    --en-border: #e2e8f0;
 }
 
 /* ---------- Search: one slim line, so more rows fit below it ---------- */
@@ -35,7 +35,7 @@
     padding: 6px 14px 6px 38px;
     font-size: 0.85rem;
     color: var(--en-text);
-    background-color: #faf8ef;
+    background-color: #f8fafc;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%232f5233' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M21 21l-4.3-4.3'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: 13px center;
@@ -45,7 +45,7 @@
 }
 
 #studentSearch::placeholder {
-    color: #a3a998;
+    color: #94a3b8;
 }
 
 #studentSearch:hover {
@@ -55,7 +55,7 @@
 #studentSearch:focus {
     background-color: #fff;
     border-color: var(--en-green-500);
-    box-shadow: 0 0 0 4px rgba(79, 125, 69, 0.18);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
 }
 
 /* ---------- Page heading ---------- */
@@ -67,7 +67,7 @@
     color: var(--en-green-700);
 }
 
-/* khaki-to-green accent bar beside the title */
+/* accent bar beside the title */
 .d-flex.align-items-center.justify-content-between.mb-3 > h3.fw-bold::before {
     content: "";
     position: absolute;
@@ -77,7 +77,7 @@
     height: 70%;
     transform: translateY(-50%);
     border-radius: 6px;
-    background: linear-gradient(180deg, var(--en-khaki-500), var(--en-green-500));
+    background: var(--en-khaki-500);
 }
 
 /* ---------- Table card ---------- */
@@ -86,7 +86,7 @@
     border: 1px solid var(--en-border);
     border-top: 5px solid var(--en-khaki-500);
     border-radius: 16px;
-    box-shadow: 0 12px 30px -12px rgba(36, 61, 40, 0.28);
+    box-shadow: 0 12px 30px -12px rgba(23, 37, 84, 0.28);
 }
 
 .table-responsive > .table {
@@ -122,7 +122,7 @@
     text-transform: uppercase;
     white-space: nowrap;
     color: #fff;
-    background: linear-gradient(135deg, var(--en-green-600), var(--en-green-700));
+    background: var(--en-green-700);
     border-bottom: 3px solid var(--en-khaki-500);
 }
 
@@ -250,7 +250,7 @@ th[aria-sort="descending"] .sort-up {
 
 .student-actions:hover,
 .student-actions.show {
-    background-color: rgba(47, 82, 51, 0.16);
+    background-color: rgba(30, 64, 175, 0.16);
 }
 
 .student-actions:focus-visible {
@@ -272,7 +272,7 @@ th[aria-sort="descending"] .sort-up {
     --bs-dropdown-link-active-color: #fff;
     --bs-dropdown-link-active-bg: var(--en-green-600);
     --bs-dropdown-item-padding-y: 6px;
-    box-shadow: 0 12px 28px -8px rgba(36, 61, 40, 0.45);
+    box-shadow: 0 12px 28px -8px rgba(23, 37, 84, 0.45);
 }
 
 /* ---------- Page controls: numbers and gaps share one width, so the Next button stays put ---------- */

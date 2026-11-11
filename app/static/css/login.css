@@ -1,19 +1,19 @@
 :root {
-    --green-900: #243d28;
-    --green-800: #1c3220;
-    --green-500: #4f7d45;
-    --khaki-500: #c9b98f;
-    --khaki-300: #e3d9b8;
-    --gold-100: #f4ecd2;
-    --white: #fdfcf7;
-    --danger-bg: #fbeeea;
-    --danger-text: #a3392a;
-    --muted: rgba(253, 252, 247, 0.7);
+    --green-900: #172554;
+    --green-800: #0f172a;
+    --green-500: #2563eb;
+    --khaki-500: #f59e0b;
+    --khaki-300: #fde68a;
+    --gold-100: #fef3c7;
+    --white: #ffffff;
+    --danger-bg: #fef2f2;
+    --danger-text: #b91c1c;
+    --muted: rgba(255, 255, 255, 0.7);
     --line: rgba(255, 255, 255, 0.5);
     --glass-blur: blur(18px) saturate(160%);
 }
 
-/* ---------- Page: the school photo under a deep green tint, lighter where the card sits ---------- */
+/* ---------- Page: the school photo under a flat navy tint ---------- */
 body {
     display: flex;
     align-items: center;
@@ -24,20 +24,19 @@ body {
     font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
     color: var(--white);
     background:
-        radial-gradient(ellipse at 50% 50%, rgba(28, 50, 32, 0.2), rgba(16, 30, 20, 0.85) 75%),
-        linear-gradient(160deg, rgba(36, 61, 40, 0.55), rgba(20, 38, 25, 0.35) 50%, rgba(36, 61, 40, 0.65)),
+        linear-gradient(rgba(15, 23, 42, 0.72), rgba(15, 23, 42, 0.72)),
         url("../images/school.jpg") center / cover no-repeat fixed;
     background-color: var(--green-800);
 }
 
-/* ---------- Card: glass with a gradient edge light ---------- */
+/* ---------- Card: glass with a light edge ---------- */
 .login-card {
     position: relative;
     width: 100%;
     max-width: 400px;
     padding: 36px 40px 40px;
     text-align: center;
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.05));
+    background: rgba(255, 255, 255, 0.12);
     border-radius: 26px;
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.3),
@@ -47,18 +46,14 @@ body {
     animation: card-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-/* The outline: a 1.5px ring cut out of a gradient, brightest at the top left */
+/* The outline: a 1.5px ring cut out of the background by the mask */
 .login-card::before {
     content: "";
     position: absolute;
     inset: 0;
     padding: 1.5px;
     border-radius: inherit;
-    background: linear-gradient(135deg,
-        rgba(255, 255, 255, 0.85),
-        rgba(227, 217, 184, 0.4) 35%,
-        rgba(255, 255, 255, 0.08) 65%,
-        rgba(227, 217, 184, 0.5));
+    background: rgba(255, 255, 255, 0.35);
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
@@ -73,7 +68,7 @@ body {
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .login-card,
     .back-home {
-        background: rgba(28, 50, 32, 0.94);
+        background: rgba(15, 23, 42, 0.94);
     }
 }
 
@@ -90,9 +85,9 @@ body {
     content: "";
     position: absolute;
     inset: -8px;
-    border: 1px solid rgba(227, 217, 184, 0.5);
+    border: 1px solid rgba(253, 230, 138, 0.5);
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(233, 207, 122, 0.3), transparent 70%);
+    background: rgba(253, 230, 138, 0.12);
 }
 
 .brand-logo img {
@@ -206,7 +201,7 @@ body {
     right: 0;
     bottom: 0;
     height: 2px;
-    background: linear-gradient(90deg, var(--khaki-500), var(--gold-100));
+    background: var(--khaki-500);
     transform: scaleX(0);
     transform-origin: left;
     transition: transform 0.3s ease;
@@ -318,7 +313,7 @@ body {
     --bs-btn-active-border-color: transparent;
     --bs-btn-disabled-border-color: transparent;
     --bs-btn-disabled-opacity: 0.9;
-    background-image: linear-gradient(135deg, var(--gold-100), var(--khaki-500));
+    background-image: linear-gradient(var(--khaki-500), var(--khaki-500));
     border-radius: 999px;
     box-shadow: 0 14px 28px -10px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.6);
     transition: transform 0.15s, box-shadow 0.2s, filter 0.2s;
@@ -351,7 +346,7 @@ body {
 
 .login-button.btn:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 4px rgba(227, 217, 184, 0.6);
+    box-shadow: 0 0 0 4px rgba(253, 230, 138, 0.6);
 }
 
 .login-button.btn:disabled {
@@ -377,9 +372,9 @@ body {
     border-left-width: 4px;
     border-radius: 10px;
     pointer-events: auto;
-    box-shadow: 0 12px 28px -8px rgba(20, 40, 25, 0.55);
+    box-shadow: 0 12px 28px -8px rgba(15, 23, 42, 0.55);
     --bs-alert-color: var(--green-900);
-    --bs-alert-bg: #eef3e8;
+    --bs-alert-bg: #eff6ff;
     --bs-alert-border-color: var(--green-500);
 }
 
@@ -405,7 +400,7 @@ body {
     line-height: 1.2;
     text-decoration: none;
     color: #fff;
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.06));
+    background: rgba(255, 255, 255, 0.12);
     border: 1.5px solid rgba(255, 255, 255, 0.4);
     border-radius: 999px;
     box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.45);
@@ -433,7 +428,7 @@ body {
 
 .back-home:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 4px rgba(227, 217, 184, 0.65);
+    box-shadow: 0 0 0 4px rgba(253, 230, 138, 0.65);
 }
 
 /* ---------- Small screens ---------- */
