@@ -1,58 +1,77 @@
-// The bell in the sidebar opens a card with the latest Masterlist, Calendar and Linkage/Files actions.
-// The entries load each time the card opens, so they are current and no page waits for them.
+// The activity log, in two places: the sidebar bell's card with the latest Masterlist, Calendar and
+// Linkage/Files actions, and the Activity Log tab on each of those pages with every entry's details.
+// Both load each time they open, so they are current and no page waits for them.
 document.addEventListener('DOMContentLoaded', function () {
-    const toggle = document.getElementById('activityToggle');
-    const card = document.getElementById('activityCard');
-    if (!toggle || !card) {
+    const placeholder = document.getElementById('activityPlaceholder');
+    if (!placeholder) {
         return;
     }
-    const list = document.getElementById('activityList');
-    const placeholder = document.getElementById('activityPlaceholder').innerHTML;
-    const filters = card.querySelectorAll('[data-area]');
-    let area = '';
-    let latest = 0;     // only the newest request may fill the list, so a slow one can't replace a later filter
+    const loading = placeholder.innerHTML;
 
-    function load() {
-        const request = ++latest;
-        list.innerHTML = placeholder;
-        list.setAttribute('aria-busy', 'true');
-        fetch(card.dataset.url + (area ? '?area=' + encodeURIComponent(area) : ''), { cache: 'no-store' })
-            .then(function (res) {
-                if (res.status === 401) {
-                    // Logged out in the meantime: reloading goes to the login page, so this never resolves
-                    window.location.reload();
-                    return new Promise(function () {});
-                }
-                if (!res.ok) {
-                    throw new Error(`status ${res.status}`);
-                }
-                return res.text();
-            })
+    function fetchHtml(url) {
+        return fetch(url, { cache: 'no-store' }).then(function (res) {
+            if (res.status === 401) {
+                // Logged out in the meantime: reloading goes to the login page, so this never resolves
+                window.location.reload();
+                return new Promise(function () {});
+            }
+            if (!res.ok) {
+                throw new Error(`status ${res.status}`);
+            }
+            return res.text();
+        });
+    }
+
+    const loadError = `<div class="dashboard-load-error activity-error">
+        <p>The activity log could not be loaded.</p>
+        <button type="button" class="activity-retry" data-activity-retry>Try again</button>
+    </div>`;
+
+    // Shows url's HTML in target, with the placeholder until it arrives, then runs then(). Only the newest
+    // request for a target may fill it, so a slow one can't replace a later one.
+    const latest = new Map();
+    function loadInto(target, url, then) {
+        const request = (latest.get(target) || 0) + 1;
+        latest.set(target, request);
+        target.innerHTML = loading;
+        target.setAttribute('aria-busy', 'true');
+        fetchHtml(url)
             .then(function (html) {
-                if (request === latest) {
-                    list.innerHTML = html;
+                if (latest.get(target) === request) {
+                    target.innerHTML = html;
+                    if (then) {
+                        then();
+                    }
                 }
             })
             .catch(function () {
-                if (request === latest) {
-                    list.innerHTML = `<div class="dashboard-load-error activity-error">
-                        <p>The activity log could not be loaded.</p>
-                        <button type="button" class="activity-retry" data-activity-retry>Try again</button>
-                    </div>`;
+                if (latest.get(target) === request) {
+                    target.innerHTML = loadError;
                 }
             })
             .finally(function () {
-                if (request === latest) {
-                    list.removeAttribute('aria-busy');
+                if (latest.get(target) === request) {
+                    target.removeAttribute('aria-busy');
                 }
             });
+    }
+
+    // ---------- The bell's card ----------
+    const toggle = document.getElementById('activityToggle');
+    const card = document.getElementById('activityCard');
+    const list = document.getElementById('activityList');
+    const filters = card.querySelectorAll('[data-area]');
+    let area = '';
+
+    function loadCard() {
+        loadInto(list, card.dataset.url + (area ? '?area=' + encodeURIComponent(area) : ''));
     }
 
     function setOpen(open, returnFocus) {
         card.hidden = !open;
         toggle.setAttribute('aria-expanded', String(open));
         if (open) {
-            load();
+            loadCard();
         } else if (returnFocus) {
             toggle.focus();
         }
@@ -69,11 +88,13 @@ document.addEventListener('DOMContentLoaded', function () {
             filters.forEach(function (button) {
                 button.setAttribute('aria-pressed', String(button === filter));
             });
-            load();
+            loadCard();
         } else if (event.target.closest('[data-activity-retry]')) {
-            load();
+            loadCard();
         } else if (event.target.closest('[data-activity-close]')) {
             setOpen(false, true);
+        } else if (event.target.closest('a[href]')) {
+            setOpen(false);     // an entry: it goes to its details in a page's Activity Log tab
         }
     });
 
@@ -90,4 +111,94 @@ document.addEventListener('DOMContentLoaded', function () {
             setOpen(false);
         }
     });
+
+    // ---------- The Activity Log tab (Masterlist, Calendar and Linkage/Files only) ----------
+    const pane = document.getElementById('activityTab');
+    const tabButton = document.getElementById('activityTabButton');
+    if (!pane || !tabButton) {
+        return;
+    }
+    const details = pane.querySelector('[data-activity-details]');
+    const tab = bootstrap.Tab.getOrCreateInstance(tabButton);
+
+    // The entry a link pointed at (#activity-<id>), if it is on the first page
+    function highlightEntry() {
+        const row = /^#activity-\d+$/.test(location.hash) && document.getElementById(location.hash.slice(1));
+        if (row) {
+            row.classList.add('is-highlighted');
+            row.scrollIntoView({ block: 'center' });
+        }
+    }
+
+    function loadDetails() {
+        loadInto(details, pane.dataset.url, highlightEntry);
+    }
+
+    // Adds the next page's rows under the table
+    function showOlder(more) {
+        const request = latest.get(details);
+        more.disabled = true;
+        more.textContent = 'Loading...';
+        fetchHtml(pane.dataset.url + '?before=' + encodeURIComponent(more.dataset.before))
+            .then(function (html) {
+                if (latest.get(details) !== request) {
+                    return;     // the tab was reloaded meanwhile, so these rows no longer follow on
+                }
+                const page = new DOMParser().parseFromString(html, 'text/html');
+                details.querySelector('.activity-table tbody').append(...page.querySelectorAll('.activity-table tbody tr'));
+                const next = page.querySelector('[data-activity-more]');
+                if (next) {
+                    more.replaceWith(next);
+                } else {
+                    more.remove();
+                }
+            })
+            .catch(function () {
+                more.disabled = false;
+                more.textContent = 'Could not load. Try again';
+            });
+    }
+
+    // The address keeps the open tab (#activity), so a reload or the Back button comes back to it
+    tabButton.addEventListener('shown.bs.tab', function () {
+        if (!location.hash.startsWith('#activity')) {
+            history.replaceState(null, '', '#activity');
+        }
+        loadDetails();
+    });
+    document.getElementById('mainTabButton').addEventListener('shown.bs.tab', function () {
+        history.replaceState(null, '', location.pathname + location.search);
+    });
+
+    details.addEventListener('click', function (event) {
+        const more = event.target.closest('[data-activity-more]');
+        if (more) {
+            showOlder(more);
+        } else if (event.target.closest('[data-activity-retry]')) {
+            loadDetails();
+        }
+    });
+
+    // #activity or #activity-<id> opens the tab: on arrival, from the Back button or from a card entry
+    function followHash() {
+        if (!/^#activity(-\d+)?$/.test(location.hash)) {
+            return;
+        }
+        if (tabButton.classList.contains('active')) {
+            loadDetails();
+        } else {
+            tab.show();
+        }
+    }
+    window.addEventListener('hashchange', followHash);
+
+    // A link to the address already showing changes nothing, so there is no hashchange to follow
+    document.addEventListener('click', function (event) {
+        const link = event.target.closest('a[href]');
+        if (link && link.href === location.href && /^#activity/.test(link.hash)) {
+            event.preventDefault();
+            followHash();
+        }
+    });
+    followHash();
 });

@@ -126,6 +126,7 @@ class ActivityLog(db.Model):
     area = db.Column(db.String(20), nullable=False)         # masterlist / calendar / linkage
     action = db.Column(db.String(10), nullable=False)       # POST / UPDATE / DELETE
     description = db.Column(db.String(255), nullable=False)
+    details = db.Column(db.JSON, nullable=True)       # [[label, old value, new value], ...]; NULL on entries made before details were kept
 
     def __repr__(self):
         return f'<ActivityLog {self.action} {self.area}>'

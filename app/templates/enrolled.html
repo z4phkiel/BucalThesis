@@ -2,6 +2,7 @@
 
 {% block content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/enrolled.css') }}">
+{% from 'activity_tabs.html' import activity_tabs with context %}
 
 {# A header that enrolled.js sorts by; a plain header when there are no students to sort #}
 {% macro sort_header(key, label) -%}
@@ -21,6 +22,7 @@
     <h3 class="fw-bold mb-0">Enrolled Students</h3>
 </div>
 
+{% call activity_tabs('masterlist', 'Students') %}
 <!-- Search Bar -->
 <div class="card student-search shadow-sm mb-3">
     <div class="card-body">
@@ -96,6 +98,7 @@
     <ul id="studentPagerList" class="pagination pagination-sm"></ul>
     <span id="studentPagerSummary" class="table-pager-summary" aria-live="polite"></span>
 </nav>
+{% endcall %}
 {% endblock %}
 
 

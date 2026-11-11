@@ -53,6 +53,15 @@
 </div>
 {% endmacro %}
 
+{# The Masterlist, Calendar and Linkage/Files tab strip (activity_tabs.html). .page-tabs is in activity-log.css,
+   which no page stylesheet restyles, so the placeholder uses the real look. #}
+{% macro page_tabs(main_label) %}
+<div class="page-tabs" aria-hidden="true">
+    <span class="page-tab active">{{ main_label }}</span>
+    <span class="page-tab">Activity Log</span>
+</div>
+{% endmacro %}
+
 {# Archives: one card per kind of item; each table ends with the same Archived and Actions columns #}
 {% macro archive_section(title, columns) %}
 <div class="skel-card skel-card-linkage">
@@ -126,6 +135,7 @@
     <div class="skel-head skel-head-slim">
         <div class="skel-title skel-title-list">Enrolled Students</div>
     </div>
+    {{ page_tabs('Students') }}
     {{ search_card('Search Students', 'skel-card-slim') }}
     <div class="skel-table-card">
         {{ table([
@@ -143,6 +153,7 @@
 <template data-skeleton-path="{{ url_for('main.calendar') }}">
     <span class="visually-hidden">Loading the calendar</span>
     <div class="skel-title skel-title-calendar">Calendar</div>
+    {{ page_tabs('Calendar') }}
     <div class="skel-cal">
         <div class="skel-cal-card">
             <div class="skel-cal-head">
@@ -186,6 +197,7 @@
     <div class="skel-head skel-head-slim">
         <div class="skel-title skel-title-list">Linkage/Files</div>
     </div>
+    {{ page_tabs('Links & Files') }}
     {{ search_card('Search Linkages', 'skel-card-slim') }}
     <div class="skel-card skel-card-linkage">
         <div class="skel-card-body">

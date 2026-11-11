@@ -5,6 +5,8 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/linkagefiles.css') }}">
 <h1 class="h3 mb-3">Linkage/Files</h1>
 
+{% from 'activity_tabs.html' import activity_tabs with context %}
+{% call activity_tabs('linkage', 'Links & Files') %}
 <div class="card linkage-search shadow-sm mb-3">
     <div class="card-body">
         <label for="linkageSearch" class="form-label">Search Linkages</label>
@@ -283,6 +285,7 @@
 </div>
     </div>
 </div>
+{% endcall %}
 
 <!-- Edit link (one shared popup, filled in by the script below) -->
 <div class="modal fade" id="editLinkModal" tabindex="-1" aria-hidden="true">

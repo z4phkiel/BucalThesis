@@ -1,0 +1,55 @@
+{# One page of an Activity Log tab, newest first. activity-log.js shows it, and for "Show older activity"
+   adds the next page's rows under it. details are [label, old, new]: see log_changes() in routes.py. #}
+{% if logs %}
+<div class="activity-table-wrap">
+    <table class="activity-table">
+        <thead>
+            <tr>
+                <th>When</th>
+                <th>By</th>
+                <th>Action</th>
+                <th>What happened</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            {% set short, day, clock = when(log.created_at) %}
+            <tr id="activity-{{ log.id }}">
+                <td class="text-nowrap">
+                    <time datetime="{{ log.created_at.isoformat(timespec='seconds') }}Z">
+                        <span class="activity-day">{{ day }}</span>
+                        <span class="activity-clock">{{ clock }}</span>
+                    </time>
+                </td>
+                <td class="activity-user">{{ log.username }}</td>
+                <td><span class="activity-badge {{ log.action | lower }}">{{ log.action }}</span></td>
+                <td>
+                    <div class="activity-text">{{ log.description }}</div>
+                    {% if log.details %}
+                    <ul class="activity-changes">
+                        {% for label, old, new in log.details %}
+                        <li>
+                            <span class="activity-field">{{ label }}:</span>
+                            {% if log.action == 'POST' or old == new %}{{ new }}
+                            {% elif log.action == 'DELETE' %}{{ old }}
+                            {% else %}<del>{{ old or 'blank' }}</del>
+                            <span class="activity-arrow" aria-hidden="true">&rarr;</span><span class="visually-hidden">changed to</span>
+                            <ins>{{ new or 'blank' }}</ins>{% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% elif log.details is not none %}
+                    <p class="activity-unchanged">Saved with no changes.</p>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% if has_more %}
+<button type="button" class="activity-retry activity-more" data-activity-more data-before="{{ logs[-1].id }}">Show older activity</button>
+{% endif %}
+{% else %}
+<p class="dash-empty">No activity yet.</p>
+{% endif %}

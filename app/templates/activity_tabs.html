@@ -1,0 +1,28 @@
+{# The Masterlist, Calendar and Linkage/Files each have two tabs: the page itself (the call block's content)
+   and its Activity Log, which activity-log.js loads from /activity-log/<area> each time the tab opens.
+   Import it with context, for activity_areas. #}
+{% macro activity_tabs(area, main_label) %}
+<div class="page-tabs" role="tablist" aria-label="{{ activity_areas[area] }} views">
+    <button type="button" class="page-tab active" id="mainTabButton" role="tab" data-bs-toggle="tab" data-bs-target="#mainTab"
+            aria-controls="mainTab" aria-selected="true">{{ main_label }}</button>
+    <button type="button" class="page-tab" id="activityTabButton" role="tab" data-bs-toggle="tab" data-bs-target="#activityTab"
+            aria-controls="activityTab" aria-selected="false" tabindex="-1">Activity Log</button>
+</div>
+
+<div class="tab-content">
+    <div class="tab-pane active" id="mainTab" role="tabpanel" aria-labelledby="mainTabButton">
+        {{ caller() }}
+    </div>
+
+    <div class="tab-pane" id="activityTab" role="tabpanel" aria-labelledby="activityTabButton"
+         data-url="{{ url_for('main.activity_log_details', area=area) }}">
+        <section class="card shadow-sm activity-panel">
+            <div class="card-body">
+                <h2 class="card-title activity-panel-title">{{ activity_areas[area] }} Activity Log</h2>
+                <p class="activity-panel-intro">Every add, change and delete, newest first, with the values that were added, changed or removed.</p>
+                <div data-activity-details aria-live="polite"></div>
+            </div>
+        </section>
+    </div>
+</div>
+{% endmacro %}
