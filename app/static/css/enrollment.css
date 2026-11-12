@@ -35,7 +35,7 @@
     margin-bottom: calc(30px + var(--stepper-label-gap) + var(--stepper-label-height));
     background-color: var(--ix-white);
     border-radius: 0;
-    box-shadow: 0 10px 24px -14px rgba(23, 37, 84, 0.45);
+    box-shadow: 0 10px 24px -14px rgba(53, 90, 37, 0.45);
 }
 
 .stepper-wrap.is-stuck .step-label {
@@ -121,8 +121,8 @@
 
 .stepper-wrap.is-stuck .step-node.active .step-dot {
     box-shadow:
-        0 0 0 5px rgba(37, 99, 235, 0.22),
-        0 4px 12px rgba(30, 64, 175, 0.3);
+        0 0 0 5px rgba(93, 134, 75, 0.22),
+        0 4px 12px rgba(67, 106, 51, 0.3);
     transform: scale(1.1);
 }
 
@@ -220,7 +220,7 @@
     font-size: 13px;
     font-weight: 700;
 
-    box-shadow: 0 3px 10px rgba(23, 37, 84, 0.1);
+    box-shadow: 0 3px 10px rgba(53, 90, 37, 0.1);
     transition: all 0.3s ease;
 }
 
@@ -259,7 +259,7 @@
     color: #ffffff;
     background: var(--ix-green-900);
     border-radius: 8px;
-    box-shadow: 0 8px 18px rgba(23, 37, 84, 0.3);
+    box-shadow: 0 8px 18px rgba(53, 90, 37, 0.3);
     opacity: 1;
     transform: translateX(-50%);
     pointer-events: none;
@@ -272,8 +272,8 @@
     color: #ffffff;
 
     box-shadow:
-        0 0 0 5px rgba(37, 99, 235, 0.18),
-        0 4px 12px rgba(30, 64, 175, 0.28);
+        0 0 0 5px rgba(93, 134, 75, 0.18),
+        0 4px 12px rgba(67, 106, 51, 0.28);
 
     transform: scale(1.05);
 
@@ -285,13 +285,13 @@
 @keyframes step-here {
     from {
         box-shadow:
-            0 0 0 0 rgba(37, 99, 235, 0.55),
-            0 4px 12px rgba(30, 64, 175, 0.28);
+            0 0 0 0 rgba(93, 134, 75, 0.55),
+            0 4px 12px rgba(67, 106, 51, 0.28);
     }
     60% {
         box-shadow:
-            0 0 0 14px rgba(37, 99, 235, 0),
-            0 4px 12px rgba(30, 64, 175, 0.28);
+            0 0 0 14px rgba(93, 134, 75, 0),
+            0 4px 12px rgba(67, 106, 51, 0.28);
     }
 }
 
@@ -342,7 +342,7 @@
 /* Radio buttons and checkboxes: the page's green instead of Bootstrap's blue */
 .main-content .form-check-input:focus {
     border-color: var(--ix-green-500);
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
+    box-shadow: 0 0 0 4px rgba(93, 134, 75, 0.18);
 }
 
 .main-content .form-check-input:checked {
@@ -396,7 +396,7 @@ html {
     border: 1px solid var(--ix-border);
     border-left: 5px solid var(--ix-brick);
     border-radius: 14px;
-    box-shadow: 0 18px 40px -12px rgba(23, 37, 84, 0.5);
+    box-shadow: 0 18px 40px -12px rgba(53, 90, 37, 0.5);
     visibility: hidden;
     opacity: 0;
     transform: translate(-50%, calc(100% + 40px));
@@ -503,7 +503,7 @@ html {
 
 .step-alert.is-resolved .step-alert-icon {
     color: var(--ix-green-600);
-    background: #eff6ff;
+    background: #edf3ea;
 }
 
 .step-alert.is-resolved .step-alert-title {

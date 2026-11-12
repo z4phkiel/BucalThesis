@@ -1,7 +1,7 @@
 /* Chart colors were checked for colorblind separation and contrast against the card surface */
 #statisticsPage {
-    --stat-actual: #1e40af;
-    --stat-predicted: #d97706;
+    --stat-actual: #436a33;
+    --stat-predicted: #669751;
     --stat-peek: 52px;      /* how much of the table card shows at the bottom of the first screen */
 }
 
@@ -9,7 +9,7 @@
 .sidebar .nav-item:nth-child(1) .nav-link {
     color: var(--ix-green-900);
     font-weight: 700;
-    background-color: var(--ix-khaki-500);
+    background-color: var(--ix-khaki-300);
 }
 
 /* ---------- First screen ----------
@@ -114,7 +114,7 @@
 
 .stat-stepper .form-select:focus {
     border-color: var(--ix-green-500);
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
+    box-shadow: 0 0 0 4px rgba(93, 134, 75, 0.18);
 }
 
 .stat-step {
@@ -166,7 +166,7 @@
     background: var(--ix-white);
     border: 1px solid var(--ix-border);
     border-radius: 12px;
-    box-shadow: 0 8px 18px -12px rgba(23, 37, 84, 0.28);
+    box-shadow: 0 8px 18px -12px rgba(53, 90, 37, 0.28);
 }
 
 .stat-tile .stat-label,
@@ -282,7 +282,7 @@
 }
 
 .stat-chart:focus-visible {
-    outline: 3px solid rgba(37, 99, 235, 0.45);
+    outline: 3px solid rgba(93, 134, 75, 0.45);
     outline-offset: 2px;
 }
 
@@ -400,7 +400,7 @@
     background: #fff;
     border: 1px solid var(--ix-border);
     border-radius: 10px;
-    box-shadow: 0 12px 28px -8px rgba(23, 37, 84, 0.45);
+    box-shadow: 0 12px 28px -8px rgba(53, 90, 37, 0.45);
 }
 
 .stat-tooltip[hidden] {

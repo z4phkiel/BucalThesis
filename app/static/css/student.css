@@ -14,7 +14,7 @@
 /* Radio buttons and checkboxes: the page's green instead of Bootstrap's blue */
 .student-form .form-check-input:focus {
     border-color: var(--ix-green-500);
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
+    box-shadow: 0 0 0 4px rgba(93, 134, 75, 0.18);
 }
 
 .student-form .form-check-input:checked {
@@ -99,7 +99,7 @@
     background: var(--ix-white);
     border: 2px solid var(--ix-khaki-500);
     border-radius: 999px;
-    box-shadow: 0 8px 18px rgba(30, 64, 175, 0.28);
+    box-shadow: 0 8px 18px rgba(67, 106, 51, 0.28);
     transition: background-color 0.15s ease;
 }
 
@@ -110,7 +110,7 @@
 }
 
 .form-fab-option:focus-visible {
-    outline: 3px solid rgba(37, 99, 235, 0.45);
+    outline: 3px solid rgba(93, 134, 75, 0.45);
     outline-offset: 2px;
 }
 

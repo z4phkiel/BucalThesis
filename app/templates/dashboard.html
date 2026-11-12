@@ -13,7 +13,8 @@
     <div class="d-flex flex-column bg-dark vh-100 position-fixed top-0 start-0 sidebar">
         <div class="p-3 border-bottom border-secondary text-center">
             <span class="fs-5 fw-semibold text-white">Bucal II Elementary 108039</span>
-            <button type="button" id="activityToggle" class="activity-toggle" aria-controls="activityCard" aria-expanded="false" title="Activity log">
+            <button type="button" id="activityToggle" class="activity-toggle" aria-controls="activityCard" aria-expanded="false" title="Activity log"
+                    data-unseen-url="{{ url_for('main.activity_log_unseen') }}">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                 <span class="visually-hidden">Activity log</span>
             </button>

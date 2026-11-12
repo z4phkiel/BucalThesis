@@ -9,19 +9,19 @@
 
 /* ---------- Palette ---------- */
 :root {
-    --ix-green-900: #172554;
-    --ix-green-700: #1e40af;
-    --ix-green-600: #1d4ed8;
-    --ix-green-500: #2563eb;
-    --ix-khaki-500: #f59e0b;
-    --ix-khaki-400: #fbbf24;
-    --ix-khaki-300: #fde68a;
-    --ix-khaki-100: #fffbeb;
+    --ix-green-900: #355a25;
+    --ix-green-700: #436a33;
+    --ix-green-600: #4f763e;
+    --ix-green-500: #5d864b;
+    --ix-khaki-500: #669751;
+    --ix-khaki-400: #bad0b1;
+    --ix-khaki-300: #d9e5d4;
+    --ix-khaki-100: #f3f7f1;
     --ix-white: #ffffff;
-    --ix-page: #f1f5f9;
-    --ix-text: #1e293b;
-    --ix-muted: #5e6e82;
-    --ix-border: #e2e8f0;
+    --ix-page: #f3f6f2;
+    --ix-text: #242a21;
+    --ix-muted: #677062;
+    --ix-border: #e4e9e2;
     --ix-brick: #b91c1c;
 }
 
@@ -30,14 +30,14 @@
    ========================================================== */
 .sidebar.bg-dark {
     background: var(--ix-green-900) !important;
-    box-shadow: 4px 0 24px rgba(15, 23, 42, 0.25);
+    box-shadow: 4px 0 24px rgba(30, 48, 22, 0.25);
     border-right: 3px solid var(--ix-khaki-500);
     overflow-y: auto;
 }
 
 /* brand area */
 .sidebar .border-secondary {
-    border-color: rgba(245, 158, 11, 0.45) !important;
+    border-color: rgba(102, 151, 81, 0.45) !important;
 }
 
 .sidebar > div:first-child {
@@ -82,14 +82,14 @@
 
 .sidebar .nav-link:hover,
 .sidebar .nav-link:focus-visible {
-    background-color: rgba(253, 230, 138, 0.16);
+    background-color: rgba(217, 229, 212, 0.16);
     color: #ffffff;
     transform: translateX(3px);
     outline: none;
 }
 
 .sidebar .nav-link.active {
-    background-color: var(--ix-khaki-500);
+    background-color: var(--ix-khaki-300);
     color: var(--ix-green-900);
     font-weight: 700;
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
@@ -106,7 +106,7 @@
     --bs-btn-active-color: #fff;
     --bs-btn-active-bg: #991b1b;
     --bs-btn-active-border-color: #991b1b;
-    --bs-btn-focus-shadow-rgb: 245, 158, 11;
+    --bs-btn-focus-shadow-rgb: 102, 151, 81;
     border-width: 1.5px;
     border-radius: 0.6rem;
     font-weight: 600;
@@ -151,7 +151,7 @@
     border: 1px solid var(--ix-border);
     border-top: 5px solid var(--ix-khaki-500);
     border-radius: 16px;
-    box-shadow: 0 12px 30px -12px rgba(23, 37, 84, 0.28) !important;
+    box-shadow: 0 12px 30px -12px rgba(53, 90, 37, 0.28) !important;
 }
 
 .main-content .card-body {
@@ -232,7 +232,7 @@
 
 .main-content .form-control:focus {
     border-color: var(--ix-green-500);
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
+    box-shadow: 0 0 0 4px rgba(93, 134, 75, 0.18);
 }
 
 .main-content .input-group-text {
@@ -255,32 +255,32 @@
     --bs-btn-active-color: #fff;
     --bs-btn-active-bg: var(--ix-green-900);
     --bs-btn-active-border-color: var(--ix-green-900);
-    --bs-btn-focus-shadow-rgb: 37, 99, 235;
+    --bs-btn-focus-shadow-rgb: 93, 134, 75;
     --bs-btn-disabled-bg: var(--ix-green-600);
     --bs-btn-disabled-border-color: var(--ix-green-600);
     border-radius: 10px;
     font-weight: 600;
     letter-spacing: 0.02em;
-    box-shadow: 0 8px 18px rgba(30, 64, 175, 0.28);
+    box-shadow: 0 8px 18px rgba(67, 106, 51, 0.28);
     transition: transform 0.15s, box-shadow 0.2s, background-color 0.2s;
 }
 
 .main-content .btn-primary:hover {
     transform: translateY(-1px);
-    box-shadow: 0 12px 24px rgba(30, 64, 175, 0.38);
+    box-shadow: 0 12px 24px rgba(67, 106, 51, 0.38);
 }
 
 .main-content .btn-success {
     --bs-btn-color: var(--ix-green-900);
-    --bs-btn-bg: var(--ix-khaki-500);
+    --bs-btn-bg: var(--ix-khaki-300);
     --bs-btn-border-color: var(--ix-khaki-500);
     --bs-btn-hover-color: var(--ix-green-900);
     --bs-btn-hover-bg: var(--ix-khaki-400);
-    --bs-btn-hover-border-color: var(--ix-khaki-400);
+    --bs-btn-hover-border-color: var(--ix-khaki-500);
     --bs-btn-active-color: var(--ix-green-900);
-    --bs-btn-active-bg: #d97706;
-    --bs-btn-active-border-color: #d97706;
-    --bs-btn-focus-shadow-rgb: 245, 158, 11;
+    --bs-btn-active-bg: var(--ix-khaki-400);
+    --bs-btn-active-border-color: var(--ix-green-600);
+    --bs-btn-focus-shadow-rgb: 102, 151, 81;
     border-radius: 8px;
     font-weight: 700;
 }
@@ -311,7 +311,7 @@
 
 .main-content .alert-secondary {
     --bs-alert-color: var(--ix-green-900);
-    --bs-alert-bg: #eff6ff;
+    --bs-alert-bg: #edf3ea;
     --bs-alert-border-color: var(--ix-green-500);
 }
 
@@ -334,7 +334,7 @@
     margin-bottom: 8px;
     overflow-y: auto;
     pointer-events: auto;
-    box-shadow: 0 12px 28px -8px rgba(23, 37, 84, 0.45);
+    box-shadow: 0 12px 28px -8px rgba(53, 90, 37, 0.45);
     scrollbar-width: none;  /* a long message still scrolls with the mouse wheel */
 }
 
@@ -354,7 +354,7 @@
 
 .main-content .alert-success {
     --bs-alert-color: var(--ix-green-900);
-    --bs-alert-bg: #eff6ff;
+    --bs-alert-bg: #edf3ea;
     --bs-alert-border-color: var(--ix-green-500);
 }
 
@@ -364,10 +364,11 @@
     --bs-alert-border-color: var(--ix-brick);
 }
 
+/* warnings and holidays stay amber: status colors, kept apart from the green palette */
 .main-content .alert-warning {
     --bs-alert-color: #92400e;
-    --bs-alert-bg: var(--ix-khaki-100);
-    --bs-alert-border-color: var(--ix-khaki-500);
+    --bs-alert-bg: #fffbeb;
+    --bs-alert-border-color: #f59e0b;
 }
 
 @media (max-width: 768px) {
@@ -553,7 +554,7 @@
     --bs-pagination-hover-border-color: var(--ix-khaki-500);
     --bs-pagination-focus-color: var(--ix-green-900);
     --bs-pagination-focus-bg: var(--ix-khaki-100);
-    --bs-pagination-focus-box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
+    --bs-pagination-focus-box-shadow: 0 0 0 4px rgba(93, 134, 75, 0.18);
     --bs-pagination-active-color: #fff;
     --bs-pagination-active-bg: var(--ix-green-600);
     --bs-pagination-active-border-color: var(--ix-green-600);
@@ -567,7 +568,7 @@
 
 /* pressed state: shows the moment a link is clicked */
 .sidebar .nav-link:active {
-    background-color: var(--ix-khaki-500);
+    background-color: var(--ix-khaki-300);
     color: var(--ix-green-900);
     transform: scale(0.97);
 }
@@ -580,7 +581,7 @@ body:has(link[href*="calendar.css"]) .sidebar .nav-item:nth-child(4) .nav-link,
 body:has(link[href*="linkage"]) .sidebar .nav-item:nth-child(5) .nav-link,
 body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(5) .nav-link,
 .sidebar .nav-link[aria-current="page"] {
-    background-color: var(--ix-khaki-500);
+    background-color: var(--ix-khaki-300);
     color: var(--ix-green-900);
     font-weight: 700;
     box-shadow: inset 4px 0 0 var(--ix-green-600), 0 6px 14px rgba(0, 0, 0, 0.25);
@@ -597,7 +598,7 @@ body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(5) .nav-link,
 .sidebar .nav > li:last-child {
     margin-top: auto;
     padding: 1rem 0.25rem 0.75rem !important;
-    border-top: 1px solid rgba(245, 158, 11, 0.35);
+    border-top: 1px solid rgba(102, 151, 81, 0.35);
 }
 
 /* ==========================================================
@@ -749,7 +750,6 @@ body:has(#metricEditFab) .main-content > .p-4 {
 #forecastCard.is-updating .card-body > p.mt-3 {
     color: transparent !important;
     background: var(--ix-skel-shimmer);
-    background-size: 200% 100%;
     border-radius: 6px;
     animation: skel-shimmer 1.5s linear infinite;
 }
@@ -775,7 +775,7 @@ body:has(#metricEditFab) .main-content > .p-4 {
     background: var(--ix-green-700);
     border: 2px solid var(--ix-khaki-500);
     border-radius: 999px;
-    box-shadow: 0 8px 18px rgba(30, 64, 175, 0.28);
+    box-shadow: 0 8px 18px rgba(67, 106, 51, 0.28);
     transition: box-shadow 0.2s, transform 0.15s;
 }
 
@@ -785,12 +785,12 @@ body:has(#metricEditFab) .main-content > .p-4 {
 
 .metric-fab:hover,
 .metric-fab:focus-visible {
-    box-shadow: 0 12px 24px rgba(30, 64, 175, 0.38);
+    box-shadow: 0 12px 24px rgba(67, 106, 51, 0.38);
     transform: translateY(-1px);
 }
 
 .metric-fab:focus-visible {
-    outline: 3px solid rgba(37, 99, 235, 0.45);
+    outline: 3px solid rgba(93, 134, 75, 0.45);
     outline-offset: 2px;
 }
 
@@ -801,7 +801,7 @@ body:has(#metricEditFab) .main-content > .p-4 {
 
 .metric-fab.is-editing {
     color: var(--ix-green-900);
-    background: var(--ix-khaki-500);
+    background: var(--ix-khaki-300);
     border-color: var(--ix-green-600);
 }
 
@@ -867,7 +867,7 @@ body:has(#metricEditFab) .main-content > .p-4 {
     pointer-events: auto;
     background: var(--ix-white);
     border: 1px solid var(--ix-border);
-    box-shadow: 0 12px 28px -8px rgba(23, 37, 84, 0.45);
+    box-shadow: 0 12px 28px -8px rgba(53, 90, 37, 0.45);
     animation: metric-pop-in 0.2s ease-out;
 }
 
@@ -1004,7 +1004,7 @@ body:has(#metricEditFab) .main-content > .p-4 {
     padding: 10px 18px;
     font-weight: 600;
     color: var(--ix-green-900);
-    background: #eff6ff;
+    background: #edf3ea;
     border-color: var(--ix-green-500);
     border-radius: 999px;
 }
@@ -1067,19 +1067,18 @@ body:has(#metricEditFab) .main-content > .p-4 {
    shows on the page being left, before the next page's stylesheet has loaded.
    ========================================================== */
 :root {
-    --ix-skel-shimmer: linear-gradient(90deg, var(--ix-border) 30%, var(--ix-khaki-100) 50%, var(--ix-border) 70%);
+    --ix-skel-shimmer: var(--ix-border);
 }
 
+/* a flat pulse, no gradient sweep */
 @keyframes skel-shimmer {
-    from { background-position: 150% 0; }
-    to   { background-position: -50% 0; }
+    50% { background-color: var(--ix-khaki-100); }
 }
 
 .skel {
     display: block;
     height: 14px;
     background: var(--ix-skel-shimmer);
-    background-size: 200% 100%;
     border-radius: 6px;
     animation: skel-shimmer 1.5s linear infinite;
 }
@@ -1099,7 +1098,7 @@ body.is-navigating .sidebar .nav-link {
 body.is-navigating .sidebar .nav-link.is-navigation-target {
     color: var(--ix-green-900) !important;
     font-weight: 700 !important;
-    background-color: var(--ix-khaki-500) !important;
+    background-color: var(--ix-khaki-300) !important;
 }
 
 /* ---------- Page headings ---------- */
@@ -1165,7 +1164,7 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
     border: 1px solid var(--ix-border);
     border-top: 5px solid var(--ix-khaki-500);
     border-radius: 16px;
-    box-shadow: 0 12px 30px -12px rgba(23, 37, 84, 0.28);
+    box-shadow: 0 12px 30px -12px rgba(53, 90, 37, 0.28);
 }
 
 .skel-card {
@@ -1271,7 +1270,7 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
 .skel-alert-green {
     display: flex;
     align-items: center;
-    background: #eff6ff;
+    background: #edf3ea;
     border-color: var(--ix-green-500);
 }
 
@@ -1440,7 +1439,7 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
 .skel-picture {
     overflow: hidden;
     border-radius: 16px;
-    box-shadow: 0 12px 30px -12px rgba(23, 37, 84, 0.28);
+    box-shadow: 0 12px 30px -12px rgba(53, 90, 37, 0.28);
 }
 
 .skel-picture-image {
@@ -1663,7 +1662,7 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
 
 .dash-item:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3);
+    box-shadow: 0 0 0 3px rgba(93, 134, 75, 0.3);
 }
 
 .dash-item-text {
@@ -1752,8 +1751,8 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
     text-transform: uppercase;
 }
 
-.event-tile.holiday { color: #92400e; background: var(--ix-khaki-300); }
-.event-tile.event   { color: var(--ix-green-700); background: #dbeafe; }
+.event-tile.holiday { color: #92400e; background: #fde68a; }
+.event-tile.event   { color: var(--ix-green-700); background: #e0eadc; }
 .event-tile.exam    { color: var(--ix-brick); background: #fee2e2; }
 
 .event-tag {
@@ -1781,16 +1780,16 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
 
 /* Ongoing: happening today, or a multi-day event already under way. Tinted, with a live dot on the tile. */
 .dash-item.is-ongoing {
-    background: #eff6ff;
+    background: #edf3ea;
     box-shadow: inset 3px 0 0 var(--ix-green-500);
 }
 
 .dash-item.is-ongoing:hover {
-    background: #dbeafe;
+    background: #e0eadc;
 }
 
 .dash-item.is-ongoing:focus-visible {
-    box-shadow: inset 3px 0 0 var(--ix-green-500), 0 0 0 3px rgba(37, 99, 235, 0.3);
+    box-shadow: inset 3px 0 0 var(--ix-green-500), 0 0 0 3px rgba(93, 134, 75, 0.3);
 }
 
 .is-ongoing .event-tile::after {
@@ -1807,8 +1806,8 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
 }
 
 @keyframes event-live {
-    0%        { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.55); }
-    70%, 100% { box-shadow: 0 0 0 6px rgba(37, 99, 235, 0); }
+    0%        { box-shadow: 0 0 0 0 rgba(93, 134, 75, 0.55); }
+    70%, 100% { box-shadow: 0 0 0 6px rgba(93, 134, 75, 0); }
 }
 
 /* ---------- Their placeholders, and the dashboard skeleton's card grid ---------- */

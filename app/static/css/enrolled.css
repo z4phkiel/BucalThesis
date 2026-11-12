@@ -1,16 +1,16 @@
 
 :root {
-    --en-green-900: #172554;
-    --en-green-700: #1e40af;
-    --en-green-600: #1d4ed8;
-    --en-green-500: #2563eb;
-    --en-khaki-500: #f59e0b;
-    --en-khaki-300: #fde68a;
-    --en-khaki-100: #fffbeb;
+    --en-green-900: #355a25;
+    --en-green-700: #436a33;
+    --en-green-600: #4f763e;
+    --en-green-500: #5d864b;
+    --en-khaki-500: #669751;
+    --en-khaki-300: #d9e5d4;
+    --en-khaki-100: #f3f7f1;
     --en-white: #ffffff;
-    --en-text: #1e293b;
-    --en-muted: #5e6e82;
-    --en-border: #e2e8f0;
+    --en-text: #242a21;
+    --en-muted: #677062;
+    --en-border: #e4e9e2;
 }
 
 /* ---------- Search: one slim line, so more rows fit below it ---------- */
@@ -35,7 +35,7 @@
     padding: 6px 14px 6px 38px;
     font-size: 0.85rem;
     color: var(--en-text);
-    background-color: #f8fafc;
+    background-color: #fafaf9;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%232f5233' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M21 21l-4.3-4.3'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: 13px center;
@@ -45,7 +45,7 @@
 }
 
 #studentSearch::placeholder {
-    color: #94a3b8;
+    color: #9ba595;
 }
 
 #studentSearch:hover {
@@ -55,7 +55,7 @@
 #studentSearch:focus {
     background-color: #fff;
     border-color: var(--en-green-500);
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
+    box-shadow: 0 0 0 4px rgba(93, 134, 75, 0.18);
 }
 
 /* ---------- Page heading ---------- */
@@ -86,7 +86,7 @@
     border: 1px solid var(--en-border);
     border-top: 5px solid var(--en-khaki-500);
     border-radius: 16px;
-    box-shadow: 0 12px 30px -12px rgba(23, 37, 84, 0.28);
+    box-shadow: 0 12px 30px -12px rgba(53, 90, 37, 0.28);
 }
 
 .table-responsive > .table {
@@ -250,7 +250,7 @@ th[aria-sort="descending"] .sort-up {
 
 .student-actions:hover,
 .student-actions.show {
-    background-color: rgba(30, 64, 175, 0.16);
+    background-color: rgba(67, 106, 51, 0.16);
 }
 
 .student-actions:focus-visible {
@@ -272,7 +272,7 @@ th[aria-sort="descending"] .sort-up {
     --bs-dropdown-link-active-color: #fff;
     --bs-dropdown-link-active-bg: var(--en-green-600);
     --bs-dropdown-item-padding-y: 6px;
-    box-shadow: 0 12px 28px -8px rgba(23, 37, 84, 0.45);
+    box-shadow: 0 12px 28px -8px rgba(53, 90, 37, 0.45);
 }
 
 /* ---------- Page controls: numbers and gaps share one width, so the Next button stays put ---------- */

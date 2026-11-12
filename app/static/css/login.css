@@ -1,9 +1,9 @@
 :root {
-    --green-900: #172554;
-    --green-800: #0f172a;
-    --green-500: #2563eb;
-    --khaki-500: #f59e0b;
-    --khaki-300: #fde68a;
+    --green-900: #355a25;
+    --green-800: #1e3016;
+    --green-500: #5d864b;
+    --khaki-500: #669751;
+    --khaki-300: #d9e5d4;
     --gold-100: #fef3c7;
     --white: #ffffff;
     --danger-bg: #fef2f2;
@@ -24,7 +24,7 @@ body {
     font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
     color: var(--white);
     background:
-        linear-gradient(rgba(15, 23, 42, 0.72), rgba(15, 23, 42, 0.72)),
+        linear-gradient(rgba(30, 48, 22, 0.72), rgba(30, 48, 22, 0.72)),
         url("../images/school.jpg") center / cover no-repeat fixed;
     background-color: var(--green-800);
 }
@@ -68,7 +68,7 @@ body {
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .login-card,
     .back-home {
-        background: rgba(15, 23, 42, 0.94);
+        background: rgba(30, 48, 22, 0.94);
     }
 }
 
@@ -85,9 +85,9 @@ body {
     content: "";
     position: absolute;
     inset: -8px;
-    border: 1px solid rgba(253, 230, 138, 0.5);
+    border: 1px solid rgba(217, 229, 212, 0.5);
     border-radius: 50%;
-    background: rgba(253, 230, 138, 0.12);
+    background: rgba(217, 229, 212, 0.12);
 }
 
 .brand-logo img {
@@ -313,7 +313,7 @@ body {
     --bs-btn-active-border-color: transparent;
     --bs-btn-disabled-border-color: transparent;
     --bs-btn-disabled-opacity: 0.9;
-    background-image: linear-gradient(var(--khaki-500), var(--khaki-500));
+    background-image: linear-gradient(var(--khaki-300), var(--khaki-300));
     border-radius: 999px;
     box-shadow: 0 14px 28px -10px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.6);
     transition: transform 0.15s, box-shadow 0.2s, filter 0.2s;
@@ -346,7 +346,7 @@ body {
 
 .login-button.btn:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 4px rgba(253, 230, 138, 0.6);
+    box-shadow: 0 0 0 4px rgba(217, 229, 212, 0.6);
 }
 
 .login-button.btn:disabled {
@@ -372,9 +372,9 @@ body {
     border-left-width: 4px;
     border-radius: 10px;
     pointer-events: auto;
-    box-shadow: 0 12px 28px -8px rgba(15, 23, 42, 0.55);
+    box-shadow: 0 12px 28px -8px rgba(30, 48, 22, 0.55);
     --bs-alert-color: var(--green-900);
-    --bs-alert-bg: #eff6ff;
+    --bs-alert-bg: #edf3ea;
     --bs-alert-border-color: var(--green-500);
 }
 
@@ -428,7 +428,7 @@ body {
 
 .back-home:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 4px rgba(253, 230, 138, 0.65);
+    box-shadow: 0 0 0 4px rgba(217, 229, 212, 0.65);
 }
 
 /* ---------- Small screens ---------- */

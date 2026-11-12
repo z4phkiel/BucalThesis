@@ -9,6 +9,7 @@ class User(db.Model):
     username = db.Column(db.String(50), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False) # Stores the scrambled password
     role = db.Column(db.String(20), default='admin') # e.g., admin, registrar
+    activity_seen = db.Column(db.JSON, nullable=True)  # area -> id of the newest activity entry this user has seen there
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let area = '';
 
     function loadCard() {
-        loadInto(list, card.dataset.url + (area ? '?area=' + encodeURIComponent(area) : ''));
+        loadInto(list, card.dataset.url + (area ? '?area=' + encodeURIComponent(area) : ''), refreshDots);
     }
 
     function setOpen(open, returnFocus) {
@@ -112,9 +112,43 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // ---------- Red dots on the bell and the Activity Log tab: entries by other users not seen yet ----------
+    // Checked when a page loads and after the card or the tab shows entries (the server marks those seen).
+    // Never on a timer: every request renews the session, so polling would keep idle users logged in.
+    const tabButton = document.getElementById('activityTabButton');
+    let dotsRequest = 0;
+
+    // CSS draws the dot; the label says the same to screen readers
+    function setDot(element, on) {
+        element.classList.toggle('has-unseen', on);
+        if (on) {
+            element.setAttribute('aria-label', element.textContent.trim() + ', new activity');
+        } else {
+            element.removeAttribute('aria-label');
+        }
+    }
+
+    function refreshDots() {
+        const request = ++dotsRequest;     // only the newest answer counts, as one sent before a "seen" is stale
+        fetch(toggle.dataset.unseenUrl, { cache: 'no-store' })
+            .then(function (res) {
+                return res.ok ? res.json() : null;
+            })
+            .then(function (data) {
+                if (!data || request !== dotsRequest) {
+                    return;
+                }
+                setDot(toggle, data.areas.length > 0);
+                if (tabButton) {
+                    setDot(tabButton, data.areas.includes(tabButton.dataset.activityArea));
+                }
+            })
+            .catch(function () {});     // only the dots depend on it, so they stay as they were
+    }
+    refreshDots();
+
     // ---------- The Activity Log tab (Masterlist, Calendar and Linkage/Files only) ----------
     const pane = document.getElementById('activityTab');
-    const tabButton = document.getElementById('activityTabButton');
     if (!pane || !tabButton) {
         return;
     }
@@ -131,7 +165,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function loadDetails() {
-        loadInto(details, pane.dataset.url, highlightEntry);
+        loadInto(details, pane.dataset.url, function () {
+            highlightEntry();
+            refreshDots();
+        });
     }
 
     // Adds the next page's rows under the table

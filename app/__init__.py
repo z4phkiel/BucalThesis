@@ -80,6 +80,7 @@ NEW_COLUMNS = {
     'file_item': ARCHIVED_AT,
     'picture_item': ARCHIVED_AT,
     'activity_log': {'details': 'JSON NULL'},
+    'user': {'activity_seen': 'JSON NULL'},
 }
 
 

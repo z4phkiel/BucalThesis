@@ -1,17 +1,17 @@
 
 :root {
-    --lf-green-900: #172554;
-    --lf-green-700: #1e40af;
-    --lf-green-600: #1d4ed8;
-    --lf-green-500: #2563eb;
-    --lf-khaki-500: #f59e0b;
-    --lf-khaki-400: #fbbf24;
-    --lf-khaki-300: #fde68a;
-    --lf-khaki-100: #fffbeb;
+    --lf-green-900: #355a25;
+    --lf-green-700: #436a33;
+    --lf-green-600: #4f763e;
+    --lf-green-500: #5d864b;
+    --lf-khaki-500: #669751;
+    --lf-khaki-400: #bad0b1;
+    --lf-khaki-300: #d9e5d4;
+    --lf-khaki-100: #f3f7f1;
     --lf-white: #ffffff;
-    --lf-text: #1e293b;
-    --lf-muted: #5e6e82;
-    --lf-border: #e2e8f0;
+    --lf-text: #242a21;
+    --lf-muted: #677062;
+    --lf-border: #e4e9e2;
     --lf-brick: #b91c1c;
 }
 
@@ -59,7 +59,7 @@
     padding: 6px 14px 6px 38px;
     font-size: 0.85rem;
     color: var(--lf-text);
-    background-color: #f8fafc;
+    background-color: #fafaf9;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%232f5233' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M21 21l-4.3-4.3'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: 13px center;
@@ -69,7 +69,7 @@
 }
 
 .main-content #linkageSearch::placeholder {
-    color: #94a3b8;
+    color: #9ba595;
 }
 
 .main-content #linkageSearch:hover {
@@ -79,7 +79,7 @@
 .main-content #linkageSearch:focus {
     background-color: #fff;
     border-color: var(--lf-green-500);
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
+    box-shadow: 0 0 0 4px rgba(93, 134, 75, 0.18);
 }
 
 /* ---------- Section headings inside the cards ---------- */
@@ -98,7 +98,7 @@
 }
 
 .card-body > form.row .form-control::placeholder {
-    color: #94a3b8;
+    color: #9ba595;
 }
 
 /* file picker button; its margins cancel the field's padding, so it fills the field's height */
@@ -114,6 +114,7 @@
 }
 
 .main-content .form-control[type="file"]:hover::file-selector-button {
+    color: var(--lf-green-900);
     background: var(--lf-khaki-400);
 }
 
@@ -230,7 +231,7 @@
     --bs-btn-active-color: #fff;
     --bs-btn-active-bg: var(--lf-green-900);
     --bs-btn-active-border-color: var(--lf-green-900);
-    --bs-btn-focus-shadow-rgb: 37, 99, 235;
+    --bs-btn-focus-shadow-rgb: 93, 134, 75;
 }
 
 /* Delete: brick outline */
@@ -257,7 +258,7 @@
     border: 0;
     border-top: 6px solid var(--lf-khaki-500);
     border-radius: 18px;
-    box-shadow: 0 30px 60px -15px rgba(15, 23, 42, 0.55);
+    box-shadow: 0 30px 60px -15px rgba(30, 48, 22, 0.55);
 }
 
 .modal .modal-header {
@@ -285,7 +286,7 @@
 
 .modal .form-control {
     padding: 10px 14px;
-    background-color: #f8fafc;
+    background-color: #fafaf9;
     border: 1.5px solid var(--lf-border);
     border-radius: 10px;
 }
@@ -293,7 +294,7 @@
 .modal .form-control:focus {
     background-color: #fff;
     border-color: var(--lf-green-500);
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
+    box-shadow: 0 0 0 4px rgba(93, 134, 75, 0.18);
 }
 
 .modal .form-text {
@@ -323,7 +324,7 @@
     --bs-btn-active-color: var(--lf-green-900);
     --bs-btn-active-bg: var(--lf-khaki-400);
     --bs-btn-active-border-color: var(--lf-khaki-500);
-    --bs-btn-focus-shadow-rgb: 245, 158, 11;
+    --bs-btn-focus-shadow-rgb: 102, 151, 81;
 }
 
 /* Save changes: green (also covers the popup, which sits outside index.css's page area) */
@@ -337,8 +338,8 @@
     --bs-btn-active-color: #fff;
     --bs-btn-active-bg: var(--lf-green-900);
     --bs-btn-active-border-color: var(--lf-green-900);
-    --bs-btn-focus-shadow-rgb: 37, 99, 235;
-    box-shadow: 0 8px 18px rgba(30, 64, 175, 0.28);
+    --bs-btn-focus-shadow-rgb: 93, 134, 75;
+    box-shadow: 0 8px 18px rgba(67, 106, 51, 0.28);
 }
 
 /* ---------- Picture cards: the same text and button sizes as the table rows ---------- */
@@ -385,7 +386,6 @@
     position: absolute;
     inset: 0;
     background: var(--ix-skel-shimmer);
-    background-size: 200% 100%;
     animation: skel-shimmer 1.5s linear infinite;
 }
 

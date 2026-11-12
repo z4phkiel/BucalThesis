@@ -148,13 +148,43 @@ def latest_activity(area='', before=None, limit=ACTIVITY_SHOWN):
     return logs.order_by(ActivityLog.id.desc()).limit(limit).all()
 
 
+def mark_activity_seen(logs, areas):
+    """Records that this user has seen every entry up to the newest of logs (newest first) in each of areas."""
+    user = db.session.get(User, session['user_id'])
+    if not logs or user is None:
+        return
+    seen = dict(user.activity_seen or {})
+    seen.update({area: max(seen.get(area, 0), logs[0].id) for area in areas})
+    if seen != user.activity_seen:
+        user.activity_seen = seen
+        db.session.commit()
+
+
 @main_bp.route("/activity-log")
 def activity_log():
     if 'user_id' not in session:
         return {'error': 'Unauthorized'}, 401
 
-    logs = latest_activity(request.args.get('area', ''))
+    area = request.args.get('area', '')
+    logs = latest_activity(area)
+    # Opening the card counts as seeing everything up to its newest entry, in the area it is filtered to or in all
+    mark_activity_seen(logs, [area] if area in ACTIVITY_AREAS else ACTIVITY_AREAS)
     return render_template('activity_log.html', logs=logs, pages=ACTIVITY_PAGES, when=activity_time)
+
+
+@main_bp.route("/activity-log/unseen")
+def activity_log_unseen():
+    """The areas with entries by other users newer than this user has seen, for the red dots (activity-log.js)."""
+    if 'user_id' not in session:
+        return {'error': 'Unauthorized'}, 401
+
+    user = db.session.get(User, session['user_id'])
+    seen = (user and user.activity_seen) or {}
+    newest = (db.session.query(ActivityLog.area, db.func.max(ActivityLog.id))
+              .filter(ActivityLog.username != session.get('username', ''),
+                      ActivityLog.id > min(seen.get(area, 0) for area in ACTIVITY_AREAS))   # older rows are all seen
+              .group_by(ActivityLog.area).all())
+    return {'areas': [area for area, last in newest if area in ACTIVITY_AREAS and last > seen.get(area, 0)]}
 
 
 @main_bp.route("/activity-log/<area>")
@@ -166,7 +196,10 @@ def activity_log_details(area):
         abort(404)
 
     # One extra entry shows whether there is an older page
-    logs = latest_activity(area, request.args.get('before', type=int), ACTIVITY_SHOWN + 1)
+    before = request.args.get('before', type=int)
+    logs = latest_activity(area, before, ACTIVITY_SHOWN + 1)
+    if not before:
+        mark_activity_seen(logs, [area])
     return render_template('activity_log_details.html', logs=logs[:ACTIVITY_SHOWN],
                            has_more=len(logs) > ACTIVITY_SHOWN, when=activity_time)
 

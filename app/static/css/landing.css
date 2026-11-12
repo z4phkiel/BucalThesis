@@ -1,16 +1,16 @@
 :root {
-    --green-900: #172554;
-    --green-700: #1e40af;
-    --green-600: #1d4ed8;
-    --green-500: #2563eb;
-    --khaki-500: #f59e0b;
-    --khaki-400: #fbbf24;
-    --khaki-300: #fde68a;
-    --khaki-100: #fffbeb;
+    --green-900: #355a25;
+    --green-700: #436a33;
+    --green-600: #4f763e;
+    --green-500: #5d864b;
+    --khaki-500: #669751;
+    --khaki-400: #bad0b1;
+    --khaki-300: #d9e5d4;
+    --khaki-100: #f3f7f1;
     --white: #ffffff;
-    --text: #1e293b;
-    --muted: #475569;
-    --border: #cbd5e1;
+    --text: #242a21;
+    --muted: #4e574a;
+    --border: #cfd6cc;
 }
 
 *, *::before, *::after {
@@ -65,28 +65,28 @@ a { color: inherit; }
 
 .btn:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.7);
+    box-shadow: 0 0 0 4px rgba(102, 151, 81, 0.7);
 }
 
 .btn-green {
     color: #fff;
     background: var(--green-600);
-    box-shadow: 0 8px 18px rgba(30, 64, 175, 0.35);
+    box-shadow: 0 8px 18px rgba(67, 106, 51, 0.35);
 }
 
 .btn-green:hover {
     filter: brightness(1.08);
-    box-shadow: 0 12px 24px rgba(30, 64, 175, 0.45);
+    box-shadow: 0 12px 24px rgba(67, 106, 51, 0.45);
 }
 
 .btn-khaki {
     color: var(--green-900);
-    background: var(--khaki-500);
+    background: var(--khaki-300);
     box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
 }
 
 .btn-khaki:hover {
-    background: var(--khaki-300);
+    background: var(--khaki-100);
 }
 
 .btn-outline {
@@ -113,7 +113,7 @@ a { color: inherit; }
     background: rgba(255, 255, 255, 0.92);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border);
-    box-shadow: 0 6px 20px -12px rgba(23, 37, 84, 0.35);
+    box-shadow: 0 6px 20px -12px rgba(53, 90, 37, 0.35);
 }
 
 .site-header::after {
@@ -180,7 +180,7 @@ a { color: inherit; }
     color: #fff;
     background: var(--green-600);
     border-radius: 999px;
-    box-shadow: 0 6px 14px rgba(30, 64, 175, 0.3);
+    box-shadow: 0 6px 14px rgba(67, 106, 51, 0.3);
 }
 
 .btn-login:hover {
@@ -212,7 +212,7 @@ a { color: inherit; }
     text-transform: uppercase;
     color: var(--khaki-300);
     background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(253, 230, 138, 0.45);
+    border: 1px solid rgba(217, 229, 212, 0.45);
     border-radius: 999px;
 }
 
@@ -311,13 +311,13 @@ a { color: inherit; }
     border: 1px solid var(--border);
     border-top: 5px solid var(--khaki-500);
     border-radius: 16px;
-    box-shadow: 0 12px 30px -14px rgba(23, 37, 84, 0.3);
+    box-shadow: 0 12px 30px -14px rgba(53, 90, 37, 0.3);
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 18px 36px -14px rgba(23, 37, 84, 0.4);
+    box-shadow: 0 18px 36px -14px rgba(53, 90, 37, 0.4);
 }
 
 .card h3 {
@@ -350,7 +350,7 @@ a { color: inherit; }
     height: 52px;
     background: var(--green-600);
     border-radius: 14px;
-    box-shadow: 0 8px 16px rgba(30, 64, 175, 0.28);
+    box-shadow: 0 8px 16px rgba(67, 106, 51, 0.28);
 }
 
 .icon svg {
@@ -373,7 +373,7 @@ a { color: inherit; }
     border: 1px solid var(--border);
     border-left: 8px solid var(--khaki-500);
     border-radius: 20px;
-    box-shadow: 0 18px 40px -16px rgba(23, 37, 84, 0.35);
+    box-shadow: 0 18px 40px -16px rgba(53, 90, 37, 0.35);
 }
 
 .fb-icon {
@@ -385,7 +385,7 @@ a { color: inherit; }
     height: 76px;
     background: var(--green-600);
     border-radius: 20px;
-    box-shadow: 0 10px 20px rgba(30, 64, 175, 0.3);
+    box-shadow: 0 10px 20px rgba(67, 106, 51, 0.3);
 }
 
 .fb-icon svg {
@@ -555,7 +555,7 @@ a { color: inherit; }
 .hero {
     /* a one-color layer is the flat navy tint over the photo */
     background:
-        linear-gradient(rgba(23, 37, 84, 0.84), rgba(23, 37, 84, 0.84)),
+        linear-gradient(rgba(53, 90, 37, 0.84), rgba(53, 90, 37, 0.84)),
         url("../images/school.jpg") center / cover no-repeat;
     background-color: var(--green-900);
 }
