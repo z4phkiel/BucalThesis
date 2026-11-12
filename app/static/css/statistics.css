@@ -503,6 +503,30 @@
     text-decoration: underline;
 }
 
+/* ---------- Abnormal years form, under the table ---------- */
+.stat-abnormal {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--ix-khaki-500);
+}
+
+.stat-abnormal-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.stat-abnormal-fields .form-select {
+    flex: 0 1 16rem;
+    width: auto;
+}
+
+.stat-abnormal-fields .form-control {
+    flex: 1 1 14rem;
+    width: auto;
+}
+
 @media (max-width: 767.98px) {
     .stat-focus {
         grid-template-columns: 1fr;

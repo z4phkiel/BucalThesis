@@ -81,6 +81,7 @@ NEW_COLUMNS = {
     'picture_item': ARCHIVED_AT,
     'activity_log': {'details': 'JSON NULL'},
     'user': {'activity_seen': 'JSON NULL'},
+    'yearly_metric': {'abnormal_reason': 'VARCHAR(255) NULL'},
 }
 
 

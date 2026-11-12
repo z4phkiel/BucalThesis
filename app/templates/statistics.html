@@ -7,7 +7,7 @@
 {% block content %}
 {% set heading %}<h2 class="text-dark">Predicted vs Actual Enrollment</h2>{% endset %}
 {% set back_link %}<a href="{{ url_for('main.index') }}" class="btn btn-sm metric-btn-ghost">Back to dashboard</a>{% endset %}
-{% set note %}{% if forecast_note %}<div class="alert alert-warning mb-0" role="status">{{ forecast_note }}</div>{% endif %}{% endset %}
+{% set note %}{% if forecast_note or forecast_warning %}<div class="alert alert-warning mb-0" role="status">{{ forecast_note or forecast_warning }}</div>{% endif %}{% endset %}
 
 <div id="statisticsPage">
     {% if years %}
@@ -92,8 +92,12 @@
                             <span class="stat-note">copying last year's count</span>
                         </div>
                         <div class="stat-metric">
+                            <span id="statCountOnly" class="stat-metric-value">{{ count_only_mape }}%</span>
+                            <span class="stat-note">model without the two rates</span>
+                        </div>
+                        <div class="stat-metric">
                             <span id="statR2" class="stat-metric-value">{{ r2_score if r2_score is not none else 'N/A' }}</span>
-                            <span class="stat-note">R<sup>2</sup> on unseen years</span>
+                            <span class="stat-note">R<sup>2</sup> against the earlier years' average</span>
                         </div>
                     </div>
                     {% endif %}
@@ -107,6 +111,11 @@
                     Click a year to compare it. Predictions use the prior year's enrollee count, retention rate and cohort survival rate.
                     Each comes from a model trained only on earlier years, so the first {{ min_years }} usable years have none.
                     A predicted point with no actual count is the current forecast.
+                    {% if mape is not none %}
+                    The three percentages are average misses on the same {{ tested_years }} years, and {{ best_method }} did best{% if few_tests %}, though {{ tested_years }} years are too few to prove which is better{% endif %}.
+                    {% if average_difference %}On average the model predicted {{ average_difference | abs }} enrollees too {{ 'high' if average_difference > 0 else 'low' }}.{% endif %}
+                    {% endif %}
+                    {% if years | selectattr('abnormal_reason') | list %}A year marked abnormal below is left out of training and scoring, and so is the prediction made from it.{% endif %}
                     {% if r2_score is not none and r2_score < 0 %}An R<sup>2</sup> below 0 means the model did worse than guessing the average of the earlier years.{% endif %}
                 </p>
             </div>
@@ -136,6 +145,7 @@
                             <td>
                                 <button type="button" class="stat-year-btn">{{ y.year }}</button>
                                 {% if y.is_forecast %}<span class="badge bg-secondary ms-1">Forecast</span>{% endif %}
+                                {% if y.abnormal_reason %}<span class="badge bg-secondary ms-1" title="{{ y.abnormal_reason }}">Abnormal</span>{% endif %}
                             </td>
                             <td>{{ y.predicted if y.predicted is not none else '—' }}</td>
                             <td>{{ y.actual if y.actual is not none else 'Not yet submitted' }}</td>
@@ -146,6 +156,25 @@
                     </tbody>
                 </table>
             </div>
+
+            {# No script: the page reloads with every score recalculated #}
+            <form method="post" action="{{ url_for('main.mark_abnormal_year') }}" class="stat-abnormal">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <p class="text-muted stat-caption mb-0">
+                    <strong>Abnormal years.</strong> A year that was not a normal school year (a pandemic or a calamity, for example) misleads the model.
+                    Give the reason to leave that year out of training and scoring, or clear the reason to count it again.
+                </p>
+                <div class="stat-abnormal-fields">
+                    <select name="metric_id" class="form-select form-select-sm" aria-label="School year" required>
+                        {% for y in years | reverse if y.id %}
+                        <option value="{{ y.id }}">S.Y. {{ y.year }}{% if y.abnormal_reason %} (abnormal: {{ y.abnormal_reason }}){% endif %}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="text" name="reason" class="form-control form-control-sm" maxlength="255" autocomplete="off"
+                           placeholder="Reason, or blank for a normal year" aria-label="Reason the year was abnormal, or blank for a normal year">
+                    <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -156,7 +185,7 @@
         {{ back_link }}
     </div>
 
-    {% if forecast_note %}<div class="mb-3">{{ note }}</div>{% endif %}
+    {% if forecast_note or forecast_warning %}<div class="mb-3">{{ note }}</div>{% endif %}
 
     <div class="card shadow-sm">
         <div class="card-body text-center text-muted py-5">

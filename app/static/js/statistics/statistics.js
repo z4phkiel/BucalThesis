@@ -330,7 +330,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('statActual').textContent = item.actual === null ? 'Pending' : number(item.actual);
         document.getElementById('statDifference').textContent = item.difference === null ? '—' : signed(item.difference);
 
-        let predictedNote = 'Too few earlier years to predict this one';
+        let predictedNote = item.left_out || 'Too few earlier years to predict this one';
         if (item.is_forecast) {
             predictedNote = `Current forecast, expect roughly ${number(item.range[0])} to ${number(item.range[1])}`;
         } else if (item.predicted !== null) {

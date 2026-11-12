@@ -113,6 +113,7 @@ class YearlyMetric(db.Model):
     graduation_rate = db.Column(db.Float)
     retention_rate = db.Column(db.Float)
     enrollee_count = db.Column(db.Integer)
+    abnormal_reason = db.Column(db.String(255))     # why the forecast should leave this year out (e.g. a pandemic); blank for a normal year
 
     def __repr__(self):
         return f'<YearlyMetric {self.school_year}>'
