@@ -48,4 +48,46 @@ document.addEventListener('DOMContentLoaded', function () {
     password.addEventListener('blur', function () {
         capsHint.hidden = true;
     });
+
+    // Login photo slideshow: moves on every SLIDE_MS; a bar jumps to its photo.
+    // With reduced motion it stays put and only the bars change the photo.
+    const SLIDE_MS = 6000;
+    const slides = document.querySelectorAll('.photo-slide');
+    const dots = document.querySelectorAll('.photo-dot');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let currentSlide = 0;
+    let slideTimer = null;
+
+    function showSlide(index) {
+        slides[currentSlide].classList.remove('is-active');
+        dots[currentSlide].classList.remove('is-active');
+        dots[currentSlide].removeAttribute('aria-current');
+        currentSlide = (index + slides.length) % slides.length;
+        slides[currentSlide].classList.add('is-active');
+        dots[currentSlide].classList.add('is-active');
+        dots[currentSlide].setAttribute('aria-current', 'true');
+
+        clearTimeout(slideTimer);
+        if (!reduceMotion.matches) {
+            slideTimer = setTimeout(function () { showSlide(currentSlide + 1); }, SLIDE_MS);
+        }
+    }
+
+    if (dots.length) {
+        dots[0].parentElement.style.setProperty('--slide-time', SLIDE_MS + 'ms');
+        dots.forEach(function (dot, i) {
+            dot.addEventListener('click', function () { showSlide(i); });
+        });
+        showSlide(0);
+    }
+
+    // Authorized-use notice: opens with the page, then hands focus back to the form.
+    // Reopened from the top-right button, Bootstrap returns focus to that button instead.
+    const notice = document.getElementById('authNotice');
+    if (notice.hasAttribute('data-auto-open')) {
+        notice.addEventListener('hidden.bs.modal', function () {
+            document.getElementById('username').focus();
+        }, { once: true });
+        bootstrap.Modal.getOrCreateInstance(notice).show();
+    }
 });

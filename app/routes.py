@@ -682,8 +682,9 @@ def prediction_history(metrics_oldest_first):
 
 @main_bp.route("/")
 def index():
+    # Visitors who are not logged in start on the public landing page
     if 'user_id' not in session:
-        return redirect(url_for('main.login'))
+        return redirect(url_for('main.landing'))
 
     # The table and forecast load separately from /dashboard/data, so the page can appear straight away
     return render_template('dashboard.html', username=session['username'])
