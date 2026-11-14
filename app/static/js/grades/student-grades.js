@@ -47,6 +47,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.querySelectorAll('.sg-level').forEach(function (level) {
         const input = level.querySelector('.sg-file-input');
+        if (!input) {   // a role that only views grades gets no upload field
+            return;
+        }
         input.addEventListener('change', function () {
             sendFile(input);
         });

@@ -56,10 +56,12 @@
 {# The Masterlist, Calendar and Linkage/Files tab strip (activity_tabs.html). .page-tabs is in activity-log.css,
    which no page stylesheet restyles, so the placeholder uses the real look. #}
 {% macro page_tabs(main_label) %}
+{% if can('view_activity') %}
 <div class="page-tabs" aria-hidden="true">
     <span class="page-tab active">{{ main_label }}</span>
     <span class="page-tab">Activity Log</span>
 </div>
+{% endif %}
 {% endmacro %}
 
 {# Archives: one card per kind of item; each table ends with the same Archived and Actions columns #}
@@ -278,4 +280,28 @@
     ]) }}
     {{ archive_section('Files', file_columns) }}
     {{ archive_section('Pictures', file_columns) }}
+</template>
+
+{# The button and the Actions column follow the same permissions as accounts.html.
+   Column widths copy where the real table's columns land, with and without Actions. #}
+{% set account_actions = can('edit_accounts') %}
+<template data-skeleton-path="{{ url_for('main.accounts') }}">
+    <span class="visually-hidden">Loading the accounts</span>
+    <div class="skel-head skel-head-accounts">
+        <div class="skel-title skel-title-list">Accounts</div>
+        {% if can('create_accounts') %}<span class="skel skel-button skel-button-accounts"></span>{% endif %}
+    </div>
+    <p class="skel-intro">Accounts of the authorized personnel who can sign in to the system.</p>
+    <div class="skel-card skel-card-linkage">
+        <div class="skel-card-body">
+            <div class="skel-table-frame">
+                {{ table([
+                    {'label': 'Name', 'width': '25%' if account_actions else '38%', 'bars': ['64%', '78%', '56%', '70%']},
+                    {'label': 'Username', 'width': '15%' if account_actions else '27%', 'bars': ['58%', '70%', '50%']},
+                    {'label': 'Role', 'width': '20%' if account_actions else 'auto', 'bars': ['64px', '84px', '64px']},
+                ] + ([{'label': 'Actions', 'width': 'auto', 'align': 'end', 'pills': 2}] if account_actions else []),
+                4, 'skel-table-tight skel-table-striped') }}
+            </div>
+        </div>
+    </div>
 </template>

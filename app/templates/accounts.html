@@ -23,8 +23,9 @@
 <div class="mb-3">
     <label class="form-label" for="{{ id }}-role">Role</label>
     <select id="{{ id }}-role" name="role" class="form-select" required>
-        {% for value, label in roles.items() %}
-        <option value="{{ value }}"{% if user and user.role == value or not user and value == 'admin' %} selected{% endif %}>{{ label }}</option>
+        {# Only your own role or a lower one (assignable_roles in permissions.py) #}
+        {% for value, label in roles.items() if value in assignable %}
+        <option value="{{ value }}"{% if user and user.role == value %} selected{% endif %}>{{ label }}</option>
         {% endfor %}
     </select>
 </div>
@@ -66,7 +67,7 @@
 
 <div class="d-flex justify-content-between align-items-center mb-1">
     <h1 class="h3 mb-1">Accounts</h1>
-    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createAccount">Create account</button>
+    {% if can('create_accounts') %}<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createAccount">Create account</button>{% endif %}
 </div>
 <p class="accounts-intro">Accounts of the authorized personnel who can sign in to the system.</p>
 
@@ -79,7 +80,7 @@
                         <th>Name</th>
                         <th>Username</th>
                         <th>Role</th>
-                        <th class="text-end">Actions</th>
+                        {% if can('edit_accounts') %}<th class="text-end">Actions</th>{% endif %}
                     </tr>
                 </thead>
                 <tbody>
@@ -91,10 +92,12 @@
                         </td>
                         <td>{{ user.username }}</td>
                         <td><span class="accounts-role {{ user.role }}">{{ roles.get(user.role, user.role or 'Admin') }}</span></td>
+                        {% if can('edit_accounts') %}
                         <td class="text-end text-nowrap">
                             <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#edit-{{ user.id }}">Edit</button>
                             <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#password-{{ user.id }}">Change password</button>
                         </td>
+                        {% endif %}
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -103,12 +106,14 @@
     </div>
 </section>
 
+{% if can('create_accounts') %}
 {% call popup('createAccount', 'Create account', url_for('main.create_account'), 'Create account') %}
 {{ account_fields('create') }}
 {{ password_fields('create') }}
 {% endcall %}
+{% endif %}
 
-{% for user in users %}
+{% for user in users if can('edit_accounts') %}
 {% call popup('edit-' ~ user.id, 'Edit ' ~ (user.full_name or user.username), url_for('main.edit_account', user_id=user.id), 'Save changes') %}
 {{ account_fields('edit-' ~ user.id, user) }}
 {% endcall %}

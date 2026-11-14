@@ -652,3 +652,9 @@
     gap: 8px;
     padding: 12px;
 }
+
+/* A role that only views the calendar: no add/edit form, no Edit and Delete buttons (calendar.html) */
+.cal-modal.view-only .cal-edit,
+.cal-modal.view-only .acts {
+    display: none;
+}

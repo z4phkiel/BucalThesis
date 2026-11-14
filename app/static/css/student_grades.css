@@ -1,13 +1,6 @@
 /* A student's grade files: one Excel file per level, Kindergarten to Grade 6.
    Colors come from the --ix-* palette in index.css. */
 
-/* this page is reached from the Masterlist, so that stays highlighted (this file loads on this page only) */
-.sidebar .nav-item:nth-child(3) .nav-link {
-    background-color: var(--ix-khaki-300);
-    color: var(--ix-green-900);
-    font-weight: 700;
-}
-
 /* ---------- Icons ---------- */
 .sg-sprite {
     position: absolute;

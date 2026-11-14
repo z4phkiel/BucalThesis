@@ -19,6 +19,7 @@
     <div class="card-body">
         <h2 class="h5 mb-3">Important Links</h2>
 
+        {% if can('upload_files') %}
         <form action="{{ url_for('main.add_link') }}" method="POST" class="row g-2 mb-3">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="col-md-4">
@@ -31,6 +32,7 @@
                 <button type="submit" class="btn btn-primary">Add Link</button>
             </div>
         </form>
+        {% endif %}
 
         <div class="table-responsive">
             <table class="table table-striped table-hover align-middle mb-0">
@@ -47,6 +49,7 @@
                         <td>{{ link.title }}</td>
                         <td><a href="{{ link.url }}" target="_blank" rel="noopener noreferrer">{{ link.url }}</a></td>
                         <td class="text-end text-nowrap">
+                            {% if can('edit_files') %}
                             <button type="button" class="btn btn-sm btn-outline-primary"
                                     data-bs-toggle="modal" data-bs-target="#editLinkModal"
                                     data-action="{{ url_for('main.edit_link', link_id=link.id) }}"
@@ -57,11 +60,12 @@
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                             </form>
+                            {% endif %}
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="3" class="text-center text-muted py-4">No links yet. Add one above.</td>
+                        <td colspan="3" class="text-center text-muted py-4">No links yet.{% if can('upload_files') %} Add one above.{% endif %}</td>
                     </tr>
                     {% endfor %}
                     <tr class="search-empty d-none">
@@ -78,6 +82,7 @@
     <div class="card-body">
         <h2 class="h5 mb-3">Important Files</h2>
 
+        {% if can('upload_files') %}
         <form action="{{ url_for('main.upload_file') }}" method="POST" enctype="multipart/form-data" class="row g-2 mb-1">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="col-md-4">
@@ -91,6 +96,7 @@
             </div>
         </form>
         <p class="text-muted small mb-3">PDF, DOCX or XLSX files only, up to 10 MB each.</p>
+        {% endif %}
 
         <div class="table-responsive">
             <table class="table table-striped table-hover align-middle mb-0">
@@ -116,6 +122,7 @@
                         <td class="text-nowrap">{{ f.uploaded_at.strftime('%b %d, %Y') if f.uploaded_at else '—' }}</td>
                         <td class="text-end text-nowrap">
                             <a href="{{ url_for('main.download_file', file_id=f.id) }}" class="btn btn-sm btn-success">Download</a>
+                            {% if can('edit_files') %}
                             <button type="button" class="btn btn-sm btn-outline-primary"
                                     data-bs-toggle="modal" data-bs-target="#editFileModal"
                                     data-action="{{ url_for('main.edit_file', file_id=f.id) }}"
@@ -126,11 +133,12 @@
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                             </form>
+                            {% endif %}
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5" class="text-center text-muted py-4">No files yet. Upload one above.</td>
+                        <td colspan="5" class="text-center text-muted py-4">No files yet.{% if can('upload_files') %} Upload one above.{% endif %}</td>
                     </tr>
                     {% endfor %}
                     <tr class="search-empty d-none">
@@ -148,6 +156,7 @@
         <h2 class="h5 mb-3">Important Pictures</h2>
 
         <!-- Upload Picture Form -->
+        {% if can('upload_files') %}
         <form action="{{ url_for('main.upload_picture') }}"
               method="POST"
               enctype="multipart/form-data"
@@ -191,6 +200,8 @@
                  class="img-thumbnail"
                  style="max-width: 250px; max-height: 200px; object-fit: contain;">
         </div>
+
+        {% endif %}
 
 <!-- Uploaded Pictures -->
 <div class="row g-3">
@@ -247,6 +258,7 @@
                             <i class="bi bi-eye me-1"></i> View
                         </a>
 
+                        {% if can('edit_files') %}
                         <form action="{{ url_for('main.delete_picture', picture_id=picture.id) }}"
                               method="POST"
                               class="flex-fill"
@@ -261,6 +273,7 @@
                                 <i class="bi bi-trash me-1"></i> Delete
                             </button>
                         </form>
+                        {% endif %}
 
                     </div>
                 </div>

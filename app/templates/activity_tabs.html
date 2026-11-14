@@ -2,6 +2,10 @@
    and its Activity Log, which activity-log.js loads from /activity-log/<area> each time the tab opens.
    Import it with context, for activity_areas. #}
 {% macro activity_tabs(area, main_label) %}
+{# A role without view_activity gets the page alone: no tabs, and activity-log.js skips the tab code #}
+{% if not can('view_activity') %}
+{{ caller() }}
+{% else %}
 <div class="page-tabs" role="tablist" aria-label="{{ activity_areas[area] }} views">
     <button type="button" class="page-tab active" id="mainTabButton" role="tab" data-bs-toggle="tab" data-bs-target="#mainTab"
             aria-controls="mainTab" aria-selected="true">{{ main_label }}</button>
@@ -25,4 +29,5 @@
         </section>
     </div>
 </div>
+{% endif %}
 {% endmacro %}

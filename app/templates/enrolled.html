@@ -64,16 +64,18 @@
                 <td>{{ student.sex | capitalize if student.sex else '—' }}</td>
                 <td>{{ student.date_signed.strftime('%B %d, %Y') if student.date_signed else '—' }}</td>
                 <td class="text-center">
+                    {% if can('view_enrollment') or can('view_grades') %}
                     <div class="dropdown">
                         <!-- Fixed positioning lets the menu open past the table's edge instead of being cut off -->
                         <button type="button" class="student-actions" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" aria-label="Actions for {{ full_name }}">
                             <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13" cy="8" r="1.5"/></svg>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end student-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('main.student_detail', student_id=student.id) }}">View enrollment form</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('main.student_grades', student_id=student.id) }}">View grades</a></li>
+                            {% if can('view_enrollment') %}<li><a class="dropdown-item" href="{{ url_for('main.student_detail', student_id=student.id) }}">View enrollment form</a></li>{% endif %}
+                            {% if can('view_grades') %}<li><a class="dropdown-item" href="{{ url_for('main.student_grades', student_id=student.id) }}">View grades</a></li>{% endif %}
                         </ul>
                     </div>
+                    {% endif %}
                 </td>
             </tr>
             {% else %}

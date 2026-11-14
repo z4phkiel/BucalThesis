@@ -4,9 +4,10 @@ from datetime import datetime
 from sqlalchemy.dialects.mysql import MEDIUMBLOB
 from sqlalchemy.orm import deferred
 
-# Account roles: stored value -> label. Only a Super Admin can open the Accounts page.
+# Account roles: stored value -> label. What each may do is in permissions.py.
+# Least powerful first: a dropdown with no option selected falls on its first one.
 SUPER_ADMIN = 'super_admin'
-ROLES = {SUPER_ADMIN: 'Super Admin', 'admin': 'Admin'}
+ROLES = {'faculty': 'Faculty', 'principal': 'Principal', 'admin': 'Admin', SUPER_ADMIN: 'Super Admin'}
 
 
 class User(db.Model):
@@ -95,7 +96,8 @@ class Enrollment(db.Model):
     strand = db.Column(db.String(100))
 
     distance_learning_modalities = db.Column(db.Text)
-    signature_data = db.Column(db.Text)
+    # Up to 64 KB each, so lists like the Masterlist skip it; it loads only when one student's form shows it
+    signature_data = deferred(db.Column(db.Text))
 
     parent_guardian_name = db.Column(db.String(150))
     date_signed = db.Column(db.Date)

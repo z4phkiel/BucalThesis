@@ -1,9 +1,12 @@
-from flask import Blueprint, render_template, redirect, request, url_for, session, flash, current_app, send_file, jsonify, abort
+from flask import Blueprint, render_template, redirect, request, url_for, session, flash, current_app, send_file, jsonify, abort, g
 from app.models import User, Enrollment, YearlyMetric, Grades, CalendarEvent, LinkItem, FileItem, PictureItem, ActivityLog, ROLES, SUPER_ADMIN
+from app.permissions import NAV_PAGES, NAV_SECTIONS, assignable_roles, can, may_open
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import undefer
 from app import db
 from datetime import date, datetime, timedelta
 import base64
+import hashlib
 import math
 import re
 import threading
@@ -259,17 +262,65 @@ def count_login_attempt(key):
         return 0
 
 
+def password_fingerprint(user):
+    # Changes when the password does, so a reset ends the logins made with the old one.
+    # Not the hash itself: the cookie is signed, but anyone holding it can read it.
+    return hashlib.sha256(user.password_hash.encode()).hexdigest()[:16]
+
+
 @main_bp.before_request
 def sync_session_with_account():
-    # The signed cookie can't know the account was removed, renamed or given another role, so check the database
+    # The signed cookie can't know the account was removed, renamed, given another role or another password,
+    # so check the database
     user_id = session.get('user_id')
     if user_id is None:
         return
-    user = db.session.get(User, user_id)
-    if user is None:
+    # Kept on g for this request, so the sidebar's name needs no second read
+    user = g.user = db.session.get(User, user_id)
+    if user is None or session.get('pw') != password_fingerprint(user):
         session.clear()
     elif (session.get('username'), session.get('role')) != (user.username, user.role):
         session['username'], session['role'] = user.username, user.role
+
+
+# ROLES
+# permissions.py says what each role may do. Signed-out visitors are still turned away by each route itself.
+
+def nav_pages():
+    """(link, label, aria-current) of the sidebar pages this user's role may open. aria-current is 'page' for the
+    page that is open and 'true' for the sidebar page a sub-page belongs to (NAV_SECTIONS), else None."""
+    role = session.get('role')
+    section = NAV_SECTIONS.get((request.endpoint or '').removeprefix('main.'))
+    pages = []
+    for endpoint, label in NAV_PAGES.items():
+        if may_open(role, endpoint):
+            href = url_for('main.' + endpoint)
+            pages.append((href, label, 'page' if request.path == href else 'true' if endpoint == section else None))
+    return pages
+
+
+def signed_in():
+    """(name, role label) for the sidebar, or None when nobody is signed in. Uses the account row that
+    sync_session_with_account already read for this request."""
+    user = g.get('user') if 'user_id' in session else None
+    return (user.full_name or user.username, ROLES.get(user.role, user.role or '')) if user else None
+
+
+@main_bp.before_request
+def check_permission():
+    endpoint = request.endpoint.removeprefix('main.')
+    if 'user_id' not in session or may_open(session.get('role'), endpoint, request.method):
+        return
+    pages = nav_pages()
+    if endpoint == 'index' and pages:   # a role without the Dashboard starts on its first page
+        return redirect(pages[0][0])
+    return render_template('error_pages/denied.html'), 403
+
+
+@main_bp.app_context_processor
+def permissions_for_templates():
+    # can('edit_files') in a template hides the buttons this role cannot use
+    return {'nav_pages': nav_pages, 'can': lambda permission: can(session.get('role'), permission), 'signed_in': signed_in}
 
 
 @main_bp.route("/login", methods=['GET', 'POST'])
@@ -301,6 +352,7 @@ def login():
             session['user_id'] = user.id
             session['username'] = user.username
             session['role'] = user.role
+            session['pw'] = password_fingerprint(user)
             flash('Login successful!', 'success')
             return redirect(url_for('main.index'))
         else:
@@ -760,7 +812,8 @@ def test_signatures():
     if 'user_id' not in session:
         return redirect(url_for('main.login'))
 
-    enrollments = Enrollment.query.order_by(Enrollment.id.desc()).all()
+    # This page shows every signature, so they come in the same query instead of one query per student
+    enrollments = Enrollment.query.options(undefer(Enrollment.signature_data)).order_by(Enrollment.id.desc()).all()
     return render_template('test_signatures.html', enrollments=enrollments)
 
 # Enrollment rules (the page's JavaScript is only a convenience, these are what count)
@@ -1995,7 +2048,8 @@ def landing():
 
 
 # ACCOUNTS
-# A Super Admin creates the accounts of authorized personnel and changes their names, roles and passwords
+# A Super Admin creates the accounts of authorized personnel and changes their names, roles and passwords.
+# An Admin can also create accounts (any role but Super Admin); a Principal can only look at the list.
 USERNAME_PATTERN = re.compile(r'[A-Za-z0-9._-]{3,50}')
 MAX_FULL_NAME_LENGTH = 100
 MIN_PASSWORD_LENGTH = 8
@@ -2020,6 +2074,8 @@ def account_values(form, user=None):
         errors.append('That username is already taken.')
     if values['role'] not in ROLES:
         errors.append('Choose a role.')
+    elif values['role'] not in assignable_roles(session.get('role')):
+        errors.append('You can only give your own role or a lower one.')
     return values, errors
 
 
@@ -2030,16 +2086,6 @@ def password_errors(form):
     if password != form.get('confirm_password', ''):
         return ['The two passwords do not match.']
     return []
-
-
-def accounts_denied():
-    """Where to send someone who may not manage accounts, or None for a Super Admin."""
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-    if session.get('role') != SUPER_ADMIN:
-        flash('Only a Super Admin can manage accounts.', 'danger')
-        return redirect(url_for('main.index'))
-    return None
 
 
 def save_account(success_message):
@@ -2054,21 +2100,20 @@ def save_account(success_message):
 
 @main_bp.route('/accounts')
 def accounts():
-    denied = accounts_denied()
-    if denied:
-        return denied
+    if 'user_id' not in session:
+        return redirect(url_for('main.login'))
 
     users = User.query.order_by(User.username).all()
-    return render_template('accounts.html', users=users, roles=ROLES, min_password=MIN_PASSWORD_LENGTH,
+    return render_template('accounts.html', users=users, roles=ROLES, assignable=assignable_roles(session.get('role')),
+                           min_password=MIN_PASSWORD_LENGTH,
                            max_password=MAX_PASSWORD_LENGTH, max_name=MAX_FULL_NAME_LENGTH,
                            username_pattern=USERNAME_PATTERN.pattern)
 
 
 @main_bp.route('/accounts/create', methods=['POST'])
 def create_account():
-    denied = accounts_denied()
-    if denied:
-        return denied
+    if 'user_id' not in session:
+        return redirect(url_for('main.login'))
 
     values, errors = account_values(request.form)
     errors += password_errors(request.form)
@@ -2085,9 +2130,8 @@ def create_account():
 
 @main_bp.route('/accounts/<int:user_id>/edit', methods=['POST'])
 def edit_account(user_id):
-    denied = accounts_denied()
-    if denied:
-        return denied
+    if 'user_id' not in session:
+        return redirect(url_for('main.login'))
 
     user = User.query.get_or_404(user_id)
     values, errors = account_values(request.form, user)
@@ -2109,9 +2153,8 @@ def edit_account(user_id):
 
 @main_bp.route('/accounts/<int:user_id>/password', methods=['POST'])
 def change_account_password(user_id):
-    denied = accounts_denied()
-    if denied:
-        return denied
+    if 'user_id' not in session:
+        return redirect(url_for('main.login'))
 
     user = User.query.get_or_404(user_id)
     errors = password_errors(request.form)
@@ -2121,4 +2164,6 @@ def change_account_password(user_id):
 
     user.set_password(request.form['password'])
     save_account(f'Password changed for {user.full_name or user.username}.')
+    if user.id == session['user_id']:   # the new password ends every other login of this account, not this one
+        session['pw'] = password_fingerprint(user)
     return redirect(url_for('main.accounts'))

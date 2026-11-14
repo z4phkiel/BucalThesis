@@ -1,8 +1,7 @@
 {% extends 'dashboard.html' %}
 
 {% block head %}
-{# Reuses the Linkage/Files title, tables, row buttons and popups. Linked in the head, not the page body,
-   because index.css marks the Linkage tab as the open page when linkagefiles.css is linked from the body. #}
+{# Reuses the Linkage/Files title, tables, row buttons and popups #}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/linkagefiles.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/archives.css') }}">
 {% endblock %}

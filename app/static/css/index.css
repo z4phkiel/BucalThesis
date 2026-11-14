@@ -113,6 +113,38 @@
     letter-spacing: 0.04em;
 }
 
+/* signed-in account, above the logout button: lined up with the nav labels, a long name ends in "...".
+   contain: the nav is a wrapping flex column, which would otherwise widen the sidebar to fit a long name */
+.sidebar-user {
+    contain: inline-size;
+    margin-bottom: 0.5rem;
+    text-align: left;
+    line-height: 1.25;
+}
+
+.sidebar-user-name,
+.sidebar-user-role {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.sidebar-user-name {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.sidebar-user-role {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ix-khaki-400);
+}
+
 /* ==========================================================
    Page area
    ========================================================== */
@@ -573,14 +605,9 @@
     transform: scale(0.97);
 }
 
-/* current page */
-body:has(#metricsCard) .sidebar .nav-item:nth-child(1) .nav-link,
-body:has(link[href*="enrollment.css"]) .sidebar .nav-item:nth-child(2) .nav-link,
-body:has(link[href*="enrolled.css"]) .sidebar .nav-item:nth-child(3) .nav-link,
-body:has(link[href*="calendar.css"]) .sidebar .nav-item:nth-child(4) .nav-link,
-body:has(link[href*="linkage"]) .sidebar .nav-item:nth-child(5) .nav-link,
-body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(5) .nav-link,
-.sidebar .nav-link[aria-current="page"] {
+/* current page, or the sidebar page that the open page belongs to (aria-current "page" or "true"). It comes from
+   the server (nav_pages in routes.py), so it follows each role's own sidebar. */
+.sidebar .nav-link[aria-current] {
     background-color: var(--ix-khaki-300);
     color: var(--ix-green-900);
     font-weight: 700;
@@ -621,13 +648,7 @@ body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(5) .nav-link,
 }
 
 /* flat highlight: just the green marker on the left edge */
-body:has(#metricsCard) .sidebar .nav-item:nth-child(1) .nav-link,
-body:has(link[href*="enrollment.css"]) .sidebar .nav-item:nth-child(2) .nav-link,
-body:has(link[href*="enrolled.css"]) .sidebar .nav-item:nth-child(3) .nav-link,
-body:has(link[href*="calendar.css"]) .sidebar .nav-item:nth-child(4) .nav-link,
-body:has(link[href*="linkage"]) .sidebar .nav-item:nth-child(5) .nav-link,
-body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(5) .nav-link,
-.sidebar .nav-link[aria-current="page"] {
+.sidebar .nav-link[aria-current] {
     box-shadow: inset 5px 0 0 var(--ix-green-600);
 }
 
@@ -640,23 +661,11 @@ body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(5) .nav-link,
     --ix-nav-marker: 9px;
 }
 
-body:has(#metricsCard) .sidebar .nav-item:nth-child(1) .nav-link,
-body:has(link[href*="enrollment.css"]) .sidebar .nav-item:nth-child(2) .nav-link,
-body:has(link[href*="enrolled.css"]) .sidebar .nav-item:nth-child(3) .nav-link,
-body:has(link[href*="calendar.css"]) .sidebar .nav-item:nth-child(4) .nav-link,
-body:has(link[href*="linkage"]) .sidebar .nav-item:nth-child(5) .nav-link,
-body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(5) .nav-link,
-.sidebar .nav-link[aria-current="page"] {
+.sidebar .nav-link[aria-current] {
     box-shadow: inset var(--ix-nav-marker) 0 0 var(--ix-green-600);
 }
 
-body:has(#metricsCard) .sidebar .nav-item:nth-child(1) .nav-link,
-body:has(link[href*="enrollment.css"]) .sidebar .nav-item:nth-child(2) .nav-link,
-body:has(link[href*="enrolled.css"]) .sidebar .nav-item:nth-child(3) .nav-link,
-body:has(link[href*="calendar.css"]) .sidebar .nav-item:nth-child(4) .nav-link,
-body:has(link[href*="linkage"]) .sidebar .nav-item:nth-child(5) .nav-link,
-body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(5) .nav-link,
-.sidebar .nav-link[aria-current="page"],
+.sidebar .nav-link[aria-current],
 .sidebar .nav-link.active {
     box-shadow: none;
 }
@@ -1240,12 +1249,26 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
     height: 34px;
 }
 
-/* Archives: the line under the title */
+/* Archives and Accounts: the line under the title */
 .skel-intro {
     margin: 0.25rem 0 1rem 2px;
     font-size: 0.82rem;
     line-height: 1.5;
     color: var(--ix-muted);
+}
+
+/* Accounts: the title shares its row with the Create account button, right above the intro line */
+.skel-head-accounts {
+    margin-bottom: 0;
+}
+
+/* the real heading's mb-1, which sets the row's height when there is no button */
+.skel-head-accounts .skel-title {
+    margin-bottom: 0.25rem;
+}
+
+.skel-button-accounts {
+    width: 139px;
 }
 
 /* ---------- Dashboard ---------- */

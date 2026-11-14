@@ -38,10 +38,12 @@
 {% endcall %}
 
 <div class="cal-modal-bg" id="calModalBg">
-    <div class="cal-modal">
+    {# view-only keeps the form in the page for calendar.js; calendar.css hides it and the Edit and Delete buttons #}
+    <div class="cal-modal{% if not can('edit_calendar') %} view-only{% endif %}">
         <h3 id="modalDate"></h3>
         <div id="modalEntries"></div>
 
+        <div class="cal-edit">
         <div class="date-row">
             <div>
                 <label for="fStart">Start Date</label>
@@ -68,10 +70,11 @@
         <textarea id="fDesc" maxlength="500" placeholder="Add a description..."></textarea>
  
         <div class="form-error" id="formError"></div>
+        </div>
         <div class="modal-actions">
             <button type="button" class="cal-btn" id="btnClose">Close</button>
             <button type="button" class="cal-btn" id="btnCancelEdit" style="display:none">Cancel edit</button>
-            <button type="button" class="cal-btn primary" id="btnSave">Add</button>
+            <button type="button" class="cal-btn primary cal-edit" id="btnSave">Add</button>
         </div>
     </div>
 </div>

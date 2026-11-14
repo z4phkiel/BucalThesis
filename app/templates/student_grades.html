@@ -51,10 +51,12 @@
       </ol>
     </div>
   </div>
+  {% if can('submit_grades') %}
   <p class="sg-note">
     <svg class="sg-icon"><use href="#sg-i-info"/></svg>
     One Excel (.xlsx) file per level, up to 10 MB. Click a level to choose a file, or drop one onto it.
   </p>
+  {% endif %}
 </section>
 
 <!-- One row per level, Kindergarten to Grade 6 -->
@@ -89,6 +91,7 @@
         <a href="{{ url_for('main.download_report_card', report_id=report.id) }}" class="btn btn-primary btn-sm">
           <svg class="sg-icon"><use href="#sg-i-download"/></svg> Download
         </a>
+        {% if can('submit_grades') %}
         <form method="POST" enctype="multipart/form-data" action="{{ upload_url }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="file" name="report_card" id="{{ input_id }}" class="sg-file-input visually-hidden" accept="{{ xlsx }}" required
@@ -104,8 +107,9 @@
             <svg class="sg-icon"><use href="#sg-i-trash"/></svg> Delete
           </button>
         </form>
+        {% endif %}
       </div>
-      {% else %}
+      {% elif can('submit_grades') %}
       <form method="POST" enctype="multipart/form-data" action="{{ upload_url }}" class="sg-drop">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="file" name="report_card" id="{{ input_id }}" class="sg-file-input visually-hidden" accept="{{ xlsx }}" required

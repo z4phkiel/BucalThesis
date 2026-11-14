@@ -5,13 +5,6 @@
     --stat-peek: 52px;      /* how much of the table card shows at the bottom of the first screen */
 }
 
-/* this page belongs to the Dashboard section of the sidebar */
-.sidebar .nav-item:nth-child(1) .nav-link {
-    color: var(--ix-green-900);
-    font-weight: 700;
-    background-color: var(--ix-khaki-300);
-}
-
 /* ---------- First screen ----------
    The hero is one screen tall. The areas above and below the graph share the spare height equally,
    which keeps the graph at the center. If the top needs more room, the bottom gets what is left.
