@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, redirect, request, url_for, session, flash, current_app, send_file, jsonify, abort
-from app.models import User, Enrollment, YearlyMetric, Grades, CalendarEvent, LinkItem, FileItem, PictureItem, ActivityLog # Make sure to import your User model instead of or alongside myTask
+from app.models import User, Enrollment, YearlyMetric, Grades, CalendarEvent, LinkItem, FileItem, PictureItem, ActivityLog, ROLES, SUPER_ADMIN
+from sqlalchemy.exc import IntegrityError
 from app import db
 from datetime import date, datetime, timedelta
 import base64
@@ -259,11 +260,16 @@ def count_login_attempt(key):
 
 
 @main_bp.before_request
-def end_session_of_deleted_user():
-    # The signed cookie can't know the account was removed, so check that it still exists
+def sync_session_with_account():
+    # The signed cookie can't know the account was removed, renamed or given another role, so check the database
     user_id = session.get('user_id')
-    if user_id is not None and db.session.get(User, user_id) is None:
+    if user_id is None:
+        return
+    user = db.session.get(User, user_id)
+    if user is None:
         session.clear()
+    elif (session.get('username'), session.get('role')) != (user.username, user.role):
+        session['username'], session['role'] = user.username, user.role
 
 
 @main_bp.route("/login", methods=['GET', 'POST'])
@@ -1986,3 +1992,133 @@ def delete_archived(kind, item_id):
 @main_bp.route('/welcome')
 def landing():
     return render_template('landing.html')
+
+
+# ACCOUNTS
+# A Super Admin creates the accounts of authorized personnel and changes their names, roles and passwords
+USERNAME_PATTERN = re.compile(r'[A-Za-z0-9._-]{3,50}')
+MAX_FULL_NAME_LENGTH = 100
+MIN_PASSWORD_LENGTH = 8
+MAX_PASSWORD_LENGTH = 128
+
+
+def account_values(form, user=None):
+    """The name, username and role fields of a submitted form, and what is wrong with them."""
+    values = {
+        'full_name': ' '.join(form.get('full_name', '').split()),
+        'username': form.get('username', '').strip(),
+        'role': form.get('role', ''),
+    }
+    errors = []
+    if not values['full_name'] or len(values['full_name']) > MAX_FULL_NAME_LENGTH:
+        errors.append(f'Enter a name of up to {MAX_FULL_NAME_LENGTH} characters.')
+    # An older username outside the rule can stay as it is
+    if values['username'] != (user.username if user else None) and not USERNAME_PATTERN.fullmatch(values['username']):
+        errors.append('A username is 3 to 50 letters, numbers, dots, dashes or underscores.')
+    elif User.query.filter(db.func.lower(User.username) == values['username'].lower(),
+                           User.id != (user.id if user else 0)).first():
+        errors.append('That username is already taken.')
+    if values['role'] not in ROLES:
+        errors.append('Choose a role.')
+    return values, errors
+
+
+def password_errors(form):
+    password = form.get('password', '')
+    if not MIN_PASSWORD_LENGTH <= len(password) <= MAX_PASSWORD_LENGTH:
+        return [f'A password is {MIN_PASSWORD_LENGTH} to {MAX_PASSWORD_LENGTH} characters.']
+    if password != form.get('confirm_password', ''):
+        return ['The two passwords do not match.']
+    return []
+
+
+def accounts_denied():
+    """Where to send someone who may not manage accounts, or None for a Super Admin."""
+    if 'user_id' not in session:
+        return redirect(url_for('main.login'))
+    if session.get('role') != SUPER_ADMIN:
+        flash('Only a Super Admin can manage accounts.', 'danger')
+        return redirect(url_for('main.index'))
+    return None
+
+
+def save_account(success_message):
+    """Commits, or reports a username taken in the meantime by another save."""
+    try:
+        db.session.commit()
+        flash(success_message, 'success')
+    except IntegrityError:
+        db.session.rollback()
+        flash('That username is already taken.', 'danger')
+
+
+@main_bp.route('/accounts')
+def accounts():
+    denied = accounts_denied()
+    if denied:
+        return denied
+
+    users = User.query.order_by(User.username).all()
+    return render_template('accounts.html', users=users, roles=ROLES, min_password=MIN_PASSWORD_LENGTH,
+                           max_password=MAX_PASSWORD_LENGTH, max_name=MAX_FULL_NAME_LENGTH,
+                           username_pattern=USERNAME_PATTERN.pattern)
+
+
+@main_bp.route('/accounts/create', methods=['POST'])
+def create_account():
+    denied = accounts_denied()
+    if denied:
+        return denied
+
+    values, errors = account_values(request.form)
+    errors += password_errors(request.form)
+    if errors:
+        flash(' '.join(errors), 'danger')
+        return redirect(url_for('main.accounts'))
+
+    user = User(**values)
+    user.set_password(request.form['password'])
+    db.session.add(user)
+    save_account(f'Account created for {values["full_name"]}.')
+    return redirect(url_for('main.accounts'))
+
+
+@main_bp.route('/accounts/<int:user_id>/edit', methods=['POST'])
+def edit_account(user_id):
+    denied = accounts_denied()
+    if denied:
+        return denied
+
+    user = User.query.get_or_404(user_id)
+    values, errors = account_values(request.form, user)
+    if (user.role == SUPER_ADMIN and values['role'] != SUPER_ADMIN
+            and User.query.filter_by(role=SUPER_ADMIN).count() == 1):
+        errors.append('This is the only Super Admin, so its role cannot change. Make another account Super Admin first.')
+    if errors:
+        flash(' '.join(errors), 'danger')
+        return redirect(url_for('main.accounts'))
+
+    for column, value in values.items():
+        setattr(user, column, value)
+    save_account(f'Saved the changes to {values["full_name"]}.')
+    # Someone who just gave up their own Super Admin role can no longer open this page
+    if user.id == session['user_id'] and user.role != SUPER_ADMIN:
+        return redirect(url_for('main.index'))
+    return redirect(url_for('main.accounts'))
+
+
+@main_bp.route('/accounts/<int:user_id>/password', methods=['POST'])
+def change_account_password(user_id):
+    denied = accounts_denied()
+    if denied:
+        return denied
+
+    user = User.query.get_or_404(user_id)
+    errors = password_errors(request.form)
+    if errors:
+        flash(' '.join(errors), 'danger')
+        return redirect(url_for('main.accounts'))
+
+    user.set_password(request.form['password'])
+    save_account(f'Password changed for {user.full_name or user.username}.')
+    return redirect(url_for('main.accounts'))

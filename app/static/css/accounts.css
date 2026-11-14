@@ -1,0 +1,119 @@
+/* Accounts: the title, table, row buttons and popups come from linkagefiles.css; these are the additions */
+
+.accounts-intro {
+    margin: 0 0 1rem 2px;
+    font-size: 0.82rem;
+    color: var(--lf-muted);
+}
+
+/* the role dropdown, matching the popup's text fields */
+.modal .form-select {
+    padding: 10px 36px 10px 14px;
+    background-color: #fafaf9;
+    border: 1.5px solid var(--lf-border);
+    border-radius: 10px;
+}
+
+.modal .form-select:focus {
+    background-color: #fff;
+    border-color: var(--lf-green-500);
+    box-shadow: 0 0 0 4px rgba(93, 134, 75, 0.18);
+}
+
+/* a field the warning popup listed: brick, like the delete buttons */
+.modal .form-control.is-invalid,
+.modal .form-select.is-invalid {
+    padding-right: 40px;
+    border-color: var(--lf-brick);
+}
+
+.modal .form-control.is-invalid:focus,
+.modal .form-select.is-invalid:focus {
+    box-shadow: 0 0 0 4px rgba(185, 28, 28, 0.15);
+}
+
+/* ---------- Warning popup: what to fix before a form is sent ---------- */
+.form-warning {
+    width: min(380px, calc(100vw - 32px));
+    padding: 28px 28px 24px;
+    text-align: center;
+    color: var(--lf-text);
+    background: var(--lf-white);
+    border: 0;
+    border-top: 6px solid var(--lf-brick);
+    border-radius: 18px;
+    box-shadow: 0 30px 60px -15px rgba(30, 48, 22, 0.55);
+}
+
+.form-warning::backdrop {
+    background: rgba(53, 90, 37, 0.35);
+}
+
+.form-warning-icon {
+    width: 44px;
+    height: 44px;
+    margin-bottom: 10px;
+    fill: none;
+    stroke: var(--lf-brick);
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.form-warning-title {
+    margin-bottom: 12px;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--lf-green-700);
+}
+
+.form-warning-list {
+    margin: 0 0 20px;
+    padding: 12px 16px 12px 32px;
+    font-size: 0.9rem;
+    text-align: left;
+    color: var(--lf-brick);
+    background: #fef2f2;
+    border-radius: 10px;
+}
+
+.form-warning-list li + li {
+    margin-top: 4px;
+}
+
+.form-warning .btn {
+    min-width: 120px;
+    padding: 9px 20px;
+    font-weight: 600;
+    border-radius: 10px;
+}
+
+.accounts-role {
+    display: inline-block;
+    padding: 3px 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--lf-green-700);
+    background: var(--lf-khaki-100);
+    border: 1px solid var(--lf-khaki-400);
+    border-radius: 999px;
+}
+
+.accounts-role.super_admin {
+    color: #fff;
+    background: var(--lf-green-700);
+    border-color: var(--lf-green-700);
+}
+
+/* marks the signed-in Super Admin's own row */
+.accounts-you {
+    margin-left: 6px;
+    padding: 1px 8px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--lf-muted);
+    background: var(--lf-khaki-100);
+    border-radius: 999px;
+}

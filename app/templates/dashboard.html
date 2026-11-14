@@ -22,8 +22,10 @@
 
         <ul class="nav flex-column gap-1 flex-grow-1 text-center">
             {# aria-current marks the page already open; page-skeleton.js ignores plain clicks on it #}
-            {% for endpoint, label in [('main.index', 'Dashboard'), ('main.enrollment', 'Enrollment Form'), ('main.enrolled', 'Masterlist'),
-                                       ('main.calendar', 'Calendar'), ('main.linkagefiles', 'Linkage/Files'), ('main.archives', 'Archives')] %}
+            {% set nav_pages = [('main.index', 'Dashboard'), ('main.enrollment', 'Enrollment Form'), ('main.enrolled', 'Masterlist'),
+                            ('main.calendar', 'Calendar'), ('main.linkagefiles', 'Linkage/Files'), ('main.archives', 'Archives')] %}
+            {% if session.role == 'super_admin' %}{% set nav_pages = nav_pages + [('main.accounts', 'Accounts')] %}{% endif %}
+            {% for endpoint, label in nav_pages %}
             {% set href = url_for(endpoint) %}
             <li class="nav-item">
                 <a href="{{ href }}" class="nav-link"{% if request.path == href %} aria-current="page"{% endif %}>

@@ -2,6 +2,7 @@ import os
 from datetime import timedelta
 from urllib.parse import quote_plus
 
+import click
 from dotenv import load_dotenv
 
 from flask import Flask, render_template
@@ -68,6 +69,19 @@ def create_app():
         db.create_all()
         add_missing_columns()
 
+    # The first Super Admin can't be made from the Accounts page, so it is made here:
+    #   py -m flask --app run make-super-admin <username>
+    @app.cli.command('make-super-admin')
+    @click.argument('username')
+    def make_super_admin(username):
+        from app.models import User, SUPER_ADMIN
+        user = User.query.filter_by(username=username).first()
+        if user is None:
+            raise click.ClickException(f'No account is named {username}.')
+        user.role = SUPER_ADMIN
+        db.session.commit()
+        click.echo(f'{username} is now a Super Admin.')
+
     return app
 
 
@@ -80,7 +94,7 @@ NEW_COLUMNS = {
     'file_item': ARCHIVED_AT,
     'picture_item': ARCHIVED_AT,
     'activity_log': {'details': 'JSON NULL'},
-    'user': {'activity_seen': 'JSON NULL'},
+    'user': {'activity_seen': 'JSON NULL', 'full_name': 'VARCHAR(100) NULL'},
     'yearly_metric': {'abnormal_reason': 'VARCHAR(255) NULL'},
 }
 

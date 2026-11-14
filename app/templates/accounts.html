@@ -1,0 +1,133 @@
+{% extends 'dashboard.html' %}
+
+{% block head %}
+{# Title, table, row buttons and popups come from linkagefiles.css, linked in the head like the Archives page does #}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/linkagefiles.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/accounts.css') }}">
+{% endblock %}
+
+{% block content %}
+{# Name, username and role: the same fields when creating and editing. id keeps each popup's labels unique. #}
+{% macro account_fields(id, user=none) %}
+<div class="mb-3">
+    <label class="form-label" for="{{ id }}-name">Full name</label>
+    <input type="text" id="{{ id }}-name" name="full_name" class="form-control" maxlength="{{ max_name }}"
+           value="{{ user.full_name or '' if user else '' }}" autocomplete="off" required>
+</div>
+<div class="mb-3">
+    <label class="form-label" for="{{ id }}-username">Username</label>
+    <input type="text" id="{{ id }}-username" name="username" class="form-control" maxlength="50"
+           value="{{ user.username if user else '' }}" autocomplete="off" required data-pattern="{{ username_pattern }}">
+    <div class="form-text">3 to 50 letters, numbers, dots, dashes or underscores. Used to sign in.</div>
+</div>
+<div class="mb-3">
+    <label class="form-label" for="{{ id }}-role">Role</label>
+    <select id="{{ id }}-role" name="role" class="form-select" required>
+        {% for value, label in roles.items() %}
+        <option value="{{ value }}"{% if user and user.role == value or not user and value == 'admin' %} selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+    </select>
+</div>
+{% endmacro %}
+
+{% macro password_fields(id) %}
+<div class="mb-3">
+    <label class="form-label" for="{{ id }}-password">New password</label>
+    <input type="password" id="{{ id }}-password" name="password" class="form-control"
+           minlength="{{ min_password }}" maxlength="{{ max_password }}" autocomplete="new-password" required>
+    <div class="form-text">At least {{ min_password }} characters.</div>
+</div>
+<div class="mb-3">
+    <label class="form-label" for="{{ id }}-confirm">Confirm password</label>
+    <input type="password" id="{{ id }}-confirm" name="confirm_password" class="form-control"
+           minlength="{{ min_password }}" maxlength="{{ max_password }}" autocomplete="new-password" required>
+</div>
+{% endmacro %}
+
+{% macro popup(id, title, action, submit) %}
+<div class="modal fade" id="{{ id }}" tabindex="-1" aria-labelledby="{{ id }}-title" aria-hidden="true">
+    <div class="modal-dialog">
+        {# novalidate: accounts.js checks the fields and lists the problems in its own popup instead of the browser's bubbles #}
+        <form method="POST" action="{{ action }}" class="modal-content" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="modal-header">
+                <h5 class="modal-title" id="{{ id }}-title">{{ title }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">{{ caller() }}</div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary">{{ submit }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endmacro %}
+
+<div class="d-flex justify-content-between align-items-center mb-1">
+    <h1 class="h3 mb-1">Accounts</h1>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createAccount">Create account</button>
+</div>
+<p class="accounts-intro">Accounts of the authorized personnel who can sign in to the system.</p>
+
+<section class="card shadow-sm" aria-label="Accounts">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Name</th>
+                        <th>Username</th>
+                        <th>Role</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr data-username="{{ user.username }}">
+                        <td>
+                            {{ user.full_name or '—' }}
+                            {% if user.id == session.user_id %}<span class="accounts-you">You</span>{% endif %}
+                        </td>
+                        <td>{{ user.username }}</td>
+                        <td><span class="accounts-role {{ user.role }}">{{ roles.get(user.role, user.role or 'Admin') }}</span></td>
+                        <td class="text-end text-nowrap">
+                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#edit-{{ user.id }}">Edit</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#password-{{ user.id }}">Change password</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+{% call popup('createAccount', 'Create account', url_for('main.create_account'), 'Create account') %}
+{{ account_fields('create') }}
+{{ password_fields('create') }}
+{% endcall %}
+
+{% for user in users %}
+{% call popup('edit-' ~ user.id, 'Edit ' ~ (user.full_name or user.username), url_for('main.edit_account', user_id=user.id), 'Save changes') %}
+{{ account_fields('edit-' ~ user.id, user) }}
+{% endcall %}
+
+{% call popup('password-' ~ user.id, 'Change password for ' ~ (user.full_name or user.username), url_for('main.change_account_password', user_id=user.id), 'Change password') %}
+{{ password_fields('password-' ~ user.id) }}
+{% endcall %}
+{% endfor %}
+
+<!-- Lists what to fix before a popup's form is sent; accounts.js moves it into that form and opens it -->
+<dialog id="formWarning" class="form-warning" role="alertdialog" aria-labelledby="formWarningTitle" aria-describedby="formWarningList">
+    <svg class="form-warning-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>
+    <h2 id="formWarningTitle" class="form-warning-title">Please fix these first</h2>
+    <ul id="formWarningList" class="form-warning-list"></ul>
+    <button type="button" class="btn btn-primary" data-warning-close>OK</button>
+</dialog>
+{% endblock %}
+
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/accounts/accounts.js') }}"></script>
+{% endblock %}

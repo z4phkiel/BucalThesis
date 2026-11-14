@@ -4,11 +4,17 @@ from datetime import datetime
 from sqlalchemy.dialects.mysql import MEDIUMBLOB
 from sqlalchemy.orm import deferred
 
+# Account roles: stored value -> label. Only a Super Admin can open the Accounts page.
+SUPER_ADMIN = 'super_admin'
+ROLES = {SUPER_ADMIN: 'Super Admin', 'admin': 'Admin'}
+
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False) # Stores the scrambled password
-    role = db.Column(db.String(20), default='admin') # e.g., admin, registrar
+    role = db.Column(db.String(20), default='admin')  # a key of ROLES
+    full_name = db.Column(db.String(100), nullable=True)
     activity_seen = db.Column(db.JSON, nullable=True)  # area -> id of the newest activity entry this user has seen there
 
     def set_password(self, password):
