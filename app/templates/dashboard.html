@@ -51,7 +51,6 @@
 
     {% if can('view_activity') %}
     <!-- Activity log: the bell above opens it, and activity-log.js loads the latest entries each time it opens -->
-    {% from 'dashboard_placeholders.html' import list_placeholder %}
     <section id="activityCard" class="activity-card" aria-labelledby="activityTitle" data-url="{{ url_for('main.activity_log') }}" hidden>
         <div class="activity-head">
             <h2 id="activityTitle" class="activity-title">Activity Log</h2>
@@ -64,7 +63,20 @@
             {% endfor %}
         </div>
         <div id="activityList" class="activity-body" aria-live="polite"></div>
-        <template id="activityPlaceholder">{{ list_placeholder('square') }}</template>
+        {# Laid out like the entries (activity_log.html): the operation, then the description over the meta line #}
+        <template id="activityPlaceholder">
+            <ul class="dash-list">
+                {% for width in ['82%', '64%', '76%', '58%'] %}
+                <li class="activity-placeholder-item">
+                    <span class="activity-operation"><span class="skel" style="width: 44px"></span></span>
+                    <span class="skel-dash-text">
+                        <span class="skel" style="width: {{ width }}"></span>
+                        <span class="skel" style="width: 52%"></span>
+                    </span>
+                </li>
+                {% endfor %}
+            </ul>
+        </template>
     </section>
     {% endif %}
 

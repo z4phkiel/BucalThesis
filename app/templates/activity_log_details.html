@@ -1,16 +1,10 @@
 {# One page of an Activity Log tab, newest first. activity-log.js shows it, and for "Show older activity"
    adds the next page's rows under it. details are [label, old, new]: see log_changes() in routes.py. #}
+{% from 'activity_tabs.html' import activity_table_head %}
 {% if logs %}
 <div class="activity-table-wrap">
     <table class="activity-table">
-        <thead>
-            <tr>
-                <th>When</th>
-                <th>By</th>
-                <th>Action</th>
-                <th>What happened</th>
-            </tr>
-        </thead>
+        {{ activity_table_head() }}
         <tbody>
             {% for log in logs %}
             {% set short, day, clock = when(log.created_at) %}
@@ -22,7 +16,7 @@
                     </time>
                 </td>
                 <td class="activity-user">{{ log.username }}</td>
-                <td><span class="activity-badge {{ log.action | lower }}">{{ log.action }}</span></td>
+                <td>{{ log.action }}</td>
                 <td>
                     <div class="activity-text">{{ log.description }}</div>
                     {% if log.details %}

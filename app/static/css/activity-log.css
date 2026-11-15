@@ -169,8 +169,9 @@
     margin-bottom: 10px;
 }
 
-/* ---------- Entries ---------- */
-.activity-item {
+/* ---------- Entries, and their loading rows (dashboard.html) ---------- */
+.activity-item,
+.activity-placeholder-item {
     display: flex;
     align-items: flex-start;
     gap: 10px;
@@ -195,21 +196,11 @@
     box-shadow: 0 0 0 3px rgba(93, 134, 75, 0.3);
 }
 
-/* POST / UPDATE / DELETE, in the calendar's tag colors */
-.activity-badge {
-    flex: 0 0 56px;
-    margin-top: 1px;
-    padding: 3px 0;
-    font-size: 0.6rem;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    text-align: center;
-    border-radius: 6px;
+/* POST / UPDATE / DELETE as plain text, in a column wide enough for UPDATE so the descriptions line up */
+.activity-operation {
+    flex: 0 0 60px;
+    font-size: 0.84rem;
 }
-
-.activity-badge.post   { color: var(--ix-green-700); background: #e0eadc; }
-.activity-badge.update { color: #92400e; background: #fde68a; }
-.activity-badge.delete { color: var(--ix-brick); background: #fee2e2; }
 
 /* the whole description shows, over two or more lines if needed */
 .activity-text {
@@ -339,9 +330,9 @@ button.page-tab:hover {
     overflow-wrap: anywhere;
 }
 
-.activity-table .activity-badge {
-    display: inline-block;
-    width: 56px;
+/* the placeholder's two lines in one cell (activity_tabs.html) */
+.activity-table .skel + .skel {
+    margin-top: 10px;
 }
 
 /* the values that were added, changed (old crossed out, new marked) or removed */

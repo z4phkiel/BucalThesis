@@ -1100,6 +1100,11 @@ def enrollment_form_data(form):
     return data
 
 
+# An added student's log entry says who it is, without copying the whole form into the log
+NEW_STUDENT_LOG_FIELDS = {'school_year': 'School year', 'grade_level': ENROLLMENT_LABELS['grade_level'],
+                          'lrn_no': ENROLLMENT_LABELS['lrn_no'], 'sex': ENROLLMENT_LABELS['sex']}
+
+
 # Enrollment View
 @main_bp.route("/enrollment", methods=['GET', 'POST'])
 def enrollment():
@@ -1113,7 +1118,10 @@ def enrollment():
             return render_template('enrollment.html', form_data=enrollment_form_data(request.form)), 400
 
         try:
-            db.session.add(Enrollment(**values))
+            student = Enrollment(**values)
+            db.session.add(student)
+            log_activity('masterlist', 'POST', f'Added student {full_name(student)}',
+                         log_changes({}, log_snapshot(student, NEW_STUDENT_LOG_FIELDS)))
             db.session.commit()
 
             flash('Enrollment application submitted successfully!', 'success')

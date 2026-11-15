@@ -1,6 +1,19 @@
 {# The Masterlist, Calendar and Linkage/Files each have two tabs: the page itself (the call block's content)
    and its Activity Log, which activity-log.js loads from /activity-log/<area> each time the tab opens.
    Import it with context, for activity_areas. #}
+
+{# The Activity Log table's headings, shared by the table (activity_log_details.html) and its placeholder below #}
+{% macro activity_table_head() %}
+<thead>
+    <tr>
+        <th>When</th>
+        <th>By</th>
+        <th>Operation</th>
+        <th>Action</th>
+    </tr>
+</thead>
+{% endmacro %}
+
 {% macro activity_tabs(area, main_label) %}
 {# A role without view_activity gets the page alone: no tabs, and activity-log.js skips the tab code #}
 {% if not can('view_activity') %}
@@ -25,6 +38,24 @@
                 <h2 class="card-title activity-panel-title">{{ activity_areas[area] }} Activity Log</h2>
                 <p class="activity-panel-intro">Every add, change and delete, newest first, with the values that were added, changed or removed.</p>
                 <div data-activity-details aria-live="polite"></div>
+                {# Shown while the table loads: the same columns, with bars where the text goes #}
+                <template data-activity-placeholder>
+                    <div class="activity-table-wrap">
+                        <table class="activity-table">
+                            {{ activity_table_head() }}
+                            <tbody>
+                                {% for width in ['72%', '58%', '84%', '64%', '76%', '52%'] %}
+                                <tr>
+                                    <td><span class="skel" style="width: 92px"></span><span class="skel" style="width: 60px"></span></td>
+                                    <td><span class="skel" style="width: 70%"></span></td>
+                                    <td><span class="skel" style="width: 48px"></span></td>
+                                    <td><span class="skel" style="width: {{ width }}"></span><span class="skel" style="width: 38%"></span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </template>
             </div>
         </section>
     </div>

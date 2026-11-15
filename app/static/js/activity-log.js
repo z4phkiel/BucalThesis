@@ -27,13 +27,13 @@ document.addEventListener('DOMContentLoaded', function () {
         <button type="button" class="activity-retry" data-activity-retry>Try again</button>
     </div>`;
 
-    // Shows url's HTML in target, with the placeholder until it arrives, then runs then(). Only the newest
+    // Shows url's HTML in target, with the placeholder HTML until it arrives, then runs then(). Only the newest
     // request for a target may fill it, so a slow one can't replace a later one.
     const latest = new Map();
-    function loadInto(target, url, then) {
+    function loadInto(target, url, placeholderHtml, then) {
         const request = (latest.get(target) || 0) + 1;
         latest.set(target, request);
-        target.innerHTML = loading;
+        target.innerHTML = placeholderHtml;
         target.setAttribute('aria-busy', 'true');
         fetchHtml(url)
             .then(function (html) {
@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let area = '';
 
     function loadCard() {
-        loadInto(list, card.dataset.url + (area ? '?area=' + encodeURIComponent(area) : ''), refreshDots);
+        loadInto(list, card.dataset.url + (area ? '?area=' + encodeURIComponent(area) : ''), loading, refreshDots);
     }
 
     function setOpen(open, returnFocus) {
@@ -153,6 +153,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
     const details = pane.querySelector('[data-activity-details]');
+    const detailsLoading = pane.querySelector('[data-activity-placeholder]').innerHTML;
     const tab = bootstrap.Tab.getOrCreateInstance(tabButton);
 
     // The entry a link pointed at (#activity-<id>), if it is on the first page
@@ -165,7 +166,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function loadDetails() {
-        loadInto(details, pane.dataset.url, function () {
+        loadInto(details, pane.dataset.url, detailsLoading, function () {
             highlightEntry();
             refreshDots();
         });
