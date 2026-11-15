@@ -286,6 +286,38 @@
     {{ archive_section('Pictures', file_columns) }}
 </template>
 
+{# A student's grade files (student_grades.html), at any /grades/<id> address; the sidebar keeps Masterlist marked.
+   The note and the level names mirror the real page; which levels have a file isn't known yet, so each row is bars. #}
+<template data-skeleton-prefix="{{ url_for('main.grades') }}/" data-skeleton-nav="{{ url_for('main.enrolled') }}">
+    <span class="visually-hidden">Loading the grade files</span>
+    <span class="skel skel-grades-back"></span>
+    <div class="skel-title skel-title-grades">Grade Files</div>
+    <div class="skel-card skel-grades-student">
+        <div class="skel-card-body">
+            <div class="skel-grades-identity">
+                <span class="skel skel-grades-name"></span>
+                <span class="skel skel-grades-lrn"></span>
+            </div>
+            <div class="skel-grades-progress">
+                <span class="skel skel-grades-count"></span>
+                <div class="skel-grades-steps">{% for step in range(7) %}<span class="skel skel-grades-step"></span>{% endfor %}</div>
+            </div>
+        </div>
+        {% if can('submit_grades') %}<div class="skel-grades-note"><span class="skel"></span></div>{% endif %}
+    </div>
+    <div class="skel-grades-levels">
+        {% for level in ['Kindergarten', 'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6'] %}
+        <div class="skel-grades-row">
+            <div>
+                <div class="skel-grades-level">{{ level }}</div>
+                <span class="skel skel-grades-status"></span>
+            </div>
+            <span class="skel skel-grades-file"></span>
+        </div>
+        {% endfor %}
+    </div>
+</template>
+
 {# The button and the Actions column (three dots, as on the Masterlist) follow the same permissions as accounts.html.
    Column widths copy where the real table's columns land, with and without Actions. #}
 {% set account_actions = can('edit_accounts') or can('delete_accounts') %}

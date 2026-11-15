@@ -30,7 +30,6 @@
 <!-- Student and how many levels have a file -->
 <section class="card sg-student" aria-label="Student">
   <div class="card-body">
-    <div class="sg-avatar" aria-hidden="true">{{ ((student.first_name or '')[:1] ~ (student.last_name or '')[:1]) | upper }}</div>
     <div class="sg-identity">
       <h4 class="sg-name">{{ student.last_name }}, {{ student.first_name }}{% if student.middle_name %} {{ student.middle_name }}{% endif %}{% if student.extension_name %} {{ student.extension_name }}{% endif %}</h4>
       <span class="sg-lrn">LRN <strong>{{ student.lrn_no or 'Not set' }}</strong></span>
@@ -60,14 +59,12 @@
 </section>
 
 <!-- One row per level, Kindergarten to Grade 6 -->
-<ol class="sg-timeline">
+<ol class="sg-levels">
   {% for level in grade_levels %}
   {% set report = reports.get(level) %}
   {% set input_id = 'report-file-' ~ loop.index %}
   {% set upload_url = url_for('main.upload_report_card', student_id=student.id, level=level) %}
   <li id="level-{{ loop.index }}" class="sg-level {{ 'is-filed' if report else 'is-empty' }}">
-    <span class="sg-mark" aria-hidden="true">{{ 'K' if level == 'Kindergarten' else level.split(' ')[-1] }}</span>
-
     <div class="sg-row">
       <div class="sg-level-info">
         <h5 class="sg-level-name">{{ level }}</h5>

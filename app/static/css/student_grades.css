@@ -81,21 +81,6 @@
     gap: 16px 20px;
 }
 
-.sg-avatar {
-    display: grid;
-    flex: 0 0 64px;
-    place-items: center;
-    height: 64px;
-    font-size: 1.35rem;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-    color: var(--ix-green-900);
-    background: var(--ix-khaki-300);
-    border: 3px solid var(--ix-white);
-    border-radius: 50%;
-    box-shadow: 0 0 0 2px var(--ix-khaki-500);
-}
-
 .sg-identity {
     flex: 1 1 220px;
     min-width: 0;
@@ -183,7 +168,7 @@
     color: var(--ix-muted);
     text-decoration: none;
     background: var(--ix-white);
-    border: 2px dashed var(--ix-khaki-500);
+    border: 2px solid var(--ix-khaki-400);
     border-radius: 50%;
     transition: transform 0.15s;
 }
@@ -213,15 +198,15 @@
     font-size: 0.85rem;
     color: var(--ix-green-900);
     background: var(--ix-khaki-100);
-    border-top: 1px dashed var(--ix-khaki-500);
+    border-top: 1px solid var(--ix-border);
 }
 
 .sg-note .sg-icon {
     color: var(--ix-green-600);
 }
 
-/* ---------- Timeline of levels ---------- */
-.sg-timeline {
+/* ---------- The levels, one row each ---------- */
+.sg-levels {
     display: grid;
     gap: 12px;
     margin: 0;
@@ -230,58 +215,7 @@
 }
 
 .sg-level {
-    --sg-mark: 48px;
-    position: relative;
-    display: grid;
-    grid-template-columns: var(--sg-mark) minmax(0, 1fr);
-    gap: 16px;
-    align-items: center;
     scroll-margin-top: 24px;
-}
-
-/* Each level draws its part of the line, half the gap above and below it, so the line stays joined
-   whatever the rows' heights. Green through the levels that have a file. */
-.sg-level::before {
-    content: "";
-    position: absolute;
-    left: calc(var(--sg-mark) / 2 - 1px);
-    top: -6px;
-    bottom: -6px;
-    width: 2px;
-    background: var(--ix-khaki-300);
-}
-
-.sg-level:first-child::before {
-    top: 50%;
-}
-
-.sg-level:last-child::before {
-    bottom: 50%;
-}
-
-.sg-level.is-filed::before {
-    background: var(--ix-green-500);
-}
-
-.sg-mark {
-    position: relative;
-    display: grid;
-    place-items: center;
-    width: var(--sg-mark);
-    height: var(--sg-mark);
-    font-size: 1rem;
-    font-weight: 800;
-    color: var(--ix-green-700);
-    background: var(--ix-white);
-    border: 2px dashed var(--ix-khaki-500);
-    border-radius: 50%;
-    box-shadow: 0 0 0 4px var(--ix-page);
-}
-
-.is-filed .sg-mark {
-    color: #fff;
-    background: var(--ix-green-700);
-    border: 2px solid var(--ix-khaki-500);
 }
 
 .sg-row {
@@ -325,7 +259,7 @@
     text-transform: uppercase;
     color: var(--ix-muted);
     background: var(--ix-khaki-100);
-    border: 1px dashed var(--ix-khaki-500);
+    border: 1px solid var(--ix-border);
     border-radius: 999px;
 }
 
@@ -442,7 +376,7 @@
     text-align: center;
     color: var(--ix-muted);
     background: var(--ix-khaki-100);
-    border: 2px dashed var(--ix-khaki-500);
+    border: 1.5px solid var(--ix-khaki-400);
     border-radius: 12px;
     cursor: pointer;
     transition: background-color 0.15s, border-color 0.15s, color 0.15s;
@@ -473,7 +407,6 @@
 .sg-level.is-dragover .sg-drop-zone {
     color: var(--ix-green-900);
     background: #edf3ea;
-    border-style: solid;
     border-color: var(--ix-green-500);
 }
 
@@ -486,7 +419,7 @@
     font-weight: 700;
     color: var(--ix-green-700);
     background: rgba(237, 243, 234, 0.94);
-    border: 2px dashed var(--ix-green-500);
+    border: 2px solid var(--ix-green-500);
     border-radius: inherit;
 }
 
@@ -587,15 +520,6 @@
 
     .sg-note {
         padding: 10px 1rem;
-    }
-
-    .sg-level {
-        --sg-mark: 36px;
-        gap: 10px;
-    }
-
-    .sg-mark {
-        font-size: 0.85rem;
     }
 
     .sg-row {

@@ -1589,6 +1589,129 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
     margin: 0;
 }
 
+/* ---------- A student's grade files (student_grades.html / .css) ---------- */
+.skel-grades-back {
+    width: 112px;
+    height: 20px;
+    margin: 4px 0 12px 8px;
+    border-radius: 999px;
+}
+
+.skel-title-grades {
+    margin-bottom: 1rem;
+    font-size: calc(1.3rem + 0.6vw);      /* Bootstrap's h3 */
+}
+
+@media (min-width: 1200px) {
+    .skel-title-grades {
+        font-size: 1.75rem;
+    }
+}
+
+.skel-grades-student {
+    margin-bottom: 1.75rem;
+    overflow: hidden;
+}
+
+.skel-grades-student .skel-card-body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px 20px;
+}
+
+.skel-grades-identity {
+    display: grid;
+    flex: 1 1 220px;
+    gap: 12px;
+}
+
+.skel-grades-name {
+    width: min(320px, 70%);
+    height: 22px;
+}
+
+.skel-grades-lrn {
+    width: 150px;
+    height: 24px;
+    border-radius: 999px;
+}
+
+.skel-grades-progress {
+    display: grid;
+    justify-items: end;
+    gap: 10px;
+}
+
+.skel-grades-count {
+    width: 130px;
+    margin: 6px 0;      /* the height of the "3 of 7 levels on file" line */
+}
+
+.skel-grades-steps {
+    display: flex;
+    gap: 8px;
+}
+
+.skel-grades-step {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+}
+
+.skel-grades-note {
+    padding: 13px 1.5rem;
+    background: var(--ix-khaki-100);
+    border-top: 1px solid var(--ix-border);
+}
+
+.skel-grades-note .skel {
+    width: 52%;
+}
+
+.skel-grades-levels {
+    display: grid;
+    gap: 12px;
+}
+
+.skel-grades-row {
+    display: grid;
+    grid-template-columns: 170px minmax(0, 1fr);
+    gap: 10px 20px;
+    align-items: center;
+    min-height: 82px;
+    padding: 14px 18px;
+    background: var(--ix-white);
+    border: 1px solid var(--ix-border);
+    border-left: 4px solid var(--ix-khaki-400);
+    border-radius: 14px;
+    box-shadow: 0 8px 22px -14px rgba(53, 90, 37, 0.35);
+}
+
+.skel-grades-level {
+    margin-bottom: 6px;
+    font-weight: 700;
+    color: var(--ix-green-700);
+}
+
+.skel-grades-status {
+    width: 72px;
+    height: 18px;
+    border-radius: 999px;
+}
+
+.skel-grades-file {
+    height: 44px;
+    border-radius: 12px;
+}
+
+@media (max-width: 991.98px) {
+    .skel-grades-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
 /* ---------- Calendar ---------- */
 .skel-cal {
     display: grid;
