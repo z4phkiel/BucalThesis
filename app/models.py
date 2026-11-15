@@ -1,8 +1,14 @@
 from app import db
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy.dialects.mysql import MEDIUMBLOB
 from sqlalchemy.orm import deferred
+
+
+def utc_now():
+    """The time in UTC with no time zone attached, as every DateTime column stores it.
+    Same result as datetime.utcnow(), which is deprecated since Python 3.12."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 # Account roles: stored value -> label. What each may do is in permissions.py.
 # Least powerful first: a dropdown with no option selected falls on its first one.
@@ -102,7 +108,7 @@ class Enrollment(db.Model):
     parent_guardian_name = db.Column(db.String(150))
     date_signed = db.Column(db.Date)
 
-    date_submitted = db.Column(db.DateTime, default=datetime.utcnow)
+    date_submitted = db.Column(db.DateTime, default=utc_now)
 
     def __repr__(self):
         return f'<Enrollment {self.last_name}, {self.first_name}>'
@@ -131,7 +137,7 @@ class ActivityLog(db.Model):
     __tablename__ = 'activity_log'
 
     id = db.Column(db.Integer, primary_key=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime, default=utc_now, nullable=False)
     username = db.Column(db.String(50), nullable=False)     # a copy, so the entry still says who after the account is gone
     area = db.Column(db.String(20), nullable=False)         # masterlist / calendar / linkage
     action = db.Column(db.String(10), nullable=False)       # POST / UPDATE / DELETE
@@ -160,7 +166,7 @@ class Grades(db.Model):
     file_data = db.Column(db.LargeBinary, nullable=True)
     mime_type = db.Column(db.String(100), nullable=True)
 
-    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    uploaded_at = db.Column(db.DateTime, default=utc_now)
     archived_at = db.Column(db.DateTime, nullable=True)     # NULL = active; set when deleted, which moves it to the Archives
 
     __table_args__ = (
@@ -179,7 +185,7 @@ class CalendarEvent(db.Model):
     tag = db.Column(db.String(20), nullable=False)          # holiday / event / exam
     link_url = db.Column(db.String(2048), nullable=True)
     description = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
     archived_at = db.Column(db.DateTime, nullable=True)     # NULL = active; set when deleted, which moves it to the Archives
  
     def to_dict(self):
@@ -199,7 +205,7 @@ class LinkItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(150), nullable=False)
     url = db.Column(db.String(500), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
     archived_at = db.Column(db.DateTime, nullable=True)     # NULL = active; set when deleted, which moves it to the Archives
  
     def __repr__(self):
@@ -214,7 +220,7 @@ class FileItem(db.Model):
     filename = db.Column(db.String(255), nullable=False)
     content_type = db.Column(db.String(150))
     size = db.Column(db.Integer)
-    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    uploaded_at = db.Column(db.DateTime, default=utc_now)
     archived_at = db.Column(db.DateTime, nullable=True)     # NULL = active; set when deleted, which moves it to the Archives
  
     data = deferred(db.Column(db.LargeBinary().with_variant(MEDIUMBLOB(), 'mysql'), nullable=False))
@@ -242,7 +248,7 @@ class PictureItem(db.Model):
         )
     )
 
-    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    uploaded_at = db.Column(db.DateTime, default=utc_now)
     archived_at = db.Column(db.DateTime, nullable=True)     # NULL = active; set when deleted, which moves it to the Archives
 
     def __repr__(self):

@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const username = form.elements.username;
         const password = form.elements.password;
         const confirm = form.elements.confirm_password;
+        const typed = form.elements.confirm;     // the delete popup's typed word
 
         if (name && !name.value.trim()) {
             found.push([name, 'Enter the full name.']);
@@ -39,7 +40,39 @@ document.addEventListener('DOMContentLoaded', function () {
                 found.push([confirm, 'The two passwords do not match.']);
             }
         }
+        if (typed && typed.value.trim() !== typed.dataset.word) {
+            found.push([typed, 'Type "' + typed.dataset.word + '" to delete the account.']);
+        }
         return found;
+    }
+
+    // A popup opened from a row's menu gives focus back to that row's three dots when it closes
+    // (Bootstrap only refocuses an opener that is still visible, and the menu has closed by then)
+    document.querySelectorAll('.modal').forEach(function (modal) {
+        let dots = null;
+        modal.addEventListener('show.bs.modal', function (event) {
+            const menu = event.relatedTarget && event.relatedTarget.closest('.dropdown');
+            dots = menu && menu.querySelector('.account-actions');
+        });
+        modal.addEventListener('hidden.bs.modal', function () {
+            if (dots) {
+                dots.focus();
+            }
+        });
+    });
+
+    // The delete popup is shared: it takes the clicked row's account, and the typed word starts empty each time
+    const deletePopup = document.getElementById('deleteAccount');
+    if (deletePopup) {
+        const word = document.getElementById('deleteAccountWord');
+        deletePopup.addEventListener('show.bs.modal', function (event) {
+            deletePopup.querySelector('form').action = event.relatedTarget.dataset.action;
+            document.getElementById('deleteAccountName').textContent = event.relatedTarget.dataset.name;
+            word.value = '';
+        });
+        deletePopup.addEventListener('shown.bs.modal', function () {
+            word.focus();
+        });
     }
 
     function unmark(field) {

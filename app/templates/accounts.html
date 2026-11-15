@@ -1,8 +1,10 @@
 {% extends 'dashboard.html' %}
 
 {% block head %}
-{# Title, table, row buttons and popups come from linkagefiles.css, linked in the head like the Archives page does #}
+{# Title, table, row buttons and popups come from linkagefiles.css, linked in the head like the Archives page does.
+   archives.css gives the delete popup the look of the Archives' "Delete permanently?" popup. #}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/linkagefiles.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/archives.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/accounts.css') }}">
 {% endblock %}
 
@@ -71,6 +73,7 @@
 </div>
 <p class="accounts-intro">Accounts of the authorized personnel who can sign in to the system.</p>
 
+{% set actions = can('edit_accounts') or can('delete_accounts') %}
 <section class="card shadow-sm" aria-label="Accounts">
     <div class="card-body">
         <div class="table-responsive">
@@ -80,7 +83,7 @@
                         <th>Name</th>
                         <th>Username</th>
                         <th>Role</th>
-                        {% if can('edit_accounts') %}<th class="text-end">Actions</th>{% endif %}
+                        {% if actions %}<th class="text-center">Actions</th>{% endif %}
                     </tr>
                 </thead>
                 <tbody>
@@ -92,10 +95,30 @@
                         </td>
                         <td>{{ user.username }}</td>
                         <td><span class="accounts-role {{ user.role }}">{{ roles.get(user.role, user.role or 'Admin') }}</span></td>
-                        {% if can('edit_accounts') %}
-                        <td class="text-end text-nowrap">
-                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#edit-{{ user.id }}">Edit</button>
-                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#password-{{ user.id }}">Change password</button>
+                        {% if actions %}
+                        {% set can_edit, can_delete = can('edit_accounts'), can('delete_accounts') and not delete_problem(user) %}
+                        <td class="text-center">
+                            {% if can_edit or can_delete %}
+                            {# Three dots and a menu, as on the Masterlist. Fixed positioning lets the menu open past the table's edge. #}
+                            <div class="dropdown">
+                                <button type="button" class="account-actions" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}'
+                                        aria-expanded="false" aria-label="Actions for {{ user.full_name or user.username }}">
+                                    <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13" cy="8" r="1.5"/></svg>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end account-menu">
+                                    {% if can_edit %}
+                                    <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#edit-{{ user.id }}">Edit account</button></li>
+                                    <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#password-{{ user.id }}">Change password</button></li>
+                                    {% endif %}
+                                    {% if can_delete %}
+                                    {% if can_edit %}<li><hr class="dropdown-divider"></li>{% endif %}
+                                    <li><button type="button" class="dropdown-item account-menu-delete" data-bs-toggle="modal" data-bs-target="#deleteAccount"
+                                                data-action="{{ url_for('main.delete_account', user_id=user.id) }}"
+                                                data-name="{{ user.full_name ~ ' (' ~ user.username ~ ')' if user.full_name else user.username }}">Delete account</button></li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                            {% endif %}
                         </td>
                         {% endif %}
                     </tr>
@@ -122,6 +145,36 @@
 {{ password_fields('password-' ~ user.id) }}
 {% endcall %}
 {% endfor %}
+
+{% if can('delete_accounts') %}
+<!-- Delete: one shared popup, filled in by accounts.js with the row that was clicked. The typed word is checked
+     there before sending (listed in the warning popup like the other forms' problems) and again by the server. -->
+<div class="modal fade" id="deleteAccount" tabindex="-1" aria-labelledby="deleteAccount-title" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="POST" class="modal-content" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteAccount-title">Delete account permanently?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="archives-confirm-name" id="deleteAccountName"></p>
+                <p><strong>This is a sensitive action.</strong> The account is removed from the database for good: it does not
+                   go to the Archives and cannot be restored. Its owner is signed out and can no longer sign in.</p>
+                <div class="mb-3">
+                    <label class="form-label" for="deleteAccountWord">Type <strong>{{ delete_word }}</strong> to delete this account</label>
+                    <input type="text" id="deleteAccountWord" name="confirm" class="form-control" autocomplete="off"
+                           spellcheck="false" data-word="{{ delete_word }}" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-danger">Delete permanently</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
 
 <!-- Lists what to fix before a popup's form is sent; accounts.js moves it into that form and opens it -->
 <dialog id="formWarning" class="form-warning" role="alertdialog" aria-labelledby="formWarningTitle" aria-describedby="formWarningList">

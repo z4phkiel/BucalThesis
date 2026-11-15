@@ -19,6 +19,8 @@ document.addEventListener('DOMContentLoaded', function(){
         const now = new Date();
         let view = { y: now.getFullYear(), m: now.getMonth() };
         let events = [];
+        let holidays = [];             // from Google: shown with the school's entries, never edited
+        const allEntries = () => events.concat(holidays);
         let eventsState = 'loading';   // 'loading', 'ready' or 'failed'
         let selectedDate = null;
         let editingId = null;
@@ -59,9 +61,23 @@ document.addEventListener('DOMContentLoaded', function(){
             // The dates don't depend on the server, so they show straight away
             renderGrid();
             renderSideLoading();
+            loadHolidays();   // separate, so a slow or failed Google request never holds up the school's entries
             events = await api(API, 'GET');
             eventsState = 'ready';
             render();
+        }
+
+        async function loadHolidays() {
+            try {
+                // Negative ids keep them apart from the database's ids, which the lanes are keyed by
+                holidays = (await api(window.HOLIDAYS_API, 'GET')).map((h, i) => ({ ...h, id: -(i + 1), google: true }));
+            } catch (err) {
+                return;   // the calendar works without them
+            }
+            if (eventsState === 'ready') {
+                render();
+                if (selectedDate) renderEntries();
+            }
         }
 
         function renderSideLoading() {
@@ -132,7 +148,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
             for (let i = 0; i < first; i++) html += '<div class="cal-empty"></div>';
 
-            const visible = events.filter(e => e.date <= key(view.y, view.m, days) && e.end_date >= key(view.y, view.m, 1));
+            const visible = allEntries().filter(e => e.date <= key(view.y, view.m, days) && e.end_date >= key(view.y, view.m, 1));
             const lanes = assignLanes(visible);
 
             for (let d = 1; d <= days; d++) {
@@ -181,12 +197,12 @@ document.addEventListener('DOMContentLoaded', function(){
         
         function renderSide() {
             const today = todayKey();
-            const current = events.filter(e => coversDate(e, today));
+            const current = allEntries().filter(e => coversDate(e, today));
             $('sideCurrent').innerHTML = current.length
             ? current.map(e => sideItem(e, isMultiDay(e) ? rangeLabel(e) : 'Today')).join('')
             : '<div class="side-empty">Nothing happening today</div>';
         
-            const upcoming = events
+            const upcoming = allEntries()
             .filter(e => e.date > today)
             .sort((a, b) => a.date.localeCompare(b.date))
             .slice(0, 10);
@@ -233,7 +249,7 @@ document.addEventListener('DOMContentLoaded', function(){
         }
         
         function renderEntries() {
-            const list = events.filter(e => coversDate(e, selectedDate));
+            const list = allEntries().filter(e => coversDate(e, selectedDate));
             $('modalEntries').innerHTML = list.length
         ? list.map(e => `
             <div class="entry">
@@ -248,6 +264,7 @@ document.addEventListener('DOMContentLoaded', function(){
                         : '<em>No description</em>'}
 
                     ${isMultiDay(e) ? `<div class="entry-range">${rangeLabel(e)}</div>` : ''}
+                    ${e.google ? '<div class="entry-range">From Google Calendar</div>' : ''}
 
                     ${e.link_url ? `
                         <div style="margin-top:6px;">
@@ -260,13 +277,13 @@ document.addEventListener('DOMContentLoaded', function(){
                     ` : ''}
                 </div>
 
-                <div class="acts">
+                ${e.google ? '' : `<div class="acts">
                     <button type="button" class="cal-btn"
                         data-edit="${e.id}">Edit</button>
 
                     <button type="button" class="cal-btn danger"
                         data-del="${e.id}">Delete</button>
-                </div>
+                </div>`}
             </div>
         `).join('')
         : '<div class="side-empty">No tags on this day yet</div>';

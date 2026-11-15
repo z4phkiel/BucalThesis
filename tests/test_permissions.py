@@ -45,6 +45,8 @@ class PermissionsTest(unittest.TestCase):
             ('admin', 'calendar_events', 'POST'), ('admin', 'calendar_event_detail', 'PUT'),
             ('admin', 'calendar_event_detail', 'DELETE'),
             ('super_admin', 'edit_account', 'POST'), ('super_admin', 'test_signatures', 'GET'),
+            # Deleting accounts: Admin and Super Admin
+            ('admin', 'delete_account', 'POST'), ('super_admin', 'delete_account', 'POST'),
             (None, 'logout', 'GET'),
             # The bell's card and the Activity Log tab: every role but Faculty
             ('principal', 'activity_log', 'GET'), ('principal', 'activity_log_details', 'GET'),
@@ -59,6 +61,7 @@ class PermissionsTest(unittest.TestCase):
             ('principal', 'create_account', 'POST'), ('principal', 'edit_file', 'POST'),
             ('admin', 'edit_account', 'POST'), ('admin', 'change_account_password', 'POST'),
             ('admin', 'archives', 'GET'), ('admin', 'restore_archived', 'POST'), ('admin', 'test_signatures', 'GET'),
+            ('principal', 'delete_account', 'POST'), ('faculty', 'delete_account', 'POST'),
             ('principal', 'calendar_events', 'POST'), ('principal', 'calendar_event_detail', 'DELETE'),
             ('registrar', 'enrolled', 'GET'), (None, 'index', 'GET'),
             ('faculty', 'activity_log', 'GET'), ('faculty', 'activity_log_unseen', 'GET'),

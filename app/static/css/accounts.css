@@ -105,6 +105,71 @@
     border-color: var(--lf-green-700);
 }
 
+/* ---------- Actions: three dots that open a small menu, the Masterlist's look (enrolled.css) ---------- */
+.card .table .dropdown {
+    display: flex;
+    justify-content: center;
+}
+
+.account-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    color: var(--lf-green-700);
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    transition: background-color 0.15s ease;
+}
+
+.account-actions svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+}
+
+.account-actions:hover,
+.account-actions.show {
+    background-color: rgba(67, 106, 51, 0.16);
+}
+
+.account-actions:focus-visible {
+    outline: 2px solid var(--lf-green-500);
+    outline-offset: 1px;
+}
+
+.account-menu {
+    --bs-dropdown-min-width: 11rem;
+    --bs-dropdown-padding-y: 4px;
+    --bs-dropdown-font-size: 0.82rem;
+    --bs-dropdown-color: var(--lf-text);
+    --bs-dropdown-bg: var(--lf-white);
+    --bs-dropdown-border-color: var(--lf-border);
+    --bs-dropdown-border-radius: 10px;
+    --bs-dropdown-link-color: var(--lf-text);
+    --bs-dropdown-link-hover-color: var(--lf-green-900);
+    --bs-dropdown-link-hover-bg: var(--lf-khaki-100);
+    --bs-dropdown-link-active-color: #fff;
+    --bs-dropdown-link-active-bg: var(--lf-green-600);
+    --bs-dropdown-item-padding-y: 6px;
+    --bs-dropdown-divider-bg: var(--lf-border);
+    box-shadow: 0 12px 28px -8px rgba(53, 90, 37, 0.45);
+}
+
+/* Delete account: brick, like the other delete buttons */
+.account-menu .account-menu-delete {
+    color: var(--lf-brick);
+}
+
+.account-menu .account-menu-delete:hover,
+.account-menu .account-menu-delete:focus-visible {
+    color: var(--lf-brick);
+    background: #fef2f2;
+}
+
 /* marks the signed-in Super Admin's own row */
 .accounts-you {
     margin-left: 6px;

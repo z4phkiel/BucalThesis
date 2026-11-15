@@ -282,9 +282,9 @@
     {{ archive_section('Pictures', file_columns) }}
 </template>
 
-{# The button and the Actions column follow the same permissions as accounts.html.
+{# The button and the Actions column (three dots, as on the Masterlist) follow the same permissions as accounts.html.
    Column widths copy where the real table's columns land, with and without Actions. #}
-{% set account_actions = can('edit_accounts') %}
+{% set account_actions = can('edit_accounts') or can('delete_accounts') %}
 <template data-skeleton-path="{{ url_for('main.accounts') }}">
     <span class="visually-hidden">Loading the accounts</span>
     <div class="skel-head skel-head-accounts">
@@ -296,10 +296,10 @@
         <div class="skel-card-body">
             <div class="skel-table-frame">
                 {{ table([
-                    {'label': 'Name', 'width': '25%' if account_actions else '38%', 'bars': ['64%', '78%', '56%', '70%']},
-                    {'label': 'Username', 'width': '15%' if account_actions else '27%', 'bars': ['58%', '70%', '50%']},
-                    {'label': 'Role', 'width': '20%' if account_actions else 'auto', 'bars': ['64px', '84px', '64px']},
-                ] + ([{'label': 'Actions', 'width': 'auto', 'align': 'end', 'pills': 2}] if account_actions else []),
+                    {'label': 'Name', 'width': '28%' if account_actions else '38%', 'bars': ['64%', '78%', '56%', '70%']},
+                    {'label': 'Username', 'width': '24%' if account_actions else '27%', 'bars': ['58%', '70%', '50%']},
+                    {'label': 'Role', 'width': '30%' if account_actions else 'auto', 'bars': ['64px', '84px', '64px']},
+                ] + ([{'label': 'Actions', 'width': 'auto', 'align': 'center', 'bars': ['16px']}] if account_actions else []),
                 4, 'skel-table-tight skel-table-striped') }}
             </div>
         </div>

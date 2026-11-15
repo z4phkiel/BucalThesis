@@ -41,6 +41,7 @@ PERMISSIONS = {
     'view_accounts':     'Open the Accounts page (the list of accounts)',
     'create_accounts':   'Create accounts with your own role or a lower one. Needs view_accounts',
     'edit_accounts':     "Change accounts' names, usernames and roles, and reset passwords. Needs view_accounts",
+    'delete_accounts':   'Delete accounts for good (they never go to the Archives): not your own, and only your own role or a lower one. Needs view_accounts',
 
     # Activity log
     'view_activity':     "The sidebar's bell and each page's Activity Log tab, which show the old and new value of every change",
@@ -64,7 +65,7 @@ ROLE_PERMISSIONS = {
         'submit_enrollment', 'view_masterlist', 'view_enrollment', 'edit_students', 'view_grades', 'submit_grades',
         'view_calendar', 'edit_calendar',
         'view_linkage', 'upload_files', 'edit_files',
-        'view_accounts', 'create_accounts',
+        'view_accounts', 'create_accounts', 'delete_accounts',
         'view_activity',
     },
     'faculty': {
@@ -91,13 +92,14 @@ ENDPOINT_PERMISSIONS = {
     'student_grades': 'view_grades', 'view_report_card': 'view_grades', 'download_report_card': 'view_grades',
     'upload_report_card': 'submit_grades', 'delete_report_card': 'submit_grades',
     'calendar': 'view_calendar', 'calendar_events': ('view_calendar', 'edit_calendar'), 'calendar_event_detail': 'edit_calendar',
+    'calendar_holidays': 'view_calendar',
     'linkagefiles': 'view_linkage', 'download_file': 'view_linkage', 'view_picture': 'view_linkage',
     'add_link': 'upload_files', 'upload_file': 'upload_files', 'upload_picture': 'upload_files',
     'edit_link': 'edit_files', 'edit_file': 'edit_files',
     'delete_link': 'edit_files', 'delete_file': 'edit_files', 'delete_picture': 'edit_files',
     'archives': 'archives', 'restore_archived': 'archives', 'delete_archived': 'archives',
     'accounts': 'view_accounts', 'create_account': 'create_accounts',
-    'edit_account': 'edit_accounts', 'change_account_password': 'edit_accounts',
+    'edit_account': 'edit_accounts', 'change_account_password': 'edit_accounts', 'delete_account': 'delete_accounts',
     'activity_log': 'view_activity', 'activity_log_unseen': 'view_activity', 'activity_log_details': 'view_activity',
 }
 

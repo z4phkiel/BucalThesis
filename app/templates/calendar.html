@@ -82,6 +82,9 @@
 
 
 {% block scripts %}
-<script>window.CALENDAR_API = "{{ url_for('main.calendar_events') }}";</script>
+<script>
+    window.CALENDAR_API = "{{ url_for('main.calendar_events') }}";
+    window.HOLIDAYS_API = "{{ url_for('main.calendar_holidays') }}";
+</script>
 <script src="{{ url_for('static', filename='js/calendar/calendar.js') }}"></script>
 {% endblock %}
