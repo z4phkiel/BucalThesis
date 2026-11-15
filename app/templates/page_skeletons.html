@@ -64,15 +64,19 @@
 {% endif %}
 {% endmacro %}
 
-{# Archives: one card per kind of item; each table ends with the same Archived and Actions columns #}
+{# A table's Actions column: the three dots, centered (row_menu.html), as on the Masterlist #}
+{% set row_menu_column = {'label': 'Actions', 'width': 'auto', 'align': 'center', 'bars': ['16px']} %}
+
+{# Archives: one card per kind of item; each table ends with the same Archived, Time left and Actions columns #}
 {% macro archive_section(title, columns) %}
 <div class="skel-card skel-card-linkage">
     <div class="skel-card-body">
         <div class="skel-section-title">{{ title }}</div>
         <div class="skel-table-frame">
             {{ table(columns + [
-                {'label': 'Archived', 'width': '14%', 'bars': ['62%', '54%']},
-                {'label': 'Actions', 'width': 'auto', 'align': 'end', 'pills': 2},
+                {'label': 'Archived', 'width': '19%', 'bars': ['62%', '54%']},
+                {'label': 'Time left', 'width': '17%', 'bars': ['58px', '52px']},
+                row_menu_column,
             ], 2, 'skel-table-tight skel-table-striped') }}
         </div>
     </div>
@@ -207,9 +211,9 @@
             {{ upload_form() }}
             <div class="skel-table-frame">
                 {{ table([
-                    {'label': 'Title', 'width': '25%', 'bars': ['64%', '78%', '56%']},
-                    {'label': 'Link', 'width': '40%', 'bars': ['72%', '58%', '66%']},
-                    {'label': 'Actions', 'width': 'auto', 'align': 'end', 'pills': 2},
+                    {'label': 'Title', 'width': '28%', 'bars': ['64%', '78%', '56%']},
+                    {'label': 'Link', 'width': '50%', 'bars': ['72%', '58%', '66%']},
+                    row_menu_column,
                 ], 3, 'skel-table-tight skel-table-striped') }}
             </div>
         </div>
@@ -221,11 +225,11 @@
             <span class="skel skel-help"></span>
             <div class="skel-table-frame">
                 {{ table([
-                    {'label': 'Title', 'width': '18%', 'bars': ['64%', '78%', '56%']},
-                    {'label': 'File', 'width': '15%', 'bars': ['72%', '58%', '66%']},
-                    {'label': 'Size', 'width': '9.5%', 'bars': ['62%', '54%']},
-                    {'label': 'Uploaded', 'width': '15.5%', 'bars': ['58%', '52%']},
-                    {'label': 'Actions', 'width': 'auto', 'align': 'end', 'pills': 3},
+                    {'label': 'Title', 'width': '31%', 'bars': ['64%', '78%', '56%']},
+                    {'label': 'File', 'width': '19%', 'bars': ['72%', '58%', '66%']},
+                    {'label': 'Size', 'width': '14.5%', 'bars': ['62%', '54%']},
+                    {'label': 'Uploaded', 'width': '20%', 'bars': ['58%', '52%']},
+                    row_menu_column,
                 ], 3, 'skel-table-tight skel-table-striped') }}
             </div>
         </div>
@@ -258,25 +262,25 @@
 <template data-skeleton-path="{{ url_for('main.archives') }}">
     <span class="visually-hidden">Loading the archives</span>
     <div class="skel-title skel-title-list">Archives</div>
-    <p class="skel-intro">Deleted items stay here until they are restored or deleted permanently.</p>
+    <p class="skel-intro">Deleted items stay here for 30 days, then are deleted permanently. Restore an item before then to keep it.</p>
     {% set file_columns = [
-        {'label': 'Title', 'width': '24%', 'bars': ['64%', '78%']},
-        {'label': 'File', 'width': '24%', 'bars': ['72%', '58%']},
-        {'label': 'Size', 'width': '10%', 'bars': ['62%', '54%']},
+        {'label': 'Title', 'width': '18%', 'bars': ['64%', '78%']},
+        {'label': 'File', 'width': '14%', 'bars': ['72%', '58%']},
+        {'label': 'Size', 'width': '12%', 'bars': ['62%', '54%']},
     ] %}
     {{ archive_section('Report Cards', [
-        {'label': 'Student', 'width': '24%', 'bars': ['64%', '78%']},
-        {'label': 'Grade Level', 'width': '14%', 'bars': ['52%', '45%']},
-        {'label': 'File', 'width': '20%', 'bars': ['72%', '58%']},
+        {'label': 'Student', 'width': '20%', 'bars': ['64%', '78%']},
+        {'label': 'Grade Level', 'width': '18%', 'bars': ['52%', '45%']},
+        {'label': 'File', 'width': '15%', 'bars': ['72%', '58%']},
     ]) }}
     {{ archive_section('Calendar Events', [
-        {'label': 'Description', 'width': '28%', 'bars': ['72%', '58%']},
+        {'label': 'Description', 'width': '22%', 'bars': ['72%', '58%']},
         {'label': 'Tag', 'width': '10%', 'bars': ['60%', '52%']},
-        {'label': 'Date', 'width': '20%', 'bars': ['64%', '70%']},
+        {'label': 'Date', 'width': '19%', 'bars': ['64%', '70%']},
     ]) }}
     {{ archive_section('Links', [
-        {'label': 'Title', 'width': '24%', 'bars': ['64%', '78%']},
-        {'label': 'Link', 'width': '34%', 'bars': ['72%', '58%']},
+        {'label': 'Title', 'width': '17%', 'bars': ['64%', '78%']},
+        {'label': 'Link', 'width': '29%', 'bars': ['72%', '58%']},
     ]) }}
     {{ archive_section('Files', file_columns) }}
     {{ archive_section('Pictures', file_columns) }}

@@ -46,6 +46,14 @@ def active(model):
     return model.query.filter_by(archived_at=None)
 
 
+def unless_archived(item):
+    """For the routes that serve a stored file: an archived one is gone (404) for everyone who can't open the Archives,
+    whose links still work."""
+    if item.archived_at and not can(session.get('role'), 'archives'):
+        abort(404)
+    return item
+
+
 # ACTIVITY LOG
 # Every add (POST), change (UPDATE) and delete (DELETE) on the Masterlist, Calendar and Linkage/Files.
 # The sidebar's bell opens a card with the latest entries (/activity-log). Each of those pages also has an
@@ -67,10 +75,10 @@ LOG_FIELDS = {
 }
 
 
-def log_activity(area, action, description, details=None):
+def log_activity(area, action, description, details=None, username=None):
     """Adds the entry to the session, so it is saved by the same commit as the change, or not at all.
-    details is a list of [label, old value, new value]; see log_changes()."""
-    db.session.add(ActivityLog(username=session.get('username', ''), area=area, action=action,
+    details is a list of [label, old value, new value]; see log_changes(). username defaults to whoever is signed in."""
+    db.session.add(ActivityLog(username=username or session.get('username', ''), area=area, action=action,
                                description=description[:255], details=details))
 
 
@@ -287,23 +295,24 @@ def sync_session_with_account():
 # permissions.py says what each role may do. Signed-out visitors are still turned away by each route itself.
 
 def nav_pages():
-    """(link, label, aria-current) of the sidebar pages this user's role may open. aria-current is 'page' for the
-    page that is open and 'true' for the sidebar page a sub-page belongs to (NAV_SECTIONS), else None."""
+    """(link, label, aria-current, endpoint) of the sidebar pages this user's role may open. aria-current is 'page' for
+    the page that is open and 'true' for the sidebar page a sub-page belongs to (NAV_SECTIONS), else None.
+    The endpoint picks the page's icon in dashboard.html."""
     role = session.get('role')
     section = NAV_SECTIONS.get((request.endpoint or '').removeprefix('main.'))
     pages = []
     for endpoint, label in NAV_PAGES.items():
         if may_open(role, endpoint):
             href = url_for('main.' + endpoint)
-            pages.append((href, label, 'page' if request.path == href else 'true' if endpoint == section else None))
+            pages.append((href, label, 'page' if request.path == href else 'true' if endpoint == section else None, endpoint))
     return pages
 
 
 def signed_in():
-    """(name, role label) for the sidebar, or None when nobody is signed in. Uses the account row that
+    """(name, username, role label) for the sidebar, or None when nobody is signed in. Uses the account row that
     sync_session_with_account already read for this request."""
     user = g.get('user') if 'user_id' in session else None
-    return (user.full_name or user.username, ROLES.get(user.role, user.role or '')) if user else None
+    return (user.full_name or user.username, user.username, ROLES.get(user.role, user.role or '')) if user else None
 
 
 @main_bp.before_request
@@ -378,6 +387,12 @@ def get_current_start_year():
 
     today = school_today()      # the school's date, so the year rolls over at midnight in the Philippines, not 8 hours later
     return today.year if today.month >= SCHOOL_YEAR_ROLLOVER_MONTH else today.year - 1
+
+
+@main_bp.app_context_processor
+def school_year_for_templates():
+    # The enrollment and student forms show the school year, and offer past ones, by the server's rule
+    return {'current_start_year': get_current_start_year}
  
  
 def ensure_current_school_year_metric():
@@ -691,6 +706,7 @@ def validate_enrollment(form, age_on=None):
     values = {}
     today = school_today()
     age_on = age_on or today
+    start_year = get_current_start_year()     # the school year under way, which turns over on June 1
 
     def text(name):
         return form.get(name, '').strip()
@@ -731,7 +747,7 @@ def validate_enrollment(form, age_on=None):
     values['psa_birth_cert_no'] = text('psa_birth_cert_no') or None
 
     # The server works these out itself, so what the browser sends for them is ignored
-    values['school_year'] = f'{today.year}-{today.year + 1}'
+    values['school_year'] = f'{start_year}-{start_year + 1}'
     values['date_signed'] = today
     values['age'] = None
     values['birthdate'] = None
@@ -799,7 +815,8 @@ def validate_enrollment(form, age_on=None):
         last_year = require('last_school_year_completed')
         if last_year:
             match = re.fullmatch(r'([0-9]{4})-([0-9]{4})', last_year)
-            if not match or int(match[2]) != int(match[1]) + 1 or not EARLIEST_LAST_SCHOOL_YEAR_END <= int(match[2]) <= today.year - 1:
+            # Completed: ended no later than the year the current school year began (2025-2026 is done once 2026-2027 starts)
+            if not match or int(match[2]) != int(match[1]) + 1 or not EARLIEST_LAST_SCHOOL_YEAR_END <= int(match[2]) <= start_year:
                 errors.append('Last school year completed is not a valid school year.')
         values['last_school_year_completed'] = last_year or None
 
@@ -1151,7 +1168,7 @@ def view_report_card(report_id):
     if "user_id" not in session:
         return redirect(url_for("main.login"))
 
-    report = Grades.query.get_or_404(report_id)
+    report = unless_archived(Grades.query.get_or_404(report_id))
 
     if not report.file_data:
         flash(
@@ -1175,7 +1192,7 @@ def download_report_card(report_id):
     if "user_id" not in session:
         return redirect(url_for("main.login"))
 
-    report = Grades.query.get_or_404(report_id)
+    report = unless_archived(Grades.query.get_or_404(report_id))
 
     if not report.file_data:
         flash(
@@ -1603,7 +1620,7 @@ def download_file(file_id):
     if 'user_id' not in session:
         return redirect(url_for('main.login'))
  
-    item = FileItem.query.get_or_404(file_id)
+    item = unless_archived(FileItem.query.get_or_404(file_id))
     return send_file(
         io.BytesIO(item.data),
         as_attachment=True,
@@ -1719,7 +1736,7 @@ def view_picture(picture_id):
     if 'user_id' not in session:
         return redirect(url_for('main.login'))
 
-    picture = PictureItem.query.get_or_404(picture_id)
+    picture = unless_archived(PictureItem.query.get_or_404(picture_id))
 
     if not picture.data:
         abort(404)
@@ -1771,15 +1788,70 @@ ARCHIVE_KINDS = {
 }
 
 
+ARCHIVE_DAYS = 30                  # an item is deleted for good this many days after it was moved to the Archives
+PURGE_EVERY_SECONDS = 60 * 60      # how often requests check for items past that (no scheduler runs in this app)
+last_purge = {'at': None}          # time.monotonic() of this process's last check
+purge_lock = threading.Lock()
+
+
 def archived(model):
     """Rows in the Archives, most recently deleted first."""
     return model.query.filter(model.archived_at.isnot(None)).order_by(model.archived_at.desc())
+
+
+def archived_item_name(label, values, name_column):
+    """e.g. file "Memo", as log entries name an archived item."""
+    return f'{label.lower()} {named(getattr(values, name_column))}'.strip()     # an event can have no description
+
+
+def archive_countdown(archived_at):
+    """(whole days left, the day it goes) for the Archives page. A part day counts as a day, so the last day shows 1."""
+    deadline = archived_at + timedelta(days=ARCHIVE_DAYS)
+    days = max(0, math.ceil((deadline - utc_now()).total_seconds() / 86400))
+    goes = deadline + timedelta(hours=8)    # the school's date
+    return days, f'{goes:%b} {goes.day}, {goes.year}'
+
+
+def purge_expired_archives():
+    """Deletes for good every item that has been in the Archives for ARCHIVE_DAYS, logged like a permanent delete, by
+    "System". Each row is deleted only if it is still archived and expired, so an item restored in the meantime stays,
+    and one another request already deleted isn't logged twice. A failure never breaks the page being opened."""
+    cutoff = utc_now() - timedelta(days=ARCHIVE_DAYS)
+    try:
+        for model, label, area, name_column in ARCHIVE_KINDS.values():
+            columns = LOG_FIELDS[model]     # never a report card's file
+            expired = model.query.filter(model.archived_at <= cutoff).with_entities(
+                model.id, *[getattr(model, column) for column in columns]).all()
+            for values in expired:
+                if model.query.filter(model.id == values.id, model.archived_at <= cutoff).delete():
+                    log_activity(area, 'DELETE',
+                                 f'Deleted {archived_item_name(label, values, name_column)} for good after {ARCHIVE_DAYS} days in the Archives',
+                                 log_changes(log_snapshot(values, columns), {}), username='System')
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception('Could not delete the expired Archives items; the next check tries again.')
+
+
+@main_bp.before_request
+def purge_expired_archives_hourly():
+    # One request an hour (per process) does the check, which is a few small queries; the rest skip it at once
+    now = time.monotonic()
+    due = last_purge['at'] is None or now - last_purge['at'] >= PURGE_EVERY_SECONDS
+    if due and purge_lock.acquire(blocking=False):
+        try:
+            last_purge['at'] = now
+            purge_expired_archives()
+        finally:
+            purge_lock.release()
 
 
 @main_bp.route("/archives")
 def archives():
     if 'user_id' not in session:
         return redirect(url_for('main.login'))
+
+    purge_expired_archives()    # so nothing past its 30 days is listed, however long since the last hourly check
 
     # Only the columns the page shows: a full report card row carries the file itself
     report_cards = archived(Grades).outerjoin(Enrollment, Grades.student_id == Enrollment.id).with_entities(
@@ -1794,6 +1866,8 @@ def archives():
         links=archived(LinkItem).all(),
         files=archived(FileItem).all(),
         pictures=archived(PictureItem).all(),
+        archive_days=ARCHIVE_DAYS,
+        countdown=archive_countdown,
     )
 
 
@@ -1815,7 +1889,7 @@ def change_archived(kind, item_id, restore):
         return redirect(url_for('main.archives'))
 
     snapshot = log_snapshot(values, columns)
-    item = f'{label.lower()} {named(getattr(values, name_column))}'.strip()     # an event can have no description
+    item = archived_item_name(label, values, name_column)
     if restore:
         # The item itself is unchanged, so its values are listed as they are
         details = [['Status', 'In the Archives', 'Restored']] + [[field, value, value] for field, value in snapshot.items() if value]

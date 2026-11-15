@@ -23,23 +23,57 @@
             {% endif %}
         </div>
 
+        {# Each sidebar page's icon: line drawings like the bell above, in the link's own color. The label says the same. #}
+        {% macro nav_icon(endpoint) %}
+        <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+            {% if endpoint == 'index' %}{# dashboard: a grid of cards #}
+            <rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/>
+            <rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>
+            {% elif endpoint == 'enrollment' %}{# a form to fill in: clipboard with lines #}
+            <rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+            <path d="M12 11h4M12 16h4M8 11h.01M8 16h.01"/>
+            {% elif endpoint == 'enrolled' %}{# the enrolled students: a group of people #}
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+            {% elif endpoint == 'calendar' %}
+            <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>
+            {% elif endpoint == 'linkagefiles' %}{# links and files: a folder with a link #}
+            <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>
+            <path d="M10.5 13.5h-1a2 2 0 0 0 0 4h1M13.5 13.5h1a2 2 0 0 1 0 4h-1M10.5 15.5h3"/>
+            {% elif endpoint == 'archives' %}{# deleted items kept aside: an archive box #}
+            <rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4"/>
+            {% elif endpoint == 'accounts' %}{# sign-in accounts and their roles: a person with a key #}
+            <circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h5"/>
+            <circle cx="17" cy="15" r="2.5"/><path d="M18.8 16.8 22 20M20.5 18.5l-1.2 1.2"/>
+            {% endif %}
+        </svg>
+        {% endmacro %}
+
         <ul class="nav flex-column gap-1 flex-grow-1 text-center">
             {# aria-current="page" marks the page already open, and page-skeleton.js ignores plain clicks on it;
                "true" marks the sidebar page that the open page belongs to, which stays a working link #}
-            {% for href, label, current in nav_pages() %}
+            {% for href, label, current, endpoint in nav_pages() %}
             <li class="nav-item">
                 <a href="{{ href }}" class="nav-link"{% if current %} aria-current="{{ current }}"{% endif %}>
-                    {{ label }}
+                    {{ nav_icon(endpoint) }}
+                    <span>{{ label }}</span>
                 </a>
             </li>
             {% endfor %}
             <li class="p-3">
                 {% set me = signed_in() %}
                 {% if me %}
-                <div class="sidebar-user" title="{{ me[0] }}, {{ me[1] }}">
+                {% set name, username, role = me %}
+                {# Hover or keyboard focus shows the full details in a small popup above; screen readers get them as the description #}
+                <div class="sidebar-user" tabindex="0" aria-describedby="sidebarUserCard">
                     <span class="visually-hidden">Signed in as</span>
-                    <span class="sidebar-user-name">{{ me[0] }}</span>
-                    <span class="sidebar-user-role">{{ me[1] }}</span>
+                    <span class="sidebar-user-name">{{ name }}</span>
+                    <span class="sidebar-user-role">{{ role }}</span>
+                    <dl class="sidebar-user-card" id="sidebarUserCard" role="tooltip">
+                        <dt>Name</dt><dd>{{ name }}</dd>
+                        <dt>Username</dt><dd>{{ username }}</dd>
+                        <dt>Role</dt><dd>{{ role }}</dd>
+                    </dl>
                 </div>
                 {% endif %}
                 <a href="{{ url_for('main.logout') }}" class="btn btn-danger w-100">
@@ -70,7 +104,7 @@
                 <li class="activity-placeholder-item">
                     <span class="activity-operation"><span class="skel" style="width: 44px"></span></span>
                     <span class="skel-dash-text">
-                        <span class="skel" style="width: {{ width }}"></span>
+                        <span class="skel"{{ {'style': 'width: ' ~ width} | xmlattr }}></span>
                         <span class="skel" style="width: 52%"></span>
                     </span>
                 </li>

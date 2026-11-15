@@ -169,8 +169,8 @@
     color: var(--lf-green-700);
 }
 
-/* link addresses */
-.card .table td a:not(.btn) {
+/* link addresses (not the items of a row's menu) */
+.card .table td a:not(.btn):not(.dropdown-item) {
     color: var(--lf-green-600);
     text-decoration: none;
     word-break: break-all;
@@ -181,8 +181,8 @@
     transition: color 0.18s ease, background-size 0.25s ease;
 }
 
-.card .table td a:not(.btn):hover,
-.card .table td a:not(.btn):focus-visible {
+.card .table td a:not(.btn):not(.dropdown-item):hover,
+.card .table td a:not(.btn):not(.dropdown-item):focus-visible {
     color: var(--lf-green-700);
     background-size: 100% 2px;
     outline: none;
@@ -196,55 +196,70 @@
     background: var(--lf-khaki-100);
 }
 
-/* ---------- Row action buttons (Download / Edit / Delete): short enough for a 32px row ---------- */
-.card .table td.text-end .btn {
-    min-width: 4.75rem;
-    padding: 3px 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    border-width: 1.5px;
-    border-radius: 999px;
-    transition: transform 0.15s, background-color 0.2s, color 0.2s, box-shadow 0.2s;
+/* ---------- Row actions: three dots that open a small menu, the Masterlist's look (enrolled.css).
+   Used by the tables on Linkage/Files, Archives and Accounts, which all link this file. ---------- */
+.card .table .dropdown {
+    display: flex;
+    justify-content: center;
 }
 
-.card .table td.text-end > .btn,
-.card .table td.text-end > form {
-    margin-left: 6px;
+.row-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    color: var(--lf-green-700);
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    transition: background-color 0.15s ease;
 }
 
-.card .table td.text-end > form {
-    vertical-align: middle;
+.row-actions svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
 }
 
-.card .table td.text-end .btn:hover {
-    transform: translateY(-1px);
+.row-actions:hover,
+.row-actions.show {
+    background-color: rgba(67, 106, 51, 0.16);
 }
 
-/* Edit: green outline */
-.card .table .btn-outline-primary {
-    --bs-btn-color: var(--lf-green-700);
-    --bs-btn-border-color: var(--lf-green-500);
-    --bs-btn-hover-color: #fff;
-    --bs-btn-hover-bg: var(--lf-green-600);
-    --bs-btn-hover-border-color: var(--lf-green-600);
-    --bs-btn-active-color: #fff;
-    --bs-btn-active-bg: var(--lf-green-900);
-    --bs-btn-active-border-color: var(--lf-green-900);
-    --bs-btn-focus-shadow-rgb: 93, 134, 75;
+.row-actions:focus-visible {
+    outline: 2px solid var(--lf-green-500);
+    outline-offset: 1px;
 }
 
-/* Delete: brick outline */
-.card .table .btn-outline-danger {
-    --bs-btn-color: var(--lf-brick);
-    --bs-btn-border-color: #fca5a5;
-    --bs-btn-hover-color: #fff;
-    --bs-btn-hover-bg: var(--lf-brick);
-    --bs-btn-hover-border-color: var(--lf-brick);
-    --bs-btn-active-color: #fff;
-    --bs-btn-active-bg: #991b1b;
-    --bs-btn-active-border-color: #991b1b;
-    --bs-btn-focus-shadow-rgb: 185, 28, 28;
+.row-menu {
+    --bs-dropdown-min-width: 11rem;
+    --bs-dropdown-padding-y: 4px;
+    --bs-dropdown-font-size: 0.82rem;
+    --bs-dropdown-color: var(--lf-text);
+    --bs-dropdown-bg: var(--lf-white);
+    --bs-dropdown-border-color: var(--lf-border);
+    --bs-dropdown-border-radius: 10px;
+    --bs-dropdown-link-color: var(--lf-text);
+    --bs-dropdown-link-hover-color: var(--lf-green-900);
+    --bs-dropdown-link-hover-bg: var(--lf-khaki-100);
+    --bs-dropdown-link-active-color: #fff;
+    --bs-dropdown-link-active-bg: var(--lf-green-600);
+    --bs-dropdown-item-padding-y: 6px;
+    --bs-dropdown-divider-bg: var(--lf-border);
+    box-shadow: 0 12px 28px -8px rgba(53, 90, 37, 0.45);
+}
+
+/* a menu item that deletes: brick, like the other delete buttons */
+.row-menu .row-menu-danger {
+    color: var(--lf-brick);
+}
+
+.row-menu .row-menu-danger:hover,
+.row-menu .row-menu-danger:focus-visible {
+    color: var(--lf-brick);
+    background: #fef2f2;
 }
 
 /* ---------- Edit popups ---------- */
@@ -361,11 +376,6 @@
 @media (max-width: 576px) {
     .main-content h1.h3 {
         font-size: 1.3rem;
-    }
-
-    .card .table td.text-end .btn {
-        min-width: 4.25rem;
-        padding: 3px 10px;
     }
 
     .modal .modal-header,

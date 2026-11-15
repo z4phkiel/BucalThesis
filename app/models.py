@@ -163,7 +163,9 @@ class Grades(db.Model):
     stored_filename = db.Column(db.String(255), nullable=False)
     
 
-    file_data = db.Column(db.LargeBinary, nullable=True)
+    # MEDIUMBLOB (16 MB) for the 10 MB files allowed, like the other file columns; a plain LargeBinary is a 64 KB BLOB on MySQL.
+    # Deferred: loaded only when a report card is viewed or downloaded, not for the grades page's list.
+    file_data = deferred(db.Column(db.LargeBinary().with_variant(MEDIUMBLOB(), 'mysql'), nullable=True))
     mime_type = db.Column(db.String(100), nullable=True)
 
     uploaded_at = db.Column(db.DateTime, default=utc_now)

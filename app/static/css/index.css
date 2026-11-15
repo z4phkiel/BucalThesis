@@ -80,6 +80,25 @@
     font-size: 13px;
 }
 
+/* each page's icon before its name (dashboard.html): the bell's line style, in the link's color, so it
+   follows hover, the current page and the navigation highlight on its own */
+.sidebar .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sidebar .nav-icon {
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
 .sidebar .nav-link:hover,
 .sidebar .nav-link:focus-visible {
     background-color: rgba(217, 229, 212, 0.16);
@@ -143,6 +162,81 @@
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--ix-khaki-400);
+}
+
+/* Hover or focus: a small see-through black popup above with the full name, username and role (dashboard.html).
+   It stays inside the sidebar, whose scrolling would cut off anything sticking out of it. */
+.sidebar-user {
+    position: relative;
+    border-radius: 6px;
+    cursor: default;
+}
+
+.sidebar-user:focus-visible {
+    outline: 2px solid var(--ix-khaki-400);
+    outline-offset: 3px;
+}
+
+.sidebar-user-card {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 0;
+    z-index: 10;
+    width: max-content;     /* as wide as its text, up to the sidebar's column */
+    max-width: 100%;
+    margin: 0;
+    padding: 6px 9px;
+    font-size: 0.7rem;
+    line-height: 1.25;
+    color: #fff;
+    background: rgba(48, 50, 49, 0.6);     /* see-through dark grey: the sidebar's green shows through */
+    border-radius: 7px;
+    box-shadow: 0 8px 18px -6px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(4px);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+}
+
+/* the little arrow pointing down at the name */
+.sidebar-user-card::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 12px;
+    border: 5px solid transparent;
+    border-top-color: rgba(48, 50, 49, 0.6);
+}
+
+.sidebar-user:hover .sidebar-user-card,
+.sidebar-user:focus-visible .sidebar-user-card {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+}
+
+.sidebar-user-card dt {
+    font-size: 0.56rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.sidebar-user-card dd {
+    margin: 0 0 4px;
+    font-weight: 600;
+    overflow-wrap: anywhere;    /* the full name shows here, however long */
+}
+
+.sidebar-user-card dd:last-child {
+    margin-bottom: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sidebar-user-card {
+        transition: none;
+    }
 }
 
 /* ==========================================================
@@ -394,6 +488,12 @@
     --bs-alert-color: var(--ix-brick);
     --bs-alert-bg: #fef2f2;
     --bs-alert-border-color: var(--ix-brick);
+}
+
+/* The layout keeps its scrollbar at all times (overflow-y-scroll on <html>, dashboard.html), so a popup must not get
+   Bootstrap's padding for a scrollbar that would disappear: it narrowed every table by that width while open */
+html.overflow-y-scroll body.modal-open {
+    padding-right: 0 !important;
 }
 
 /* warnings and holidays stay amber: status colors, kept apart from the green palette */

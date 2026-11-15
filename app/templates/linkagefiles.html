@@ -6,6 +6,7 @@
 <h1 class="h3 mb-3">Linkage/Files</h1>
 
 {% from 'activity_tabs.html' import activity_tabs with context %}
+{% from 'row_menu.html' import row_menu %}
 {% call activity_tabs('linkage', 'Links & Files') %}
 <div class="card linkage-search shadow-sm mb-3">
     <div class="card-body">
@@ -40,7 +41,7 @@
                     <tr>
                         <th>Title</th>
                         <th>Link</th>
-                        <th class="text-end">Actions</th>
+                        <th class="text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -48,18 +49,23 @@
                     <tr class="search-item" data-search="{{ link.title }} {{ link.url }}">
                         <td>{{ link.title }}</td>
                         <td><a href="{{ link.url }}" target="_blank" rel="noopener noreferrer">{{ link.url }}</a></td>
-                        <td class="text-end text-nowrap">
+                        <td class="text-center">
                             {% if can('edit_files') %}
-                            <button type="button" class="btn btn-sm btn-outline-primary"
-                                    data-bs-toggle="modal" data-bs-target="#editLinkModal"
-                                    data-action="{{ url_for('main.edit_link', link_id=link.id) }}"
-                                    data-title="{{ link.title }}"
-                                    data-url="{{ link.url }}">Edit</button>
-                            <form action="{{ url_for('main.delete_link', link_id=link.id) }}" method="POST"
-                                  class="d-inline" onsubmit="return confirm('Move this link to the Archives?');">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                            </form>
+                            {% call row_menu(link.title) %}
+                            <li><button type="button" class="dropdown-item"
+                                        data-bs-toggle="modal" data-bs-target="#editLinkModal"
+                                        data-action="{{ url_for('main.edit_link', link_id=link.id) }}"
+                                        data-title="{{ link.title }}"
+                                        data-url="{{ link.url }}">Edit link</button></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form action="{{ url_for('main.delete_link', link_id=link.id) }}" method="POST"
+                                      onsubmit="return confirm('Move this link to the Archives?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="dropdown-item row-menu-danger">Delete link</button>
+                                </form>
+                            </li>
+                            {% endcall %}
                             {% endif %}
                         </td>
                     </tr>
@@ -106,7 +112,7 @@
                         <th>File</th>
                         <th>Size</th>
                         <th>Uploaded</th>
-                        <th class="text-end">Actions</th>
+                        <th class="text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -120,20 +126,25 @@
                             {% else %}{{ (f.size / 1024) | round(1) }} KB{% endif %}
                         </td>
                         <td class="text-nowrap">{{ f.uploaded_at.strftime('%b %d, %Y') if f.uploaded_at else '—' }}</td>
-                        <td class="text-end text-nowrap">
-                            <a href="{{ url_for('main.download_file', file_id=f.id) }}" class="btn btn-sm btn-success">Download</a>
+                        <td class="text-center">
+                            {% call row_menu(f.title) %}
+                            <li><a class="dropdown-item" href="{{ url_for('main.download_file', file_id=f.id) }}">Download</a></li>
                             {% if can('edit_files') %}
-                            <button type="button" class="btn btn-sm btn-outline-primary"
-                                    data-bs-toggle="modal" data-bs-target="#editFileModal"
-                                    data-action="{{ url_for('main.edit_file', file_id=f.id) }}"
-                                    data-title="{{ f.title }}"
-                                    data-filename="{{ f.filename }}">Edit</button>
-                            <form action="{{ url_for('main.delete_file', file_id=f.id) }}" method="POST"
-                                  class="d-inline" onsubmit="return confirm('Move this file to the Archives?');">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                            </form>
+                            <li><button type="button" class="dropdown-item"
+                                        data-bs-toggle="modal" data-bs-target="#editFileModal"
+                                        data-action="{{ url_for('main.edit_file', file_id=f.id) }}"
+                                        data-title="{{ f.title }}"
+                                        data-filename="{{ f.filename }}">Edit file</button></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form action="{{ url_for('main.delete_file', file_id=f.id) }}" method="POST"
+                                      onsubmit="return confirm('Move this file to the Archives?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="dropdown-item row-menu-danger">Delete file</button>
+                                </form>
+                            </li>
                             {% endif %}
+                            {% endcall %}
                         </td>
                     </tr>
                     {% else %}
@@ -359,6 +370,7 @@
 
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/row-menu.js') }}"></script>
 <script src="{{ url_for('static', filename='js/linkages/linkages.js') }}">
 
 </script>

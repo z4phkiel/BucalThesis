@@ -577,7 +577,8 @@
         <div class="col-md-6 d-flex align-items-center gap-2">
             <label for="last_school_year_completed" class="form-label small mb-0 text-nowrap">Last School Year Completed</label>
             {% if editing %}
-            <select name="last_school_year_completed" id="last_school_year_completed" class="form-select form-select-sm border-0 border-bottom rounded-0">
+            <select name="last_school_year_completed" id="last_school_year_completed" class="form-select form-select-sm border-0 border-bottom rounded-0"
+                    data-max-end-year="{{ current_start_year() }}">
                 <option value="" disabled selected>Select School Year</option>
             </select>
             {% else %}

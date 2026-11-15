@@ -7,12 +7,13 @@
 {% endblock %}
 
 {% block content %}
+{% from 'row_menu.html' import row_menu %}
 {% macro size(bytes) -%}
 {% if bytes is none %}—{% elif bytes >= 1048576 %}{{ (bytes / 1048576) | round(1) }} MB{% else %}{{ (bytes / 1024) | round(1) }} KB{% endif %}
 {%- endmacro %}
 
-{# One card per kind of item. The caller fills in the item's own cells; the date and actions are the same for all.
-   name is the field the delete popup shows, so it is clear what is about to go. #}
+{# One card per kind of item. The caller fills in the item's own cells; the date, time left and actions are the same
+   for all. name is the field the delete popup shows, so it is clear what is about to go. #}
 {% macro section(kind, title, items, columns, name) %}
 <section class="card shadow-sm mb-3" aria-labelledby="{{ kind }}-title">
     <div class="card-body">
@@ -23,28 +24,40 @@
                     <tr>
                         {% for column in columns %}<th>{{ column }}</th>{% endfor %}
                         <th>Archived</th>
-                        <th class="text-end">Actions</th>
+                        <th>Time left</th>
+                        <th class="text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for item in items %}
+                    {% set days, goes = countdown(item.archived_at) %}
                     <tr>
                         {{ caller(item) }}
                         <td class="text-nowrap">{{ item.archived_at.strftime('%b %d, %Y') }}</td>
-                        <td class="text-end text-nowrap">
-                            <form action="{{ url_for('main.restore_archived', kind=kind, item_id=item.id) }}" method="POST" class="d-inline">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button type="submit" class="btn btn-sm btn-outline-primary">Restore</button>
-                            </form>
-                            <button type="button" class="btn btn-sm btn-outline-danger"
-                                    data-bs-toggle="modal" data-bs-target="#deleteForeverModal"
-                                    data-action="{{ url_for('main.delete_archived', kind=kind, item_id=item.id) }}"
-                                    data-name="{{ item[name] or 'This item' }}">Delete permanently</button>
+                        <td class="text-nowrap">
+                            {# amber in its last week #}
+                            <span class="archives-left{{ ' is-soon' if days <= 7 }}" title="Deleted for good on {{ goes }}">{{ days }} day{{ '' if days == 1 else 's' }}</span>
+                            <span class="visually-hidden">left, deleted for good on {{ goes }}</span>
+                        </td>
+                        <td class="text-center">
+                            {% call row_menu(item[name] or 'this item') %}
+                            <li>
+                                <form action="{{ url_for('main.restore_archived', kind=kind, item_id=item.id) }}" method="POST">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="dropdown-item">Restore</button>
+                                </form>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button type="button" class="dropdown-item row-menu-danger"
+                                        data-bs-toggle="modal" data-bs-target="#deleteForeverModal"
+                                        data-action="{{ url_for('main.delete_archived', kind=kind, item_id=item.id) }}"
+                                        data-name="{{ item[name] or 'This item' }}">Delete permanently</button></li>
+                            {% endcall %}
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="{{ columns | length + 2 }}" class="text-center text-muted py-4">No archived {{ title | lower }}.</td>
+                        <td colspan="{{ columns | length + 3 }}" class="text-center text-muted py-4">No archived {{ title | lower }}.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -55,7 +68,7 @@
 {% endmacro %}
 
 <h1 class="h3 mb-1">Archives</h1>
-<p class="archives-intro">Deleted items stay here until they are restored or deleted permanently.</p>
+<p class="archives-intro">Deleted items stay here for {{ archive_days }} days, then are deleted permanently. Restore an item before then to keep it.</p>
 
 {% call(r) section('report-cards', 'Report Cards', report_cards, ['Student', 'Grade Level', 'File'], 'original_filename') %}
 <td>{{ [r.last_name, r.first_name] | select | join(', ') or '—' }}</td>
@@ -112,5 +125,6 @@
 
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/row-menu.js') }}"></script>
 <script src="{{ url_for('static', filename='js/archives/archives.js') }}"></script>
 {% endblock %}

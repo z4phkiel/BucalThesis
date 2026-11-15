@@ -306,11 +306,31 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Submit: check all three parts, stop at the first one with a problem
+    // Submit: check all three parts, stop at the first one with a problem.
+    // Once it goes, the button locks (as on the login page), so a double click can't save the student twice.
+    // A disabled button also stops Enter from submitting again.
+    const SUBMIT_GIVE_UP_MS = 20000;     // lets the user try again if sending was stopped or never finishes
+    const submitLabel = submitBtn.innerHTML;
+    let submitGiveUp = null;
+
+    function unlockSubmit() {
+        clearTimeout(submitGiveUp);
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = submitLabel;
+    }
+
     form.addEventListener('submit', e => {
         for (let i = 0; i < sections.length; i++) {
             if (!validatePart(i, 'submit')) { e.preventDefault(); return; }
         }
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Submitting…';
+        submitGiveUp = setTimeout(unlockSubmit, SUBMIT_GIVE_UP_MS);
+    });
+
+    // The Back button can restore this page exactly as it was left
+    window.addEventListener('pageshow', e => {
+        if (e.persisted) unlockSubmit();
     });
 
     document.addEventListener('input', render);

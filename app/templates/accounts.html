@@ -9,6 +9,7 @@
 {% endblock %}
 
 {% block content %}
+{% from 'row_menu.html' import row_menu %}
 {# Name, username and role: the same fields when creating and editing. id keeps each popup's labels unique. #}
 {% macro account_fields(id, user=none) %}
 <div class="mb-3">
@@ -99,25 +100,18 @@
                         {% set can_edit, can_delete = can('edit_accounts'), can('delete_accounts') and not delete_problem(user) %}
                         <td class="text-center">
                             {% if can_edit or can_delete %}
-                            {# Three dots and a menu, as on the Masterlist. Fixed positioning lets the menu open past the table's edge. #}
-                            <div class="dropdown">
-                                <button type="button" class="account-actions" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}'
-                                        aria-expanded="false" aria-label="Actions for {{ user.full_name or user.username }}">
-                                    <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13" cy="8" r="1.5"/></svg>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end account-menu">
-                                    {% if can_edit %}
-                                    <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#edit-{{ user.id }}">Edit account</button></li>
-                                    <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#password-{{ user.id }}">Change password</button></li>
-                                    {% endif %}
-                                    {% if can_delete %}
-                                    {% if can_edit %}<li><hr class="dropdown-divider"></li>{% endif %}
-                                    <li><button type="button" class="dropdown-item account-menu-delete" data-bs-toggle="modal" data-bs-target="#deleteAccount"
-                                                data-action="{{ url_for('main.delete_account', user_id=user.id) }}"
-                                                data-name="{{ user.full_name ~ ' (' ~ user.username ~ ')' if user.full_name else user.username }}">Delete account</button></li>
-                                    {% endif %}
-                                </ul>
-                            </div>
+                            {% call row_menu(user.full_name or user.username) %}
+                            {% if can_edit %}
+                            <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#edit-{{ user.id }}">Edit account</button></li>
+                            <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#password-{{ user.id }}">Change password</button></li>
+                            {% endif %}
+                            {% if can_delete %}
+                            {% if can_edit %}<li><hr class="dropdown-divider"></li>{% endif %}
+                            <li><button type="button" class="dropdown-item row-menu-danger" data-bs-toggle="modal" data-bs-target="#deleteAccount"
+                                        data-action="{{ url_for('main.delete_account', user_id=user.id) }}"
+                                        data-name="{{ user.full_name ~ ' (' ~ user.username ~ ')' if user.full_name else user.username }}">Delete account</button></li>
+                            {% endif %}
+                            {% endcall %}
                             {% endif %}
                         </td>
                         {% endif %}
@@ -187,5 +181,6 @@
 
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/row-menu.js') }}"></script>
 <script src="{{ url_for('static', filename='js/accounts/accounts.js') }}"></script>
 {% endblock %}
