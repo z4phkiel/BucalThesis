@@ -68,17 +68,6 @@ a { color: inherit; }
     box-shadow: 0 0 0 4px rgba(102, 151, 81, 0.7);
 }
 
-.btn-green {
-    color: #fff;
-    background: var(--green-600);
-    box-shadow: 0 8px 18px rgba(67, 106, 51, 0.35);
-}
-
-.btn-green:hover {
-    filter: brightness(1.08);
-    box-shadow: 0 12px 24px rgba(67, 106, 51, 0.45);
-}
-
 .btn-khaki {
     color: var(--green-900);
     background: var(--khaki-300);
@@ -137,6 +126,7 @@ a { color: inherit; }
     gap: 12px;
     text-decoration: none;
     min-width: 0;
+    border-radius: 8px;     /* shapes the focus ring */
 }
 
 .brand-logo {
@@ -175,6 +165,13 @@ a { color: inherit; }
     background: var(--khaki-300);
 }
 
+/* Same focus ring as the buttons, for keyboard users */
+.site-nav a:focus-visible,
+.brand:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(102, 151, 81, 0.7);
+}
+
 .btn-login {
     padding: 10px 22px;
     color: #fff;
@@ -195,11 +192,9 @@ a { color: inherit; }
     border-radius: 0 0 48px 48px;
 }
 
-.hero-inner {
-    display: grid;
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
-    gap: 56px;
-    align-items: center;
+/* One column: the school name fits on one line instead of leaving "School" on its own */
+.hero-text {
+    max-width: 780px;
 }
 
 .eyebrow {
@@ -222,6 +217,7 @@ a { color: inherit; }
     font-weight: 800;
     line-height: 1.12;
     letter-spacing: -0.02em;
+    text-wrap: balance;     /* narrower screens: even lines, no single word left over */
 }
 
 .hero h1 span {
@@ -291,19 +287,14 @@ a { color: inherit; }
     color: var(--muted);
 }
 
-.center {
-    margin-top: 40px;
-    text-align: center;
-}
-
 /* ---------- Cards ---------- */
 .grid {
     display: grid;
     gap: 22px;
 }
 
+.grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.grid-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 
 .card {
     padding: 28px 26px;
@@ -312,12 +303,6 @@ a { color: inherit; }
     border-top: 5px solid var(--khaki-500);
     border-radius: 16px;
     box-shadow: 0 12px 30px -14px rgba(53, 90, 37, 0.3);
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 18px 36px -14px rgba(53, 90, 37, 0.4);
 }
 
 .card h3 {
@@ -333,13 +318,19 @@ a { color: inherit; }
     color: var(--muted);
 }
 
-.card-small {
-    padding: 24px 18px;
-    text-align: center;
+/* Vision and Mission: long paragraphs, so larger text and more line spacing than the short cards */
+.card-statement {
+    padding: 34px 34px 36px;
 }
 
-.card-small h3 {
+.card-statement h3 {
+    margin-top: 0;      /* no icon above it */
+    font-size: 1.3rem;
+}
+
+.card-statement p {
     font-size: 1rem;
+    line-height: 1.75;
 }
 
 .icon {
@@ -452,6 +443,14 @@ a { color: inherit; }
     color: rgba(255, 255, 255, 0.7);
 }
 
+/* Gray and smaller than the line above; 0.7 white keeps 4.5:1 contrast on the dark green */
+.footer-address {
+    margin-top: 2px;
+    font-size: 0.76rem;
+    font-style: normal;
+    color: rgba(255, 255, 255, 0.7);
+}
+
 .footer-links {
     display: flex;
     flex-wrap: wrap;
@@ -468,22 +467,6 @@ a { color: inherit; }
 .footer-links a:hover {
     color: var(--khaki-300);
     text-decoration: underline;
-}
-
-/* ---------- Tablet ---------- */
-@media (max-width: 992px) {
-    .hero-inner {
-        grid-template-columns: minmax(0, 1fr);
-        gap: 44px;
-    }
-
-    .hero-card {
-        margin: 0 auto;
-    }
-
-    .grid-5 {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
 }
 
 /* ---------- Phone ---------- */
@@ -513,12 +496,13 @@ a { color: inherit; }
         padding: 60px 0;
     }
 
+    .grid-2,
     .grid-3 {
         grid-template-columns: minmax(0, 1fr);
     }
 
-    .grid-5 {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+    .card-statement {
+        padding: 28px 24px;
     }
 
     .fb-band {
@@ -546,7 +530,7 @@ a { color: inherit; }
 
 @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
-    .btn, .card { transition: none; }
+    .btn { transition: none; }
 }
 
 /* ==========================================================

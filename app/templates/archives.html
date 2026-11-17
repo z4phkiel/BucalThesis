@@ -42,7 +42,8 @@
                         <td class="text-center">
                             {% call row_menu(item[name] or 'this item') %}
                             <li>
-                                <form action="{{ url_for('main.restore_archived', kind=kind, item_id=item.id) }}" method="POST">
+                                <form action="{{ url_for('main.restore_archived', kind=kind, item_id=item.id) }}" method="POST"
+                                      data-restore="{{ item[name] or '' }}">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="dropdown-item">Restore</button>
                                 </form>
@@ -69,6 +70,8 @@
 
 <h1 class="h3 mb-1">Archives</h1>
 <p class="archives-intro">Deleted items stay here for {{ archive_days }} days, then are deleted permanently. Restore an item before then to keep it.</p>
+{# Says "Restoring ..." to screen readers while archives.js covers the row #}
+<div id="archivesStatus" class="visually-hidden" role="status"></div>
 
 {% call(r) section('report-cards', 'Report Cards', report_cards, ['Student', 'Grade Level', 'File'], 'original_filename') %}
 <td>{{ [r.last_name, r.first_name] | select | join(', ') or '—' }}</td>
@@ -101,8 +104,10 @@
 <td class="text-nowrap">{{ size(p.size) }}</td>
 {% endcall %}
 
-<!-- Permanent delete: one shared popup, filled in by archives.js with the row that was clicked -->
-<div class="modal fade" id="deleteForeverModal" tabindex="-1" aria-labelledby="deleteForeverTitle" aria-hidden="true">
+<!-- Permanent delete: one shared popup, filled in by archives.js with the row that was clicked. Delete permanently
+     waits for "I understand" to be ticked; the server checks it again. -->
+<div class="modal fade" id="deleteForeverModal" tabindex="-1" aria-labelledby="deleteForeverTitle"
+     aria-describedby="deleteForeverName deleteForeverWarning" aria-hidden="true">
     <div class="modal-dialog">
         <form method="POST" class="modal-content">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -112,7 +117,14 @@
             </div>
             <div class="modal-body">
                 <p class="archives-confirm-name" id="deleteForeverName"></p>
-                <p>This removes it from the database for good. It cannot be restored afterwards.</p>
+                <div class="archives-warning" id="deleteForeverWarning">
+                    <svg class="archives-warning-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>
+                    <p><strong>This cannot be undone.</strong> The item is removed from the database for good. It cannot be recovered, not even from the Archives.</p>
+                </div>
+                <div class="form-check archives-understood">
+                    <input class="form-check-input" type="checkbox" id="deleteForeverUnderstood" name="understood" value="yes" required>
+                    <label class="form-check-label" for="deleteForeverUnderstood">I understand that this item cannot be recovered.</label>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

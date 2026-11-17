@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, request, url_for, session, flash, current_app, send_file, jsonify, abort, g
 from app.models import User, Enrollment, YearlyMetric, Grades, CalendarEvent, LinkItem, FileItem, PictureItem, ActivityLog, ROLES, SUPER_ADMIN, utc_now
-from app.permissions import NAV_PAGES, NAV_SECTIONS, assignable_roles, can, may_open
+from app.permissions import NAV_PAGES, NAV_SECTIONS, NO_PERMISSION_NEEDED, assignable_roles, can, may_open
 from app.forecast import METRIC_FIELDS, forecast_values, prediction_history
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import undefer
@@ -174,9 +174,6 @@ def mark_activity_seen(logs, areas):
 
 @main_bp.route("/activity-log")
 def activity_log():
-    if 'user_id' not in session:
-        return {'error': 'Unauthorized'}, 401
-
     area = request.args.get('area', '')
     logs = latest_activity(area)
     # Opening the card counts as seeing everything up to its newest entry, in the area it is filtered to or in all
@@ -187,9 +184,6 @@ def activity_log():
 @main_bp.route("/activity-log/unseen")
 def activity_log_unseen():
     """The areas with entries by other users newer than this user has seen, for the red dots (activity-log.js)."""
-    if 'user_id' not in session:
-        return {'error': 'Unauthorized'}, 401
-
     user = db.session.get(User, session['user_id'])
     seen = (user and user.activity_seen) or {}
     newest = (db.session.query(ActivityLog.area, db.func.max(ActivityLog.id))
@@ -202,8 +196,6 @@ def activity_log_unseen():
 @main_bp.route("/activity-log/<area>")
 def activity_log_details(area):
     """One page of an Activity Log tab; ?before=<id> gives the page after the entry with that id."""
-    if 'user_id' not in session:
-        return {'error': 'Unauthorized'}, 401
     if area not in ACTIVITY_AREAS:
         abort(404)
 
@@ -292,7 +284,8 @@ def sync_session_with_account():
 
 
 # ROLES
-# permissions.py says what each role may do. Signed-out visitors are still turned away by each route itself.
+# permissions.py says what each role may do. check_permission() also turns signed-out visitors away from every
+# route but the public ones (NO_PERMISSION_NEEDED), so a route needs no sign-in check of its own.
 
 def nav_pages():
     """(link, label, aria-current, endpoint) of the sidebar pages this user's role may open. aria-current is 'page' for
@@ -318,7 +311,14 @@ def signed_in():
 @main_bp.before_request
 def check_permission():
     endpoint = request.endpoint.removeprefix('main.')
-    if 'user_id' not in session or may_open(session.get('role'), endpoint, request.method):
+    if endpoint in NO_PERMISSION_NEEDED:
+        return
+    if 'user_id' not in session:
+        # The page's own JavaScript (fetch) gets 401; a page that was opened or a form that was sent goes to sign in
+        if request.headers.get('Sec-Fetch-Mode', 'navigate') != 'navigate':
+            return {'error': 'Unauthorized'}, 401
+        return redirect(url_for('main.landing' if endpoint == 'index' else 'main.login'))
+    if may_open(session.get('role'), endpoint, request.method):
         return
     pages = nav_pages()
     if endpoint == 'index' and pages:   # a role without the Dashboard starts on its first page
@@ -471,9 +471,6 @@ def _parse_metric_payload(data):
 
 @main_bp.route("/metrics/<int:metric_id>/update", methods=['POST'])
 def update_metric(metric_id):
-    if 'user_id' not in session:
-        return {'error': 'Unauthorized'}, 401
- 
     metric = YearlyMetric.query.get_or_404(metric_id)
 
     values, error = _parse_metric_payload(request.get_json(silent=True) or {})
@@ -490,19 +487,12 @@ def update_metric(metric_id):
 
 @main_bp.route("/")
 def index():
-    # Visitors who are not logged in start on the public landing page
-    if 'user_id' not in session:
-        return redirect(url_for('main.landing'))
-
     # The table and forecast load separately from /dashboard/data, so the page can appear straight away
     return render_template('dashboard.html', username=session['username'])
 
 
 @main_bp.route("/dashboard/data")
 def dashboard_data():
-    if 'user_id' not in session:
-        return {'error': 'Unauthorized'}, 401
-
     ensure_current_school_year_metric()
     metrics = YearlyMetric.query.order_by(YearlyMetric.school_year.desc()).all()
     all_metrics_asc = YearlyMetric.query.order_by(YearlyMetric.school_year.asc()).all()
@@ -533,9 +523,6 @@ def dashboard_data():
 
 @main_bp.route("/statistics")
 def statistics():
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
     metrics = YearlyMetric.query.order_by(YearlyMetric.school_year.asc()).all()
     return render_template('statistics.html', **prediction_history(metrics, get_current_start_year()))
 
@@ -544,9 +531,6 @@ def statistics():
 def mark_abnormal_year():
     """The statistics page's form: a reason marks the year abnormal, which leaves it out of the forecast's
     training and scoring; a blank reason makes it a normal year again."""
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
     metric = db.session.get(YearlyMetric, request.form.get('metric_id', type=int) or 0)
     if metric is None:
         abort(404)
@@ -564,9 +548,6 @@ def mark_abnormal_year():
 
 @main_bp.route("/test_signatures")
 def test_signatures():
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
     # This page shows every signature, so they come in the same query instead of one query per student
     enrollments = Enrollment.query.options(undefer(Enrollment.signature_data)).order_by(Enrollment.id.desc()).all()
     return render_template('test_signatures.html', enrollments=enrollments)
@@ -865,9 +846,6 @@ NEW_STUDENT_LOG_FIELDS = {'school_year': 'School year', 'grade_level': ENROLLMEN
 # Enrollment View
 @main_bp.route("/enrollment", methods=['GET', 'POST'])
 def enrollment():
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
     if request.method == 'POST':
         values, errors = validate_enrollment(request.form)
         if errors:
@@ -899,9 +877,6 @@ SCHOOL_YEAR_ROLLOVER_MONTH = 6
 
 @main_bp.route("/enrolled")
 def enrolled():
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-    
     students = Enrollment.query.order_by(Enrollment.id.desc()).all()
 
     # Display number of enrollees in terminal for testing
@@ -911,9 +886,6 @@ def enrolled():
 
 @main_bp.route("/enrolled/<int:student_id>")
 def student_detail(student_id):
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
     student = Enrollment.query.get_or_404(student_id)
     return render_template('student.html', student=student)
 
@@ -930,9 +902,6 @@ def student_form_data(student):
 
 @main_bp.route("/enrolled/<int:student_id>/edit", methods=['GET', 'POST'])
 def edit_student(student_id):
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
     student = Enrollment.query.get_or_404(student_id)
 
     if request.method == 'GET':
@@ -983,13 +952,6 @@ GRADE_LEVELS = [
     'Grade 5', 'Grade 6'
 ]
 
-ALLOWED_REPORT_EXTENSIONS = { "xlsx" }
-
-REPORT_MIME_TYPES = {
-    "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-}
-
-MAX_REPORT_SIZE = 10 * 1024 * 1024
 MAX_FILENAME_LENGTH = 255
 
 
@@ -1016,9 +978,6 @@ def grades():
 
 @main_bp.route("/grades/<int:student_id>")
 def student_grades(student_id):
-    if "user_id" not in session:
-        return redirect(url_for("main.login"))
-
     student = Enrollment.query.get_or_404(student_id)
 
     reports = {
@@ -1042,9 +1001,6 @@ def student_grades(student_id):
 )
 
 def upload_report_card(student_id, level):
-    if "user_id" not in session:
-        return redirect(url_for("main.login"))
-
     student = Enrollment.query.get_or_404(student_id)
 
     if level not in GRADE_LEVELS:
@@ -1053,52 +1009,15 @@ def upload_report_card(student_id, level):
             url_for("main.student_grades", student_id=student.id)
         )
 
-    uploaded_file = request.files.get("report_card")
-
-    if not uploaded_file or not uploaded_file.filename:
-        flash("Please select a report card file.", "warning")
-        return redirect(
-            url_for("main.student_grades", student_id=student.id)
-        )
-
-    filename = secure_filename(uploaded_file.filename)
-
-    if not filename or "." not in filename or len(filename) > MAX_FILENAME_LENGTH:
-        flash("Invalid filename.", "danger")
-        return redirect(
-            url_for("main.student_grades", student_id=student.id)
-        )
-
-    extension = filename.rsplit(".", 1)[1].lower()
-
-    if extension not in ALLOWED_REPORT_EXTENSIONS:
-        flash(
-            "Invalid file type. Upload an Excel (.xlsx) file only",
-            "danger",
-        )
-        return redirect(
-            url_for("main.student_grades", student_id=student.id)
-        )
-
-    file_data = uploaded_file.read()
-
-    if not file_data:
-        flash("The selected file is empty.", "warning")
-        return redirect(
-            url_for("main.student_grades", student_id=student.id)
-        )
-
-    if len(file_data) > MAX_REPORT_SIZE:
-        flash("The file must be 10 MB or smaller.", "danger")
-        return redirect(
-            url_for("main.student_grades", student_id=student.id)
-        )
-
-    if not is_real_document(extension, file_data):
-        flash("That file is not a valid Excel (.xlsx) file.", "danger")
-        return redirect(
-            url_for("main.student_grades", student_id=student.id)
-        )
+    # The Linkage/Files checks, but Excel only: checked first, so a PDF isn't told PDFs are allowed
+    upload = request.files.get("report_card")
+    if upload and upload.filename and get_extension(upload.filename) != "xlsx":
+        error = "Invalid file type. Upload an Excel (.xlsx) file only."
+    else:
+        filename, file_data, mime_type, error = read_upload(upload)
+    if error:
+        flash(error, "danger")
+        return redirect(url_for("main.student_grades", student_id=student.id))
 
     existing_report = Grades.query.filter_by(
         student_id=student.id,
@@ -1120,11 +1039,9 @@ def upload_report_card(student_id, level):
         if existing_report:
             old_filename = existing_report.original_filename
             existing_report.original_filename = filename
-            existing_report.stored_filename = (
-                f"{uuid.uuid4().hex}.{extension}"
-            )
+            existing_report.stored_filename = f"{uuid.uuid4().hex}.xlsx"
             existing_report.file_data = file_data
-            existing_report.mime_type = REPORT_MIME_TYPES[extension]
+            existing_report.mime_type = mime_type
             existing_report.uploaded_at = utc_now()
 
             message = f"{level} report card replaced successfully."
@@ -1135,9 +1052,9 @@ def upload_report_card(student_id, level):
                 student_id=student.id,
                 grade_level=level,
                 original_filename=filename,
-                stored_filename=f"{uuid.uuid4().hex}.{extension}",
+                stored_filename=f"{uuid.uuid4().hex}.xlsx",
                 file_data=file_data,
-                mime_type=REPORT_MIME_TYPES[extension],
+                mime_type=mime_type,
             )
             db.session.add(report)
             message = f"{level} report card uploaded successfully."
@@ -1165,9 +1082,6 @@ def upload_report_card(student_id, level):
 @main_bp.route("/report-cards/<int:report_id>/view")
 def view_report_card(report_id):
     """Display a report card retrieved from the MySQL BLOB column."""
-    if "user_id" not in session:
-        return redirect(url_for("main.login"))
-
     report = unless_archived(Grades.query.get_or_404(report_id))
 
     if not report.file_data:
@@ -1189,9 +1103,6 @@ def view_report_card(report_id):
 @main_bp.route("/report-cards/<int:report_id>/download")
 def download_report_card(report_id):
     """Download a report card retrieved from the MySQL BLOB column."""
-    if "user_id" not in session:
-        return redirect(url_for("main.login"))
-
     report = unless_archived(Grades.query.get_or_404(report_id))
 
     if not report.file_data:
@@ -1216,9 +1127,6 @@ def download_report_card(report_id):
 )
 def delete_report_card(report_id):
     """Move the report card to the Archives."""
-    if "user_id" not in session:
-        return redirect(url_for("main.login"))
-
     report = active(Grades).filter_by(id=report_id).first_or_404()
     student_id = report.student_id
 
@@ -1246,9 +1154,6 @@ def delete_report_card(report_id):
 # Calendar View
 @main_bp.route("/calendar")
 def calendar():
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
     return render_template('calendar.html')
 
 
@@ -1303,9 +1208,6 @@ def _parse_calendar_payload(data):
  
 @main_bp.route("/calendar/events", methods=['GET', 'POST'])
 def calendar_events():
-    if 'user_id' not in session:
-        return {'error': 'Unauthorized'}, 401
- 
     if request.method == 'GET':
         events = active(CalendarEvent).order_by(CalendarEvent.event_date.asc(), CalendarEvent.id.asc()).all()
         return jsonify([e.to_dict() for e in events])
@@ -1323,9 +1225,6 @@ def calendar_events():
  
 @main_bp.route("/calendar/events/<int:event_id>", methods=['PUT', 'DELETE'])
 def calendar_event_detail(event_id):
-    if 'user_id' not in session:
-        return {'error': 'Unauthorized'}, 401
- 
     event = active(CalendarEvent).filter_by(id=event_id).first_or_404()
  
     if request.method == 'DELETE':
@@ -1399,8 +1298,6 @@ def cached_holidays():
 
 @main_bp.route("/calendar/holidays")
 def calendar_holidays():
-    if 'user_id' not in session:
-        return {'error': 'Unauthorized'}, 401
     return jsonify(cached_holidays())
 
 
@@ -1468,9 +1365,6 @@ def file_too_large(error):
  
 @main_bp.route("/linkagefiles")
 def linkagefiles():
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
     links = active(LinkItem).order_by(LinkItem.created_at.desc()).all()
     files = active(FileItem).order_by(FileItem.uploaded_at.desc()).all()
     pictures = active(PictureItem).order_by(PictureItem.uploaded_at.desc()).all()
@@ -1487,9 +1381,6 @@ def linkagefiles():
  
 @main_bp.route("/linkage/links/add", methods=['POST'])
 def add_link():
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
- 
     title = request.form.get('title', '').strip()
     url = clean_url(request.form.get('url'))
 
@@ -1508,9 +1399,6 @@ def add_link():
  
 @main_bp.route("/linkage/links/<int:link_id>/edit", methods=['POST'])
 def edit_link(link_id):
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
- 
     link = active(LinkItem).filter_by(id=link_id).first_or_404()
     title = request.form.get('title', '').strip()
     url = clean_url(request.form.get('url'))
@@ -1531,9 +1419,6 @@ def edit_link(link_id):
  
 @main_bp.route("/linkage/links/<int:link_id>/delete", methods=['POST'])
 def delete_link(link_id):
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
- 
     link = active(LinkItem).filter_by(id=link_id).first_or_404()
     link.archived_at = utc_now()
     log_activity('linkage', 'DELETE', f'Moved link {named(link.title)} to the Archives', log_changes(log_snapshot(link, LOG_FIELDS[LinkItem]), {}))
@@ -1546,9 +1431,6 @@ def delete_link(link_id):
  
 @main_bp.route("/linkage/files/upload", methods=['POST'])
 def upload_file():
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
- 
     filename, data, content_type, error = read_upload(request.files.get('file'))
     if error:
         flash(error, 'danger')
@@ -1568,9 +1450,6 @@ def upload_file():
  
 @main_bp.route("/linkage/files/<int:file_id>/edit", methods=['POST'])
 def edit_file(file_id):
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
- 
     item = active(FileItem).filter_by(id=file_id).first_or_404()
     title = request.form.get('title', '').strip()
     upload = request.files.get('file')
@@ -1604,9 +1483,6 @@ def edit_file(file_id):
  
 @main_bp.route("/linkage/files/<int:file_id>/delete", methods=['POST'])
 def delete_file(file_id):
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
- 
     item = active(FileItem).filter_by(id=file_id).first_or_404()
     item.archived_at = utc_now()
     log_activity('linkage', 'DELETE', f'Moved file {named(item.title)} to the Archives', log_changes(log_snapshot(item, LOG_FIELDS[FileItem]), {}))
@@ -1617,9 +1493,6 @@ def delete_file(file_id):
  
 @main_bp.route("/linkage/files/<int:file_id>/download")
 def download_file(file_id):
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
- 
     item = unless_archived(FileItem.query.get_or_404(file_id))
     return send_file(
         io.BytesIO(item.data),
@@ -1686,9 +1559,6 @@ def read_picture(upload):
 
 @main_bp.route("/linkage/pictures/upload", methods=['POST'])
 def upload_picture():
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
     filename, data, content_type, error = read_picture(
         request.files.get('picture')
     )
@@ -1733,9 +1603,6 @@ def upload_picture():
 
 @main_bp.route("/linkage/pictures/<int:picture_id>/view")
 def view_picture(picture_id):
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
     picture = unless_archived(PictureItem.query.get_or_404(picture_id))
 
     if not picture.data:
@@ -1753,9 +1620,6 @@ def view_picture(picture_id):
     methods=['POST']
 )
 def delete_picture(picture_id):
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
     picture = active(PictureItem).filter_by(id=picture_id).first_or_404()
 
     try:
@@ -1848,9 +1712,6 @@ def purge_expired_archives_hourly():
 
 @main_bp.route("/archives")
 def archives():
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
     purge_expired_archives()    # so nothing past its 30 days is listed, however long since the last hourly check
 
     # Only the columns the page shows: a full report card row carries the file itself
@@ -1903,17 +1764,15 @@ def change_archived(kind, item_id, restore):
 
 @main_bp.route("/archives/<kind>/<int:item_id>/restore", methods=['POST'])
 def restore_archived(kind, item_id):
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
     return change_archived(kind, item_id, restore=True)
 
 
 @main_bp.route("/archives/<kind>/<int:item_id>/delete", methods=['POST'])
 def delete_archived(kind, item_id):
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
+    # The popup's "I understand" box: ticked there before the button unlocks, and checked again here
+    if request.form.get('understood') != 'yes':
+        flash('Tick "I understand that this item cannot be recovered" to delete it permanently.', 'danger')
+        return redirect(url_for('main.archives'))
     return change_archived(kind, item_id, restore=False)
 
 
@@ -1923,8 +1782,8 @@ def landing():
 
 
 # ACCOUNTS
-# A Super Admin creates the accounts of authorized personnel and changes their names, roles and passwords.
-# An Admin can also create and delete accounts (any role but Super Admin); a Principal can only look at the list.
+# A Super Admin or an Admin creates the accounts of authorized personnel, changes their names, roles and passwords,
+# and deletes them. An Admin does so only for accounts below Super Admin; a Principal can only look at the list.
 USERNAME_PATTERN = re.compile(r'[A-Za-z0-9._-]{3,50}')
 MAX_FULL_NAME_LENGTH = 100
 MIN_PASSWORD_LENGTH = 8
@@ -1964,13 +1823,19 @@ def password_errors(form):
     return []
 
 
+def outranks_you(user):
+    """True for an account above your own role (a Super Admin's, for an Admin), which you may not edit, give a
+    new password or delete, as you may not create one."""
+    role = session.get('role')
+    return role != SUPER_ADMIN and user.role not in assignable_roles(role)
+
+
 def account_delete_problem(user):
     """Why this user may not delete the account, or None. Never your own (nobody locks themselves out, and the
     last Super Admin stays), and only your own role or a lower one, as when creating."""
-    role = session.get('role')
     if user.id == session.get('user_id'):
         return 'You cannot delete your own account.'
-    if role != SUPER_ADMIN and user.role not in assignable_roles(role):
+    if outranks_you(user):
         return 'You can only delete accounts with your own role or a lower one.'
     return None
 
@@ -1987,22 +1852,17 @@ def save_account(success_message):
 
 @main_bp.route('/accounts')
 def accounts():
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
     users = User.query.order_by(User.username).all()
     return render_template('accounts.html', users=users, roles=ROLES, assignable=assignable_roles(session.get('role')),
                            min_password=MIN_PASSWORD_LENGTH,
                            max_password=MAX_PASSWORD_LENGTH, max_name=MAX_FULL_NAME_LENGTH,
                            username_pattern=USERNAME_PATTERN.pattern,
-                           delete_problem=account_delete_problem, delete_word=DELETE_ACCOUNT_WORD)
+                           outranks_you=outranks_you, delete_problem=account_delete_problem,
+                           delete_word=DELETE_ACCOUNT_WORD)
 
 
 @main_bp.route('/accounts/create', methods=['POST'])
 def create_account():
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
     values, errors = account_values(request.form)
     errors += password_errors(request.form)
     if errors:
@@ -2018,10 +1878,10 @@ def create_account():
 
 @main_bp.route('/accounts/<int:user_id>/edit', methods=['POST'])
 def edit_account(user_id):
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
     user = User.query.get_or_404(user_id)
+    if outranks_you(user):
+        flash('You can only edit accounts with your own role or a lower one.', 'danger')
+        return redirect(url_for('main.accounts'))
     values, errors = account_values(request.form, user)
     if (user.role == SUPER_ADMIN and values['role'] != SUPER_ADMIN
             and User.query.filter_by(role=SUPER_ADMIN).count() == 1):
@@ -2033,18 +1893,18 @@ def edit_account(user_id):
     for column, value in values.items():
         setattr(user, column, value)
     save_account(f'Saved the changes to {values["full_name"]}.')
-    # Someone who just gave up their own Super Admin role can no longer open this page
-    if user.id == session['user_id'] and user.role != SUPER_ADMIN:
+    # Someone who just gave themselves a role without the Accounts page can no longer open it
+    if user.id == session['user_id'] and not can(user.role, 'view_accounts'):
         return redirect(url_for('main.index'))
     return redirect(url_for('main.accounts'))
 
 
 @main_bp.route('/accounts/<int:user_id>/password', methods=['POST'])
 def change_account_password(user_id):
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
     user = User.query.get_or_404(user_id)
+    if outranks_you(user):     # a new password would hand over the account
+        flash('You can only change the password of accounts with your own role or a lower one.', 'danger')
+        return redirect(url_for('main.accounts'))
     errors = password_errors(request.form)
     if errors:
         flash(' '.join(errors), 'danger')
@@ -2061,9 +1921,6 @@ def change_account_password(user_id):
 def delete_account(user_id):
     """Deletes for good: accounts never go to the Archives. Its owner is signed out on their next click
     (sync_session_with_account); their activity log entries keep the username they copied."""
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
     user = db.session.get(User, user_id)
     if user is None:    # a second click, or another tab deleted it first
         flash('That account is already deleted.', 'success')

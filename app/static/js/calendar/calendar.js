@@ -229,6 +229,7 @@ document.addEventListener('DOMContentLoaded', function(){
         function closeModal() {
             $('calModalBg').classList.remove('open');
             selectedDate = null;
+            confirmToast.dismiss();     // an unanswered question goes with the popup
         }
         
         function setDates(start, end) {
@@ -334,17 +335,29 @@ document.addEventListener('DOMContentLoaded', function(){
             }
         }
         
-        async function remove(id) {
-            if (!confirm('Move this entry to the Archives?')) return;
-            try {
-            await api(`${API}/${id}`, 'DELETE');
-            events = events.filter(e => e.id !== id);
-            if (editingId === id) resetForm();
-            renderEntries();
-            render();
-            } catch (err) {
-            $('formError').textContent = err.message;
-            }
+        // ---- Move to the Archives: asked in the shared confirmation toast (confirm-toast.js) ----
+        function askToArchive(id, opener) {
+            const ev = events.find(e => e.id === id);
+            if (!ev) return;
+            const what = ev.description ? `“${ev.description}”` : `this ${(TAG_LABEL[ev.tag] || 'entry').toLowerCase()}`;
+            confirmToast.ask({
+                title: `Move ${what} to the Archives?`,
+                opener,
+                onYes: async () => {
+                    try {
+                        await api(`${API}/${ev.id}`, 'DELETE');
+                    } catch (err) {
+                        $('formError').textContent = err.message;
+                        throw err;      // the toast closes and focus goes back to Delete
+                    }
+                    events = events.filter(e => e.id !== ev.id);
+                    if (editingId === ev.id) resetForm();
+                    renderEntries();
+                    render();
+                    $('btnClose').focus({ preventScroll: true });     // the entry and its Delete button are gone; the popup stays where it was
+                    confirmToast.done(`Moved ${what} to the Archives.`);
+                },
+            });
         }
         
         // ---- Events ----
@@ -368,7 +381,7 @@ document.addEventListener('DOMContentLoaded', function(){
             $('btnSave').textContent = 'Save changes';
             $('btnCancelEdit').style.display = '';
             } else if (del) {
-            remove(Number(del.dataset.del));
+            askToArchive(Number(del.dataset.del), del);
             }
         });
         

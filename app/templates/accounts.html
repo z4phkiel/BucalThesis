@@ -97,7 +97,7 @@
                         <td>{{ user.username }}</td>
                         <td><span class="accounts-role {{ user.role }}">{{ roles.get(user.role, user.role or 'Admin') }}</span></td>
                         {% if actions %}
-                        {% set can_edit, can_delete = can('edit_accounts'), can('delete_accounts') and not delete_problem(user) %}
+                        {% set can_edit, can_delete = can('edit_accounts') and not outranks_you(user), can('delete_accounts') and not delete_problem(user) %}
                         <td class="text-center">
                             {% if can_edit or can_delete %}
                             {% call row_menu(user.full_name or user.username) %}
@@ -130,7 +130,7 @@
 {% endcall %}
 {% endif %}
 
-{% for user in users if can('edit_accounts') %}
+{% for user in users if can('edit_accounts') and not outranks_you(user) %}
 {% call popup('edit-' ~ user.id, 'Edit ' ~ (user.full_name or user.username), url_for('main.edit_account', user_id=user.id), 'Save changes') %}
 {{ account_fields('edit-' ~ user.id, user) }}
 {% endcall %}

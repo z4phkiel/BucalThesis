@@ -40,7 +40,7 @@ PERMISSIONS = {
     # Accounts
     'view_accounts':     'Open the Accounts page (the list of accounts)',
     'create_accounts':   'Create accounts with your own role or a lower one. Needs view_accounts',
-    'edit_accounts':     "Change accounts' names, usernames and roles, and reset passwords. Needs view_accounts",
+    'edit_accounts':     "Change accounts' names, usernames and roles, and reset passwords: only your own role or a lower one. Needs view_accounts",
     'delete_accounts':   'Delete accounts for good (they never go to the Archives): not your own, and only your own role or a lower one. Needs view_accounts',
 
     # Activity log
@@ -65,7 +65,8 @@ ROLE_PERMISSIONS = {
         'submit_enrollment', 'view_masterlist', 'view_enrollment', 'edit_students', 'view_grades', 'submit_grades',
         'view_calendar', 'edit_calendar',
         'view_linkage', 'upload_files', 'edit_files',
-        'view_accounts', 'create_accounts', 'delete_accounts',
+        'archives',
+        'view_accounts', 'create_accounts', 'edit_accounts', 'delete_accounts',
         'view_activity',
     },
     'faculty': {

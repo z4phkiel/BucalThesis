@@ -60,7 +60,7 @@
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <form action="{{ url_for('main.delete_link', link_id=link.id) }}" method="POST"
-                                      onsubmit="return confirm('Move this link to the Archives?');">
+                                      data-confirm-toast="Move the link “{{ link.title }}” to the Archives?">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="dropdown-item row-menu-danger">Delete link</button>
                                 </form>
@@ -138,7 +138,7 @@
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <form action="{{ url_for('main.delete_file', file_id=f.id) }}" method="POST"
-                                      onsubmit="return confirm('Move this file to the Archives?');">
+                                      data-confirm-toast="Move the file “{{ f.title }}” to the Archives?">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="dropdown-item row-menu-danger">Delete file</button>
                                 </form>
@@ -273,7 +273,7 @@
                         <form action="{{ url_for('main.delete_picture', picture_id=picture.id) }}"
                               method="POST"
                               class="flex-fill"
-                              onsubmit="return confirm('Move this picture to the Archives?');">
+                              data-confirm-toast="Move the picture “{{ picture.title }}” to the Archives?">
 
                             <input type="hidden"
                                    name="csrf_token"
