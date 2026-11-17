@@ -14,7 +14,6 @@ document.addEventListener('DOMContentLoaded', function(){
         // Dates stay 4-digit years so they can be compared as strings (same limit as routes.py).
         const MIN_YEAR = 1000;
         const MAX_YEAR = 9999;
-        const MAX_CHIPS = 2;   // tag bars shown per day before "+N more"
 
         const now = new Date();
         let view = { y: now.getFullYear(), m: now.getMonth() };
@@ -107,25 +106,28 @@ document.addEventListener('DOMContentLoaded', function(){
             return lanes;
         }
 
-        function renderChip(e, k, d, days, weekday) {
-            const text = `${esc(TAG_LABEL[e.tag] || e.tag)}${e.description ? ': ' + esc(e.description) : ''}`;
+        // The title only, so it has room; the tag is the color, the legend above the grid and hidden text for screen readers
+        function renderChip(e, k, weekday) {
+            const tag = esc(TAG_LABEL[e.tag] || e.tag);
+            const text = e.description ? `<span class="visually-hidden">${tag}: </span>${esc(e.description)}` : tag;
+            const title = e.description ? `${tag}: ${esc(e.description)}` : tag;
             if (!isMultiDay(e)) {
-                return `<span class="chip ${esc(e.tag)}" title="${esc(e.description)}">${text}</span>`;
+                return `<span class="chip ${esc(e.tag)}" title="${title}">${text}</span>`;
             }
 
-            // A bar is one chip per day, joined across the gaps. The bar breaks at the end of a week or month.
-            const lastInRow = weekday === 6 || d === days;
+            // A bar is one chip per day, joined across the grid lines. It breaks at the end of each week.
+            const lastInRow = weekday === 6;
             const classes = ['chip', 'chip-span', esc(e.tag)];
             if (k > e.date) classes.push('span-prev');
             if (k < e.end_date) classes.push(lastInRow ? 'span-next' : 'span-next span-join');
 
-            // The label sits on the first day of each row and runs across the whole bar
+            // The label sits on the first day of each week's piece and runs across the whole bar
             let label = '';
-            if (k === e.date || weekday === 0 || d === 1) {
-                const cells = Math.min(daysBetween(k, e.end_date) + 1, 7 - weekday, days - d + 1);
+            if (k === e.date || weekday === 0) {
+                const cells = Math.min(daysBetween(k, e.end_date) + 1, 7 - weekday);
                 label = `<span class="chip-label" style="--span:${cells}">${text}</span>`;
             }
-            return `<span class="${classes.join(' ')}" title="${esc(e.description)}">${label}</span>`;
+            return `<span class="${classes.join(' ')}" title="${title}">${label}</span>`;
         }
 
         function render() {
@@ -133,6 +135,8 @@ document.addEventListener('DOMContentLoaded', function(){
             renderSide();
         }
         
+        // Whole weeks, from the Sunday before the 1st to the Saturday after the last day; the other months' days are muted.
+        // Every entry of a day is shown: a week's row grows to fit its busiest day.
         function renderGrid() {
             const today = todayKey();
 
@@ -142,33 +146,41 @@ document.addEventListener('DOMContentLoaded', function(){
             $('calPrev').disabled = view.y === MIN_YEAR && view.m === 0;
             $('calNext').disabled = view.y === MAX_YEAR && view.m === 11;
 
-            let html = DOW.map(d => `<div class="cal-dow">${d}</div>`).join('');
-            const first = new Date(view.y, view.m, 1).getDay();
+            const lead = new Date(view.y, view.m, 1).getDay();
             const days = new Date(view.y, view.m + 1, 0).getDate();
-
-            for (let i = 0; i < first; i++) html += '<div class="cal-empty"></div>';
-
-            const visible = allEntries().filter(e => e.date <= key(view.y, view.m, days) && e.end_date >= key(view.y, view.m, 1));
+            const dates = Array.from({ length: Math.ceil((lead + days) / 7) * 7 }, (_, i) => new Date(view.y, view.m, i - lead + 1));
+            const keys = dates.map(d => key(d.getFullYear(), d.getMonth(), d.getDate()));
+            const visible = allEntries().filter(e => e.date <= keys[keys.length - 1] && e.end_date >= keys[0]);
             const lanes = assignLanes(visible);
+            // One day is reached with Tab (today, or the 1st), the arrow keys move between days
+            const tabStop = today.startsWith(key(view.y, view.m, 1).slice(0, 8)) ? today : key(view.y, view.m, 1);
 
-            for (let d = 1; d <= days; d++) {
-            const k = key(view.y, view.m, d);
-            const weekday = (first + d - 1) % 7;
-            const list = visible.filter(e => coversDate(e, k));
-            const shown = list.filter(e => lanes[e.id] < MAX_CHIPS);
-            const rows = shown.reduce((max, e) => Math.max(max, lanes[e.id] + 1), 0);
-            let chips = '';
-            for (let lane = 0; lane < rows; lane++) {
-                const e = shown.find(x => lanes[x.id] === lane);
-                chips += e ? renderChip(e, k, d, days, weekday) : '<span class="chip-gap"></span>';
-            }
-            const hidden = list.length - shown.length;
-            const more = hidden > 0 ? `<div class="chip-more">+${hidden} more</div>` : '';
-            const placeholder = eventsState === 'loading' && d % 6 === 2 ? '<span class="skel skel-chip"></span>' : '';
-            html += `<div class="cal-day${k === today ? ' today' : ''}" data-date="${k}">
-                        <span class="num">${d}</span>${chips}${more}${placeholder}
-                    </div>`;
-            }
+            let html = DOW.map(d => `<div class="cal-dow">${d}</div>`).join('');
+            dates.forEach((date, i) => {
+                const k = keys[i];
+                if (date.getFullYear() < MIN_YEAR || date.getFullYear() > MAX_YEAR) {
+                    html += '<div class="cal-empty"></div>';    // past the years the calendar covers
+                    return;
+                }
+                const weekday = i % 7;
+                const list = visible.filter(e => coversDate(e, k));
+                const rows = list.reduce((max, e) => Math.max(max, lanes[e.id] + 1), 0);
+                let chips = '';
+                for (let lane = 0; lane < rows; lane++) {
+                    const e = list.find(x => lanes[x.id] === lane);
+                    chips += e ? renderChip(e, k, weekday) : '<span class="chip-gap"></span>';
+                }
+                const placeholder = eventsState === 'loading' && i % 6 === 2 ? '<span class="skel skel-chip"></span>' : '';
+                const named = date.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                const count = eventsState !== 'ready' ? '' : `: ${list.length || 'no'} ${list.length === 1 ? 'entry' : 'entries'}`;
+                const classes = ['cal-day'];
+                if (date.getMonth() !== view.m) classes.push('is-outside');
+                if (k === today) classes.push('today');
+                html += `<div class="${classes.join(' ')}" data-date="${k}" role="button" tabindex="${k === tabStop ? 0 : -1}"
+                              aria-label="${esc(named + count)}"${k === today ? ' aria-current="date"' : ''}>
+                            <span class="num" aria-hidden="true">${date.getDate()}</span>${chips}${placeholder}
+                        </div>`;
+            });
             $('calGrid').innerHTML = html;
             $('calGrid').classList.toggle('is-inactive', eventsState !== 'ready');
             $('calGrid').setAttribute('aria-busy', String(eventsState === 'loading'));
@@ -227,8 +239,10 @@ document.addEventListener('DOMContentLoaded', function(){
         }
         
         function closeModal() {
+            const day = selectedDate && $('calGrid').querySelector(`[data-date="${selectedDate}"]`);
             $('calModalBg').classList.remove('open');
             selectedDate = null;
+            if (day) day.focus({ preventScroll: true });
             confirmToast.dismiss();     // an unanswered question goes with the popup
         }
         
@@ -367,6 +381,24 @@ document.addEventListener('DOMContentLoaded', function(){
             if (cell) openDay(cell.dataset.date);
         });
         
+        $('calGrid').addEventListener('keydown', e => {
+            const cell = e.target.closest('.cal-day');
+            if (!cell) return;
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                if (eventsState === 'ready') openDay(cell.dataset.date);
+                return;
+            }
+            const step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }[e.key];
+            const cells = [...$('calGrid').querySelectorAll('.cal-day')];
+            const next = step && cells[cells.indexOf(cell) + step];
+            if (!next) return;
+            e.preventDefault();
+            cell.tabIndex = -1;
+            next.tabIndex = 0;
+            next.focus();
+        });
+
         $('modalEntries').addEventListener('click', e => {
             const edit = e.target.closest('[data-edit]');
             const del = e.target.closest('[data-del]');

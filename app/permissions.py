@@ -91,6 +91,7 @@ ENDPOINT_PERMISSIONS = {
     'enrolled': 'view_masterlist', 'grades': 'view_masterlist',
     'student_detail': 'view_enrollment', 'edit_student': 'edit_students',
     'student_grades': 'view_grades', 'view_report_card': 'view_grades', 'download_report_card': 'view_grades',
+    'preview_report_card': 'view_grades',
     'upload_report_card': 'submit_grades', 'delete_report_card': 'submit_grades',
     'calendar': 'view_calendar', 'calendar_events': ('view_calendar', 'edit_calendar'), 'calendar_event_detail': 'edit_calendar',
     'calendar_holidays': 'view_calendar',

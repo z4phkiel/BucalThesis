@@ -1835,11 +1835,61 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
 }
 
 /* ---------- Calendar ---------- */
+/* Same layout as calendar.css: the month full width, Current and Upcoming side by side below it (right column when wide) */
 .skel-cal {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 320px;
+    grid-template-columns: minmax(0, 1fr);
     gap: 24px;
     align-items: start;
+}
+
+.skel-cal-side {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 28px;
+}
+
+.skel-cal-side .skel-side-section {
+    margin-bottom: 0;
+}
+
+.skel-cal-side .skel-side-section + .skel-side-section {
+    padding-top: 0;
+    padding-left: 28px;
+    border-top: 0;
+    border-left: 1px dashed var(--ix-khaki-500);
+}
+
+@media (min-width: 1800px) {
+    .skel-cal {
+        grid-template-columns: minmax(0, 1fr) 320px;
+    }
+
+    .skel-cal-side {
+        display: block;
+    }
+
+    .skel-cal-side .skel-side-section {
+        margin-bottom: 20px;
+    }
+
+    .skel-cal-side .skel-side-section + .skel-side-section {
+        padding: 20px 0 0;
+        border-top: 1px dashed var(--ix-khaki-500);
+        border-left: 0;
+    }
+}
+
+.skel-cal-legend {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    height: 19px;       /* the legend's line on the real page */
+    margin: -4px 0 14px;
+}
+
+.skel-cal-legend .skel {
+    height: 14px;
 }
 
 .skel-cal-card {
@@ -1873,10 +1923,15 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
     border-radius: 999px;
 }
 
+/* one connected grid, as in calendar.css */
 .skel-cal-grid {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 6px;
+    gap: 1px;
+    overflow: hidden;
+    background: var(--ix-border);
+    border: 1px solid var(--ix-border);
+    border-radius: 12px;
 }
 
 .skel-cal-dow {
@@ -1889,25 +1944,23 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
     color: #fff;
     background: var(--ix-green-700);
     border-bottom: 3px solid var(--ix-khaki-500);
-    border-radius: 8px;
+    box-shadow: 1px 0 0 var(--ix-green-700);
 }
 
 .skel-cal-day {
     display: grid;
     align-content: start;
-    gap: 4px;
-    height: 120px;
-    padding: 8px;
+    gap: 3px;
+    min-height: 118px;
+    padding: 6px 7px 8px;
     background: #fff;
-    border: 1px solid var(--ix-border);
-    border-radius: 10px;
 }
 
 .skel-cal-num {
-    justify-self: center;
+    justify-self: start;
     width: 20px;
     height: 20px;
-    margin-bottom: 4px;
+    margin: 3px 0 6px 3px;
     border-radius: 50%;
 }
 
@@ -1955,6 +2008,16 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
     .skel-cal {
         grid-template-columns: 1fr;
     }
+
+    .skel-cal-side {
+        grid-template-columns: 1fr;
+    }
+
+    .skel-cal-side .skel-side-section + .skel-side-section {
+        padding: 20px 0 0;
+        border-top: 1px dashed var(--ix-khaki-500);
+        border-left: 0;
+    }
 }
 
 @media (max-width: 767.98px) {
@@ -1978,12 +2041,8 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
         padding: 14px;
     }
 
-    .skel-cal-grid {
-        gap: 4px;
-    }
-
     .skel-cal-day {
-        height: 84px;
+        min-height: 84px;
         padding: 4px;
     }
 

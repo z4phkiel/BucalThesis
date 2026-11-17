@@ -21,13 +21,15 @@
         <h2 class="h5 mb-3">Important Links</h2>
 
         {% if can('upload_files') %}
-        <form action="{{ url_for('main.add_link') }}" method="POST" class="row g-2 mb-3">
+        <form action="{{ url_for('main.add_link') }}" method="POST" class="row g-2 mb-3 align-items-start" novalidate>
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="col-md-4">
-                <input type="text" name="title" class="form-control" placeholder="Title" maxlength="150" required>
+                <input type="text" name="title" class="form-control" placeholder="Title" maxlength="150" required
+                       aria-label="Link title" data-required="Enter a title for the link.">
             </div>
             <div class="col-md-6">
-                <input type="text" name="url" class="form-control" placeholder="https://example.com" maxlength="500" required>
+                <input type="text" name="url" class="form-control" placeholder="https://example.com" maxlength="500" required
+                       aria-label="Link address" data-required="Enter the link's address, e.g. https://example.com">
             </div>
             <div class="col-md-2 d-grid">
                 <button type="submit" class="btn btn-primary">Add Link</button>
@@ -89,13 +91,14 @@
         <h2 class="h5 mb-3">Important Files</h2>
 
         {% if can('upload_files') %}
-        <form action="{{ url_for('main.upload_file') }}" method="POST" enctype="multipart/form-data" class="row g-2 mb-1">
+        <form action="{{ url_for('main.upload_file') }}" method="POST" enctype="multipart/form-data" class="row g-2 mb-1 align-items-start" novalidate>
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="col-md-4">
                 <input type="text" name="title" class="form-control" placeholder="Title (optional)" maxlength="150">
             </div>
             <div class="col-md-6">
-                <input type="file" name="file" class="form-control" accept=".pdf,.docx,.xlsx" required>
+                <input type="file" name="file" class="form-control" accept=".pdf,.docx,.xlsx" required
+                       aria-label="File to upload" data-required="Choose a PDF, DOCX or XLSX file to upload.">
             </div>
             <div class="col-md-2 d-grid">
                 <button type="submit" class="btn btn-primary">Upload</button>
@@ -171,7 +174,8 @@
         <form action="{{ url_for('main.upload_picture') }}"
               method="POST"
               enctype="multipart/form-data"
-              class="row g-2 mb-1">
+              class="row g-2 mb-1 align-items-start"
+              novalidate>
 
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
@@ -181,7 +185,9 @@
                        class="form-control"
                        placeholder="Picture title"
                        maxlength="150"
-                       required>
+                       required
+                       aria-label="Picture title"
+                       data-required="Enter a title for the picture.">
             </div>
 
             <div class="col-md-6">
@@ -190,7 +196,9 @@
                        id="pictureInput"
                        class="form-control"
                        accept=".png,.jpg,.jpeg,.webp"
-                       required>
+                       required
+                       aria-label="Picture to upload"
+                       data-required="Choose a PNG, JPG or WEBP picture to upload.">
             </div>
 
             <div class="col-md-2 d-grid">
@@ -312,22 +320,24 @@
 {% endcall %}
 
 <!-- Edit link (one shared popup, filled in by the script below) -->
-<div class="modal fade" id="editLinkModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="editLinkModal" tabindex="-1" aria-labelledby="editLinkTitle" aria-hidden="true">
     <div class="modal-dialog">
-        <form method="POST" class="modal-content">
+        <form method="POST" class="modal-content" novalidate>
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="modal-header">
-                <h5 class="modal-title">Edit Link</h5>
+                <h5 class="modal-title" id="editLinkTitle">Edit Link</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label class="form-label">Title</label>
-                    <input type="text" name="title" class="form-control" maxlength="150" required>
+                    <label class="form-label" for="editLinkName">Title</label>
+                    <input type="text" name="title" id="editLinkName" class="form-control" maxlength="150" required
+                           data-required="Enter a title for the link.">
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Link</label>
-                    <input type="text" name="url" class="form-control" maxlength="500" required>
+                    <label class="form-label" for="editLinkUrl">Link</label>
+                    <input type="text" name="url" id="editLinkUrl" class="form-control" maxlength="500" required
+                           data-required="Enter the link's address, e.g. https://example.com">
                 </div>
             </div>
             <div class="modal-footer">
@@ -339,22 +349,23 @@
 </div>
 
 <!-- Edit file: change the title, and optionally replace the file -->
-<div class="modal fade" id="editFileModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="editFileModal" tabindex="-1" aria-labelledby="editFileTitle" aria-hidden="true">
     <div class="modal-dialog">
-        <form method="POST" enctype="multipart/form-data" class="modal-content">
+        <form method="POST" enctype="multipart/form-data" class="modal-content" novalidate>
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="modal-header">
-                <h5 class="modal-title">Edit File</h5>
+                <h5 class="modal-title" id="editFileTitle">Edit File</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label class="form-label">Title</label>
-                    <input type="text" name="title" class="form-control" maxlength="150" required>
+                    <label class="form-label" for="editFileName">Title</label>
+                    <input type="text" name="title" id="editFileName" class="form-control" maxlength="150" required
+                           data-required="Enter a title for the file.">
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Replace file (optional)</label>
-                    <input type="file" name="file" class="form-control" accept=".pdf,.docx,.xlsx">
+                    <label class="form-label" for="editFileUpload">Replace file (optional)</label>
+                    <input type="file" name="file" id="editFileUpload" class="form-control" accept=".pdf,.docx,.xlsx">
                     <div class="form-text">Current file: <span id="editFileCurrent"></span>. Leave empty to keep it.</div>
                 </div>
             </div>

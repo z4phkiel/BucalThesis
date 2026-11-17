@@ -21,10 +21,15 @@
                 <button id="calNext" type="button">Next &gt;</button>
             </div>
         </div>
-            <div class="cal-grid" id="calGrid"></div>
+        <ul class="cal-legend" aria-label="Tag colors">
+            <li><span class="swatch holiday" aria-hidden="true"></span>Holiday</li>
+            <li><span class="swatch event" aria-hidden="true"></span>Event</li>
+            <li><span class="swatch exam" aria-hidden="true"></span>Exam</li>
+        </ul>
+        <div class="cal-grid" id="calGrid"></div>
     </div>
  
-    <div class="cal-card">
+    <div class="cal-card cal-side">
         <div class="side-section">
             <h3>Current</h3>
             <div id="sideCurrent"></div>

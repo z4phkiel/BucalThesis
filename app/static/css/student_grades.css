@@ -270,11 +270,61 @@
 }
 
 /* ---------- A stored file ---------- */
+/* a stored file: a button that opens its preview; "Preview" shows on hover and keyboard focus */
 .sg-file {
     display: flex;
     align-items: center;
     gap: 12px;
     min-width: 0;
+    margin: -6px -8px;      /* the hover background reaches a little past the icon and text */
+    padding: 6px 8px;
+    font: inherit;
+    text-align: left;
+    color: inherit;
+    background: none;
+    border: 0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.sg-file:hover,
+.sg-file:focus-visible {
+    background: var(--ix-khaki-100);
+}
+
+.sg-file:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(93, 134, 75, 0.45);
+}
+
+.sg-file:hover .sg-file-name,
+.sg-file:focus-visible .sg-file-name {
+    color: var(--ix-green-700);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.sg-file-hint {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 5px;
+    margin-left: auto;
+    padding: 3px 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--ix-green-700);
+    background: var(--ix-white);
+    border: 1px solid var(--ix-khaki-500);
+    border-radius: 999px;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.sg-file:hover .sg-file-hint,
+.sg-file:focus-visible .sg-file-hint {
+    opacity: 1;
 }
 
 .sg-file-icon {
@@ -487,6 +537,139 @@
         background: var(--ix-khaki-100);
         box-shadow: 0 0 0 4px var(--ix-khaki-500);
     }
+}
+
+/* ---------- Preview popup ----------
+   The app's popup look (khaki top edge, rounded, green title), with the file's sheets as plain grid tables. */
+.sg-preview .modal-content {
+    border: 0;
+    border-top: 6px solid var(--ix-khaki-500);
+    border-radius: 18px;
+    box-shadow: 0 30px 60px -15px rgba(30, 48, 22, 0.55);
+}
+
+.sg-preview .modal-header {
+    gap: 12px;
+    padding: 18px 24px 14px;
+    border-bottom: 1px dashed var(--ix-khaki-500);
+}
+
+.sg-preview-heading {
+    display: grid;
+    min-width: 0;
+}
+
+.sg-preview .modal-title {
+    overflow: hidden;
+    font-weight: 700;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--ix-green-700);
+}
+
+.sg-preview-level {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--ix-muted);
+}
+
+.sg-preview .btn-close {
+    align-self: flex-start;
+    margin-left: auto;
+}
+
+.sg-preview .modal-body {
+    padding: 18px 24px;
+    background: var(--ix-khaki-100);
+}
+
+.sg-preview .modal-footer {
+    gap: 10px;
+    padding: 12px 24px 18px;
+    border-top: 0;
+}
+
+.sg-preview-hint-text {
+    margin-right: auto;
+    font-size: 0.78rem;
+    color: var(--ix-muted);
+}
+
+.sg-preview .modal-footer .btn {
+    padding: 8px 18px;
+    font-weight: 600;
+    border-radius: 10px;
+}
+
+.sg-preview-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 160px;
+    font-weight: 600;
+    color: var(--ix-green-700);
+}
+
+.sg-preview-problem {
+    margin: 0;
+    padding: 14px 16px;
+    color: var(--ix-green-900);
+    background: var(--ix-white);
+    border: 1px solid var(--ix-border);
+    border-left: 4px solid var(--ix-khaki-500);
+    border-radius: 10px;
+}
+
+.sg-preview-sheet + .sg-preview-sheet {
+    margin-top: 22px;
+}
+
+.sg-preview-sheet-name {
+    margin: 0 0 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ix-green-700);
+}
+
+/* a wide sheet scrolls sideways inside its box, not the whole popup */
+.sg-preview-scroll {
+    overflow-x: auto;
+    background: var(--ix-white);
+    border: 1px solid var(--ix-border);
+    border-radius: 10px;
+}
+
+.sg-preview-table {
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    color: var(--ix-text);
+}
+
+.sg-preview-table td {
+    min-width: 48px;
+    max-width: 320px;
+    padding: 5px 9px;
+    vertical-align: top;
+    white-space: pre-line;      /* line breaks typed in a cell */
+    overflow-wrap: anywhere;
+    border: 1px solid #e4e9e2;
+}
+
+.sg-preview-table td.is-bold {
+    font-weight: 700;
+}
+
+.sg-preview-table td.is-center {
+    text-align: center;
+}
+
+.sg-preview-note {
+    margin: 8px 0 0;
+    font-size: 0.78rem;
+    color: var(--ix-muted);
 }
 
 /* ---------- Smaller screens ---------- */

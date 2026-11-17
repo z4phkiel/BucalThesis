@@ -122,6 +122,45 @@ document.addEventListener('DOMContentLoaded', function () {
         event.preventDefault();
     });
 
+    // Preview: clicking a stored file opens the popup with its contents, read on the server (preview_report_card)
+    const preview = document.getElementById('previewModal');
+    const previewBody = document.getElementById('previewBody');
+    const previewLoading = previewBody.innerHTML;
+    let previewRequest = 0;     // only the newest answer counts, if another file is opened meanwhile
+
+    preview.addEventListener('show.bs.modal', function (event) {
+        const file = event.relatedTarget;
+        const request = ++previewRequest;
+        document.getElementById('previewTitle').textContent = file.dataset.name;
+        document.getElementById('previewLevel').textContent = file.dataset.level;
+        document.getElementById('previewDownload').href = file.dataset.downloadUrl;
+        previewBody.innerHTML = previewLoading;
+        previewBody.setAttribute('aria-busy', 'true');
+
+        fetch(file.dataset.previewUrl, { cache: 'no-store' })
+            .then(function (res) {
+                if (res.status === 401) {
+                    window.location.reload();       // signed out meanwhile: the reload goes to sign in
+                    return new Promise(function () {});
+                }
+                if (!res.ok) {
+                    throw new Error('status ' + res.status);
+                }
+                return res.text();
+            })
+            .then(function (html) {
+                if (request === previewRequest) previewBody.innerHTML = html;
+            })
+            .catch(function () {
+                if (request === previewRequest) {
+                    previewBody.innerHTML = '<p class="sg-preview-problem">The preview could not be loaded. Close this and try again, or download the file.</p>';
+                }
+            })
+            .finally(function () {
+                if (request === previewRequest) previewBody.removeAttribute('aria-busy');
+            });
+    });
+
     // The Back button can bring this page back exactly as it was left, still showing "Uploading..."
     window.addEventListener('pageshow', function (event) {
         if (event.persisted) {

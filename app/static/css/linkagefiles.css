@@ -101,6 +101,28 @@
     color: #9ba595;
 }
 
+/* A required field left empty (linkages.js, in place of the browser's bubble): brick like the delete buttons,
+   with its message under it, as the Accounts popups mark a field. Bootstrap's own invalid red becomes the app's brick. */
+.main-content {
+    --bs-form-invalid-color: var(--lf-brick);
+    --bs-form-invalid-border-color: var(--lf-brick);
+}
+
+.main-content .form-control.is-invalid {
+    border-color: var(--lf-brick);
+}
+
+.main-content .form-control.is-invalid:focus {
+    border-color: var(--lf-brick);
+    box-shadow: 0 0 0 4px rgba(185, 28, 28, 0.15);
+}
+
+.main-content .invalid-feedback {
+    margin-top: 5px;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
 /* file picker button; its margins cancel the field's padding, so it fills the field's height */
 .main-content .form-control[type="file"]::file-selector-button {
     margin: -10px 14px -10px -14px;

@@ -13,6 +13,7 @@ import re
 import threading
 import time
 import zipfile
+import openpyxl
 from PIL import Image
 import os
 import io
@@ -1120,6 +1121,94 @@ def download_report_card(report_id):
         as_attachment=True,
         download_name=report.original_filename,
     )
+
+
+# PREVIEW: a report card's sheets as tables, so it can be read without downloading it (Grade Files' preview popup)
+PREVIEW_MAX_ROWS = 300
+PREVIEW_MAX_COLUMNS = 40
+# A report card unpacks to under 200 KB. A 10 MB .xlsx is zipped XML and can unpack to far more: a 2.8 MB file of
+# 600,000 cells (28 MB unpacked) took about 6 s and 230 MB to read, which holds up the whole app, so bigger ones
+# only download.
+PREVIEW_MAX_UNPACKED = 5 * 1024 * 1024
+
+
+def preview_text(cell):
+    """A cell's value as Excel would show it, near enough: whole numbers without .0, percentages and dates readable."""
+    value = cell.value
+    if value is None:
+        return ''
+    if isinstance(value, bool):
+        return 'TRUE' if value else 'FALSE'
+    if isinstance(value, date):     # datetime too
+        return f'{value:%b} {value.day}, {value.year}'
+    if isinstance(value, (int, float)):
+        if '%' in (cell.number_format or ''):
+            value *= 100
+        value = round(value, 2)
+        text = str(int(value)) if float(value).is_integer() else str(value)
+        return text + '%' if '%' in (cell.number_format or '') else text
+    return str(value)
+
+
+def sheet_preview(sheet):
+    """(rows, cut_off) of a sheet's used part, or None when it is empty. Each row is a list of cells
+    {text, rowspan, colspan, bold, center}; a cell inside a merged range is left out, its first cell spans it."""
+    rows_shown = min(sheet.max_row, PREVIEW_MAX_ROWS)
+    columns_shown = min(sheet.max_column, PREVIEW_MAX_COLUMNS)
+    filled = [(cell.row, cell.column) for row in sheet.iter_rows(max_row=rows_shown, max_col=columns_shown)
+              for cell in row if cell.value not in (None, '')]
+    if not filled:
+        return None
+    last_row = max(row for row, _ in filled)
+    last_column = max(column for _, column in filled)
+
+    spans, covered = {}, set()
+    for merged in sheet.merged_cells.ranges:
+        if merged.min_row > last_row or merged.min_col > last_column:
+            continue
+        bottom, right = min(merged.max_row, last_row), min(merged.max_col, last_column)
+        spans[(merged.min_row, merged.min_col)] = (bottom - merged.min_row + 1, right - merged.min_col + 1)
+        covered.update((r, c) for r in range(merged.min_row, bottom + 1) for c in range(merged.min_col, right + 1))
+        covered.discard((merged.min_row, merged.min_col))
+
+    rows = []
+    for row in sheet.iter_rows(max_row=last_row, max_col=last_column):
+        cells = []
+        for cell in row:
+            if (cell.row, cell.column) in covered:
+                continue
+            rowspan, colspan = spans.get((cell.row, cell.column), (1, 1))
+            cells.append({'text': preview_text(cell), 'rowspan': rowspan, 'colspan': colspan,
+                          'bold': bool(cell.font.b), 'center': cell.alignment.horizontal in ('center', 'centerContinuous')})
+        rows.append(cells)
+    return rows, sheet.max_row > PREVIEW_MAX_ROWS or sheet.max_column > PREVIEW_MAX_COLUMNS
+
+
+@main_bp.route("/report-cards/<int:report_id>/preview")
+def preview_report_card(report_id):
+    """The report card's visible sheets as tables: a piece of HTML for the Grade Files popup, not a page."""
+    report = unless_archived(Grades.query.get_or_404(report_id))
+    sheets, problem = [], None
+    try:
+        if not report.file_data:
+            problem = 'This report card has no file stored.'
+        else:
+            with zipfile.ZipFile(BytesIO(report.file_data)) as package:
+                unpacked = sum(item.file_size for item in package.infolist())
+            if unpacked > PREVIEW_MAX_UNPACKED:
+                problem = 'This file is too large to preview.'
+            else:
+                # data_only: the values formulas last worked out in Excel, not the formulas themselves
+                book = openpyxl.load_workbook(BytesIO(report.file_data), data_only=True)
+                for sheet in book.worksheets:
+                    preview = sheet_preview(sheet) if sheet.sheet_state == 'visible' else None
+                    if preview:
+                        sheets.append((sheet.title, *preview))
+    except Exception:   # a damaged or unusual file: it can still be downloaded
+        current_app.logger.exception('Could not preview report card %s.', report_id)
+        problem = "This file can't be previewed."
+    return render_template('report_card_preview.html', sheets=sheets, problem=problem,
+                           max_rows=PREVIEW_MAX_ROWS, max_columns=PREVIEW_MAX_COLUMNS)
 
 @main_bp.route(
     "/report-cards/<int:report_id>/delete",

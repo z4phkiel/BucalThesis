@@ -185,3 +185,6 @@ cython_debug/
 .tests
 activity-log.md
 CLAUDE.md
+
+# Unit tests (run locally)
+tests/

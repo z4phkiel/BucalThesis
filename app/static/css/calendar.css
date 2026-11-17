@@ -15,29 +15,12 @@
   .cal-btn.primary:hover { background: #4f763e; }
   .cal-btn.danger { color: #b91c1c; border-color: #f0b4b4; }
  
-  .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
-  .cal-dow { text-align: center; font-weight: 600; font-size: .8rem; color: #6a7267; padding: 6px 0; }
-  .cal-empty { min-height: 92px; }
-  .cal-day {
-    min-height: 92px; border: 1px solid #e4e6e3; border-radius: 6px; padding: 4px 6px;
-    cursor: pointer; background: #fff; overflow: hidden;
-  }
-  .cal-day:hover { background: #f6f9f5; }
-  .cal-day .num { font-size: .85rem; font-weight: 600; display: inline-block; }
-  .cal-day.today { border: 2px solid #5d864b; background: #edf3ea; }
-  .cal-day.today .num {
-    background: #5d864b; color: #fff; border-radius: 50%;
-    width: 24px; height: 24px; line-height: 24px; text-align: center;
-  }
- 
+  .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+
   .chip {
     display: block; font-size: .7rem; padding: 1px 6px; border-radius: 4px; margin-top: 3px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .chip.holiday { background: #fee2e2; color: #b91c1c; }
-  .chip.event   { background: #e0eadc; color: #4f763e; }
-  .chip.exam    { background: #fef3c7; color: #b45309; }
-  .chip-more { font-size: .7rem; color: #6a7267; margin-top: 3px; }
  
   .side-section { margin-bottom: 20px; }
   .side-section h3 {
@@ -268,79 +251,128 @@
     border-color: var(--cl-brick);
 }
 
-/* ---------- Month grid ---------- */
+/* ---------- Month grid ----------
+   One connected grid like a wall calendar: the cells sit 1px apart on the border color, which draws the lines.
+   Every entry of a day is shown, so a week's row grows to fit its busiest day (calendar.js). */
 .cal-grid {
     --cl-tag-h: 22px;   /* height of every tag bar */
-    --cl-gap: 6px;
+    --cl-gap: 1px;      /* the grid lines */
     gap: var(--cl-gap);
+    background: var(--cl-border);
+    border: 1px solid var(--cl-border);
+    border-radius: 12px;
+    overflow: hidden;
 }
 
-/* weekday labels */
+/* weekday labels: one green band, like the app's table headers */
 .cal-dow {
     padding: 10px 4px;
     font-size: 0.74rem;
     font-weight: 700;
     letter-spacing: 0.08em;
+    text-align: center;
     text-transform: uppercase;
     color: #fff;
     background: var(--cl-green-700);
     border-bottom: 3px solid var(--cl-khaki-500);
-    border-radius: 8px;
+    box-shadow: 1px 0 0 var(--cl-green-700);    /* fills the grid line, so the band is unbroken */
 }
 
-/* blank cells before the 1st of the month */
+/* past the years the calendar covers */
 .cal-empty {
-    height: 120px;
-    min-height: 0;
+    min-height: 118px;
+    background: #fafbf9;
 }
 
-/* day cell: same fixed size, number on top, tag bars stacked in a grid */
+/* day cell: number top left, then one row per tag bar */
 .cal-day {
-    --cl-inset: 9px;   /* padding + border: how far a multi-day bar reaches to the cell edge */
-    overflow: visible;
+    --cl-inset: 7px;            /* side padding: how far a multi-day bar reaches to the cell edge */
+    --cl-day-bg: #fff;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: 24px;
+    grid-template-rows: 26px;
     grid-auto-rows: var(--cl-tag-h);
     align-content: start;
-    justify-items: stretch;
-    gap: 4px;
-    height: 120px;
-    min-height: 0;
-    padding: 8px;
+    gap: 3px;
+    min-height: 118px;
+    padding: 6px var(--cl-inset) 8px;
+    overflow: visible;
     font-size: 0.85rem;
-    text-align: center;
     color: var(--cl-text);
-    background: #fff;
-    border: 1px solid var(--cl-border);
-    border-radius: 10px;
-    transition: background-color 0.15s, border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+    background: var(--cl-day-bg);
+    cursor: pointer;
+    transition: background-color 0.15s;
 }
 
-.cal-day:hover {
+.cal-grid:not(.is-inactive) .cal-day:hover {
     background: var(--cl-khaki-100);
-    border-color: var(--cl-khaki-500);
-    transform: translateY(-1px);
-    box-shadow: 0 8px 16px -8px rgba(53, 90, 37, 0.35);
+}
+
+.cal-day:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--cl-green-500);
 }
 
 .cal-day .num {
-    justify-self: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    justify-self: start;
+    min-width: 26px;
+    height: 26px;
+    padding: 0 4px;
     font-weight: 700;
     color: var(--cl-green-700);
+    border-radius: 999px;
+}
+
+/* the days of the months before and after */
+.cal-day.is-outside {
+    --cl-day-bg: #fafbf9;
+}
+
+.cal-day.is-outside .num {
+    font-weight: 600;
+    color: var(--cl-muted);
 }
 
 .cal-day.today {
-    --cl-inset: 10px;
-    background: #edf3ea;
-    border: 2px solid var(--cl-green-500);
-    box-shadow: 0 0 0 3px rgba(93, 134, 75, 0.15);
+    --cl-day-bg: #edf3ea;
 }
 
 .cal-day.today .num {
     color: #fff;
     background: var(--cl-green-600);
 }
+
+/* what each tag color means, above the grid (the bars show only the title) */
+.cal-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    margin: -4px 0 14px;
+    padding: 0;
+    list-style: none;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--cl-muted);
+}
+
+.cal-legend li {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.cal-legend .swatch {
+    width: 18px;
+    height: 12px;
+    border-radius: 3px;
+}
+
+.swatch.holiday { background: #fde68a; border-left: 3px solid #f59e0b; }
+.swatch.event   { background: #e0eadc; border-left: 3px solid var(--cl-green-500); }
+.swatch.exam    { background: #fee2e2; border-left: 3px solid var(--cl-brick); }
 
 /* ---------- Tags ---------- */
 .chip {
@@ -367,14 +399,14 @@
     border-left: 3px solid var(--cl-brick);
 }
 
-/* inside the month grid every tag is the same size, centered */
+/* inside the month grid every tag is the same size, its title from the left */
 .cal-day .chip {
     width: 100%;
     height: var(--cl-tag-h);
     margin: 0;
-    padding: 0 8px;
+    padding: 0 6px;
     line-height: calc(var(--cl-tag-h) - 2px);
-    text-align: center;
+    text-align: left;
 }
 
 /* multi-day bars: one chip per day, stretched to meet its neighbours */
@@ -406,24 +438,66 @@
 .chip-label {
     position: absolute;
     top: 0;
-    left: 4px;
+    left: 6px;
     z-index: 1;
-    width: calc(var(--span) * 100% - 8px);
+    width: calc(var(--span) * 100% - 12px);
     overflow: hidden;
     text-overflow: ellipsis;
     pointer-events: none;
 }
 
-.cal-day .chip-more {
-    height: var(--cl-tag-h);
-    margin: 0;
-    font-weight: 600;
-    line-height: var(--cl-tag-h);
-    text-align: center;
-    color: var(--cl-green-600);
+/* ---------- Side panel ----------
+   The month takes the full width so the titles have room, with Current and Upcoming side by side below it.
+   A wide screen has room for both, so they go back to a column on the right. */
+.cal-wrap {
+    grid-template-columns: minmax(0, 1fr);
 }
 
-/* ---------- Side panel ---------- */
+.cal-side {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 28px;
+}
+
+.cal-side .side-section {
+    margin-bottom: 0;
+}
+
+.cal-side .side-section + .side-section {
+    padding-top: 0;
+    padding-left: 28px;
+    border-top: 0;
+    border-left: 1px dashed var(--cl-khaki-500);
+}
+
+@media (min-width: 1800px) {
+    .cal-wrap {
+        grid-template-columns: minmax(0, 1fr) 320px;
+    }
+
+    .cal-side {
+        display: block;
+    }
+
+    .cal-side .side-section + .side-section {
+        margin-top: 20px;
+        padding: 20px 0 0;
+        border-top: 1px dashed var(--cl-khaki-500);
+        border-left: 0;
+    }
+}
+
+@media (max-width: 900px) {
+    .cal-side {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .cal-side .side-section + .side-section {
+        padding: 20px 0 0;
+        border-top: 1px dashed var(--cl-khaki-500);
+        border-left: 0;
+    }
+}
 .side-section + .side-section {
     padding-top: 20px;
     border-top: 1px dashed var(--cl-khaki-500);
@@ -583,30 +657,24 @@
 
     .cal-grid {
         --cl-tag-h: 15px;
-        --cl-gap: 4px;
     }
 
     .cal-day,
     .cal-empty {
-        height: 84px;
+        min-height: 84px;
     }
 
     .cal-day {
-        --cl-inset: 5px;
+        --cl-inset: 4px;
         grid-template-rows: 20px;
         gap: 3px;
-        padding: 4px;
+        padding: 4px var(--cl-inset);
         font-size: 0.72rem;
     }
 
-    .cal-day.today {
-        --cl-inset: 6px;
-    }
-
-    .cal-day.today .num {
-        width: 20px;
+    .cal-day .num {
+        min-width: 20px;
         height: 20px;
-        line-height: 20px;
     }
 
     .cal-day .chip {
@@ -627,20 +695,6 @@
 /* ---------- While the events load (or if they could not be loaded) ---------- */
 .cal-grid.is-inactive .cal-day {
     cursor: default;
-}
-
-.cal-grid.is-inactive .cal-day:hover {
-    transform: none;
-}
-
-.cal-grid.is-inactive .cal-day:not(.today):hover {
-    background: #fff;
-    border-color: var(--cl-border);
-    box-shadow: none;
-}
-
-.cal-grid.is-inactive .cal-day.today:hover {
-    box-shadow: 0 0 0 3px rgba(93, 134, 75, 0.15);
 }
 
 .cal-day .skel-chip {
