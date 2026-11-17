@@ -64,8 +64,9 @@ def _forecast_frame(metrics_oldest_first):
     df[METRIC_FIELDS] = df[METRIC_FIELDS].apply(pd.to_numeric, errors='coerce')
     df['start_year'] = df['school_year'].str.split('-').str[0].str.strip().astype(int)
 
-    # One row per calendar year, so shift() can't pair non-consecutive years. Blank rows sort first, so a duplicate keeps its submitted row
-    df = df.sort_values('enrollee_count', na_position='first', kind='stable')
+    # One row per calendar year, so shift() can't pair non-consecutive years. Blank rows sort first, so a duplicate keeps
+    # its submitted row; of two submitted rows the later entry (higher id) is kept, since it is the correction
+    df = df.sort_values('id').sort_values('enrollee_count', key=pd.notna, kind='stable')
     df = df.drop_duplicates('start_year', keep='last').set_index('start_year').sort_index()
     df = df.reindex(range(df.index.min(), df.index.max() + 1))
 
@@ -149,6 +150,7 @@ def forecast_values(metrics_oldest_first, current_start_year):
     actual_count = None
     range_low = None
     range_high = None
+    forecast_inputs = None
     tests = []
     trained_years = 0
     scores = dict.fromkeys(['mape', 'baseline_mape', 'count_only_mape', 'average_difference', 'r2_score', 'tested_years',
@@ -201,6 +203,7 @@ def forecast_values(metrics_oldest_first, current_start_year):
 
                 model = _new_forecast_model().fit(X, y)
                 pred_next_year = _predicted_count(model, df.loc[[anchor], features])
+                forecast_inputs = {name: float(df.loc[anchor, name]) for name in features}    # for the forecast record
                 range_low = max(0, pred_next_year - scores['range_margin'])
                 range_high = pred_next_year + scores['range_margin']
 
@@ -229,6 +232,7 @@ def forecast_values(metrics_oldest_first, current_start_year):
         'actual_count': actual_count,
         'range_low': range_low,
         'range_high': range_high,
+        'forecast_inputs': forecast_inputs,
         'tests': tests,
         'trained_years': trained_years,
         **scores,

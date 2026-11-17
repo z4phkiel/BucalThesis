@@ -9,6 +9,9 @@
 {% set back_link %}<a href="{{ url_for('main.index') }}" class="btn btn-sm metric-btn-ghost">Back to dashboard</a>{% endset %}
 {% set note %}{% if forecast_note or forecast_warning %}<div class="alert alert-warning mb-0" role="status">{{ forecast_note or forecast_warning }}</div>{% endif %}{% endset %}
 
+{# Its Activity Log tab has every edit to the yearly metrics and each forecast the dashboard showed (record_forecast) #}
+{% from 'activity_tabs.html' import activity_tabs with context %}
+{% call activity_tabs('metrics', 'Statistics') %}
 <div id="statisticsPage">
     {% if years %}
     <div class="stat-hero">
@@ -196,6 +199,7 @@
     </div>
     {% endif %}
 </div>
+{% endcall %}
 {% endblock %}
 
 {% block scripts %}

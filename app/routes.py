@@ -56,12 +56,15 @@ def unless_archived(item):
 
 
 # ACTIVITY LOG
-# Every add (POST), change (UPDATE) and delete (DELETE) on the Masterlist, Calendar and Linkage/Files.
+# Every add (POST), change (UPDATE) and delete (DELETE) on the Masterlist, Calendar, Linkage/Files and yearly metrics,
+# and each forecast the dashboard showed (record_forecast).
 # The sidebar's bell opens a card with the latest entries (/activity-log). Each of those pages also has an
 # Activity Log tab (/activity-log/<area>) with every entry's details: the item's values, or what changed.
+# The yearly metrics' tab is on the statistics page.
 
-ACTIVITY_AREAS = {'masterlist': 'Masterlist', 'calendar': 'Calendar', 'linkage': 'Linkage/Files'}
-ACTIVITY_PAGES = {'masterlist': 'main.enrolled', 'calendar': 'main.calendar', 'linkage': 'main.linkagefiles'}
+ACTIVITY_AREAS = {'masterlist': 'Masterlist', 'calendar': 'Calendar', 'linkage': 'Linkage/Files', 'metrics': 'Yearly Metrics'}
+ACTIVITY_PAGES = {'masterlist': 'main.enrolled', 'calendar': 'main.calendar', 'linkage': 'main.linkagefiles',
+                  'metrics': 'main.statistics'}
 ACTIVITY_SHOWN = 30
 NAME_IN_LOG_LENGTH = 60
 VALUE_IN_LOG_LENGTH = 200
@@ -478,11 +481,73 @@ def update_metric(metric_id):
     if error:
         return {'error': error}, 400
 
+    before = metric_snapshot(metric)
     for field, value in values.items():
         setattr(metric, field, value)
 
+    # The edit history of the figures the forecast is built on. A year is all or nothing, so blank before means submitted now.
+    changes = log_changes(before, metric_snapshot(metric))
+    if changes:
+        if not any(before.values()):
+            log_activity('metrics', 'POST', f'Submitted the yearly metrics of S.Y. {metric.school_year}', changes)
+        elif values['enrollee_count'] is None:
+            log_activity('metrics', 'DELETE', f'Cleared the yearly metrics of S.Y. {metric.school_year}', changes)
+        else:
+            log_activity('metrics', 'UPDATE', f'Edited the yearly metrics of S.Y. {metric.school_year}', changes)
     db.session.commit()
     return {'success': True}
+
+
+def plain_number(value):
+    """A metric as the log shows it: blank when not submitted, and 410 or 92.5, never 410.0."""
+    if value is None:
+        return ''
+    return str(int(value)) if float(value).is_integer() else str(value)
+
+
+def metric_snapshot(metric):
+    """{label: value} of a year's metrics, for the activity log."""
+    return {field.replace('_', ' ').capitalize(): plain_number(getattr(metric, field)) for field in METRIC_FIELDS}
+
+
+FORECAST_LOG_START = 'Forecast for S.Y. '
+
+
+def record_forecast(forecast):
+    """Keeps what the dashboard showed: a forecast is logged (by "System", under Yearly Metrics) the first time it is
+    seen, and again whenever its number, range, inputs or scores change, with the old values beside the new. The
+    pages recompute the forecast from today's metrics, so without this an edit to an old year would silently rewrite
+    what was predicted. A failure never breaks the page being opened."""
+    if forecast['pred_next_year'] is None:
+        return
+    inputs = forecast['forecast_inputs']
+    shown = {
+        'School year': forecast['target_year'],
+        'Forecast': f"{forecast['pred_next_year']} enrollees",
+        'Likely range': f"{forecast['range_low']} to {forecast['range_high']}",
+        'Based on': (f"S.Y. {forecast['based_on_year']}: {plain_number(inputs['enrollee_count'])} enrollees, "
+                     f"retention {plain_number(inputs['retention_rate'])}%, "
+                     f"cohort survival {plain_number(inputs['cohort_survival_rate'])}%"),
+        'Years learned from': str(forecast['trained_years']),
+        'Average miss': f"{forecast['mape']}% across {forecast['tested_years']} past years",
+        'Best on past years': forecast['best_method'],
+    }
+    try:
+        last = (ActivityLog.query.filter_by(area='metrics', username='System')
+                .filter(ActivityLog.description.startswith(FORECAST_LOG_START)).order_by(ActivityLog.id.desc()).first())
+        before = {label: new for label, old, new in last.details} if last else {}
+        if before == shown:
+            return
+        # Every value is listed, changed or not, so the next comparison has the whole forecast to compare with
+        # shortcut: two people opening the dashboard at the same moment after an edit can log the same forecast twice;
+        # harmless, add a lock or a unique key if the log is ever counted
+        log_activity('metrics', 'UPDATE' if last else 'POST',
+                     f"{FORECAST_LOG_START}{shown['School year']}: {shown['Forecast']}, likely {shown['Likely range']}",
+                     [[label, before.get(label, ''), value] for label, value in shown.items()], username='System')
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception('Could not record the forecast.')
 
 
 
@@ -517,15 +582,18 @@ def dashboard_data():
                      for h in cached_holidays() if h['date'] <= week_end.isoformat() and h['end_date'] >= today.isoformat()]
     week_events.sort(key=lambda e: e.event_date)    # stable: on the same day the school's own entries come first
 
+    forecast = forecast_values(all_metrics_asc, get_current_start_year())
+    record_forecast(forecast)
     return render_template('dashboard_data.html', metrics=metrics, recent_students=recent_students,
-                           today=today, week_end=week_end, week_events=week_events,
-                           **forecast_values(all_metrics_asc, get_current_start_year()))
+                           today=today, week_end=week_end, week_events=week_events, **forecast)
 
 
 @main_bp.route("/statistics")
 def statistics():
     metrics = YearlyMetric.query.order_by(YearlyMetric.school_year.asc()).all()
-    return render_template('statistics.html', **prediction_history(metrics, get_current_start_year()))
+    history = prediction_history(metrics, get_current_start_year())
+    record_forecast(history)    # this page shows the forecast too
+    return render_template('statistics.html', **history)
 
 
 @main_bp.route("/statistics/abnormal-year", methods=['POST'])
@@ -540,6 +608,10 @@ def mark_abnormal_year():
     if len(reason) > MAX_REASON_LENGTH:
         flash(f'The reason must be {MAX_REASON_LENGTH} characters or fewer.', 'danger')
     else:
+        if (metric.abnormal_reason or '') != reason:
+            log_activity('metrics', 'UPDATE',
+                         f'Marked S.Y. {metric.school_year} as ' + ('an abnormal year' if reason else 'a normal year again'),
+                         [['Abnormal reason', metric.abnormal_reason or '', reason]])
         metric.abnormal_reason = reason or None
         db.session.commit()
         flash(f'S.Y. {metric.school_year} is marked abnormal and left out of the forecast.' if reason

@@ -53,7 +53,7 @@
 </div>
 {% endmacro %}
 
-{# The Masterlist, Calendar and Linkage/Files tab strip (activity_tabs.html). .page-tabs is in activity-log.css,
+{# The Masterlist, Calendar, Linkage/Files and statistics tab strip (activity_tabs.html). .page-tabs is in activity-log.css,
    which no page stylesheet restyles, so the placeholder uses the real look. #}
 {% macro page_tabs(main_label) %}
 {% if can('view_activity') %}
@@ -114,6 +114,7 @@
 
 <template data-skeleton-path="{{ url_for('main.statistics') }}">
     <span class="visually-hidden">Loading the enrollment comparison</span>
+    {{ page_tabs('Statistics') }}
     <div class="skel-head">
         <div class="skel-title skel-title-stat">Predicted vs Actual Enrollment</div>
         <span class="skel skel-stat-button"></span>

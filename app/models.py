@@ -139,7 +139,7 @@ class ActivityLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     created_at = db.Column(db.DateTime, default=utc_now, nullable=False)
     username = db.Column(db.String(50), nullable=False)     # a copy, so the entry still says who after the account is gone
-    area = db.Column(db.String(20), nullable=False)         # masterlist / calendar / linkage
+    area = db.Column(db.String(20), nullable=False)         # masterlist / calendar / linkage / metrics
     action = db.Column(db.String(10), nullable=False)       # POST / UPDATE / DELETE
     description = db.Column(db.String(255), nullable=False)
     details = db.Column(db.JSON, nullable=True)       # [[label, old value, new value], ...]; NULL on entries made before details were kept
