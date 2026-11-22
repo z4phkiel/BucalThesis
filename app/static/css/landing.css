@@ -533,6 +533,33 @@ a { color: inherit; }
     .btn { transition: none; }
 }
 
+/* ---------- Scroll reveal ---------- */
+/* landing.js adds .reveal, then .is-revealed the first time the element scrolls into view.
+   Without the script, or with reduced motion, everything just shows in place. */
+@media (prefers-reduced-motion: no-preference) {
+    .reveal {
+        opacity: 0;
+        translate: -48px 0;     /* heading lines slide in from the left */
+        transition: opacity 0.9s, translate 0.9s, scale 0.9s;
+        transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);     /* strong ease-out: quick start, long gentle stop */
+    }
+
+    .card.reveal {
+        translate: 0 40px;      /* cards rise and grow into place */
+        scale: 0.92;
+    }
+
+    /* Cards in a row, and the heading lines, arrive one after another */
+    .reveal:nth-child(2) { transition-delay: 0.12s; }
+    .reveal:nth-child(3) { transition-delay: 0.24s; }
+
+    .reveal.is-revealed {
+        opacity: 1;
+        translate: none;
+        scale: none;
+    }
+}
+
 /* ==========================================================
    Hero background photo
    ========================================================== */
