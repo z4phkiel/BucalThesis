@@ -205,6 +205,61 @@ document.addEventListener('DOMContentLoaded', function () {
         (again || pagerList.querySelector('[aria-current]')).focus();
     });
 
+    // ---------- Delete: moves the student to the Archives without reloading, so the search, sorting and page stay ----------
+    function removeRow(row) {
+        const index = matches.indexOf(row);
+        const neighbour = matches[index + 1] || matches[index - 1];
+        rows.splice(rows.indexOf(row), 1);
+        sortData.delete(row);
+        row.remove();
+
+        // The # column counts in enrollment order, as the server numbered it
+        rows.slice().sort(compareBy('position', 1)).forEach(function (other, i) {
+            other.cells[0].textContent = i + 1;
+        });
+        if (!rows.length) {
+            noResults.cells[0].textContent = 'No enrolled students found.';
+        }
+        filterRows();
+        drawPage(currentPage);
+        fitToScreen();
+
+        // The clicked dots are gone: focus the next row's dots, or the first on this page, or the search
+        const visible = neighbour && !neighbour.hidden ? neighbour : matches.find(function (other) { return !other.hidden; });
+        (visible ? visible.querySelector('.student-actions') : search).focus();
+    }
+
+    frame.addEventListener('submit', function (event) {
+        const form = event.target.closest('form[data-archive]');
+        if (!form) {
+            return;
+        }
+        event.preventDefault();
+        const row = form.closest('tr');
+        confirmToast.ask({
+            title: form.dataset.archive,
+            opener: row.querySelector('.student-actions'),
+            onYes: function () {
+                return fetch(form.action, { method: 'POST', body: new FormData(form) }).then(function (response) {
+                    if (response.status === 401) {
+                        window.location.reload();       // signed out: the reload goes to sign in
+                        return new Promise(function () {});
+                    }
+                    if (!response.ok) {
+                        throw new Error(response.status);
+                    }
+                    return response.json();
+                }).then(function (reply) {
+                    removeRow(row);
+                    confirmToast.done(reply.message);
+                }).catch(function (error) {
+                    confirmToast.done('Could not move the student to the Archives. Please try again.', 'danger');
+                    throw error;        // the toast closes and focus goes back to the row's dots
+                });
+            },
+        });
+    });
+
     window.addEventListener('resize', fitToScreen);
 
     pager.hidden = false;

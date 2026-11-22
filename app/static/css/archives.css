@@ -25,6 +25,33 @@
     border-color: #f59e0b;
 }
 
+/* Students: the LRN in even-width digits, as on the Masterlist */
+.archives-lrn {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.03em;
+}
+
+/* a student's report cards: a list, one per line, each file after a small level pill like the time-left one */
+.archives-cards {
+    display: grid;
+    gap: 3px;
+    margin: 4px 0;
+    padding: 0;
+    list-style: none;
+}
+
+.archives-card-level {
+    display: inline-block;
+    margin-right: 4px;
+    padding: 0 7px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--lf-green-700);
+    background: var(--lf-khaki-100);
+    border: 1px solid var(--lf-khaki-400);
+    border-radius: 999px;
+}
+
 /* Restore in progress (archives.js): a cover over the whole row, like the Grade Files "Deleting..." cover.
    On top of the row, so no column changes width; the green edge marks it as the safe action. */
 tr.is-restoring {

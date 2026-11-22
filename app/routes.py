@@ -983,7 +983,11 @@ def archive_student(student_id):
     log_activity('masterlist', 'DELETE', f'Moved {full_name(student)} to the Archives',
                  log_changes({**log_snapshot(student, LOG_FIELDS[Enrollment]), 'Report cards': str(cards)}, {}))
     db.session.commit()
-    flash('Student moved to the Archives.', 'success')
+    message = f'Moved {full_name(student)} to the Archives.'
+    # The Masterlist's script (enrolled.js) removes the row itself, so the page keeps its search and page
+    if request.headers.get('Sec-Fetch-Mode', 'navigate') != 'navigate':
+        return {'message': message}
+    flash(message, 'success')
     return redirect(url_for('main.enrolled'))
 
 

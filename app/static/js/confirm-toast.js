@@ -1,7 +1,7 @@
 // A confirmation toast in place of the browser's confirm(), in the app's message stack (top right, above popups).
 // It asks, so it stays until answered; the success message after it closes itself like flash-messages.js.
 //   A form with data-confirm-toast="Question?" asks before it is sent (Linkage/Files, Grade Files).
-//   confirmToast.ask({ title, opener, onYes }) asks from a script (Calendar, Grade Files' Replace). onYes returns
+//   confirmToast.ask({ title, opener, onYes }) asks from a script (Calendar, Grade Files' Replace, Masterlist). onYes returns
 //   a promise (the toast waits for it, then closes) or nothing (a form that leaves the page: it stays "busy").
 //   Optional: note, yes, busy (the button's labels), icon ('archive' or 'replace'), onCancel.
 // Styled by .confirm-toast in index.css.
@@ -104,11 +104,11 @@ window.confirmToast = (function () {
         toast.querySelector('[data-confirm-yes]').focus();
     }
 
-    // A green message that closes itself, like the server's success messages
-    function done(text) {
+    // A green message that closes itself, like the server's success messages; kind 'danger' for a failure
+    function done(text, kind) {
         const message = document.createElement('div');
-        message.className = 'alert alert-success alert-dismissible fade show';
-        message.setAttribute('role', 'status');
+        message.className = `alert alert-${kind || 'success'} alert-dismissible fade show`;
+        message.setAttribute('role', kind === 'danger' ? 'alert' : 'status');
         message.textContent = text;
         message.insertAdjacentHTML('beforeend', '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>');
         stack().appendChild(message);

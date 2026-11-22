@@ -74,11 +74,17 @@
 <div id="archivesStatus" class="visually-hidden" role="status"></div>
 
 {% call(s) section('students', 'Students', students, ['Student', 'LRN', 'Grade Level', 'Report Cards'], 'name') %}
-<td><a href="{{ url_for('main.student_detail', student_id=s.id) }}" title="View enrollment form">{{ s.name or '—' }}</a></td>
-<td>{{ s.lrn_no or '—' }}</td>
+<td><a href="{{ url_for('main.student_detail', student_id=s.id) }}">{{ s.name or '—' }}<span class="visually-hidden">, view enrollment form</span></a></td>
+<td class="archives-lrn">{{ s.lrn_no or '—' }}</td>
 <td>{{ s.grade_level.replace('_', ' ') if s.grade_level else '—' }}</td>
 <td>
-    {% for r in s.report_cards %}<a class="d-block" href="{{ url_for('main.download_report_card', report_id=r.id) }}">{{ r.grade_level }}: {{ r.original_filename }}</a>{% else %}—{% endfor %}
+    {% if s.report_cards %}
+    <ul class="archives-cards">
+        {% for r in s.report_cards %}
+        <li><span class="archives-card-level">{{ r.grade_level }}</span> <a href="{{ url_for('main.download_report_card', report_id=r.id) }}">{{ r.original_filename }}</a></li>
+        {% endfor %}
+    </ul>
+    {% else %}—{% endif %}
 </td>
 {% endcall %}
 

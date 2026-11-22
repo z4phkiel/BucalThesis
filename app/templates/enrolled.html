@@ -77,7 +77,7 @@
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <form action="{{ url_for('main.archive_student', student_id=student.id) }}" method="POST"
-                                      data-confirm-toast="Move {{ full_name }}, with their enrollment form and report cards, to the Archives?">
+                                      data-archive="Move {{ full_name }}, with their enrollment form and report cards, to the Archives?">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="dropdown-item student-menu-danger">Delete</button>
                                 </form>
