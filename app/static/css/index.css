@@ -612,6 +612,101 @@
     .confirm-toast { animation: none; }
 }
 
+/* ---------- Log out window (dashboard.html): the popups' khaki top edge, with the confirm toast's buttons.
+   Scoped to its id, since linkagefiles.css styles .modal only on its own pages ---------- */
+#logoutModal .modal-dialog {
+    max-width: min(360px, calc(100% - 32px));
+    margin-inline: auto;
+}
+
+#logoutModal .modal-content {
+    align-items: center;
+    padding: 30px 28px 24px;
+    text-align: center;
+    color: var(--ix-text);
+    background: var(--ix-white);
+    border: 0;
+    border-top: 6px solid var(--ix-khaki-500);
+    border-radius: 18px;
+    box-shadow: 0 30px 60px -15px rgba(30, 48, 22, 0.55);
+}
+
+/* the popups' green backdrop; Bootstrap adds it at the end of <body>, after this window */
+#logoutModal ~ .modal-backdrop {
+    --bs-backdrop-bg: var(--ix-green-900);
+    --bs-backdrop-opacity: 0.55;
+}
+
+/* opens with a small pop instead of Bootstrap's slide down */
+#logoutModal.fade .modal-dialog {
+    transform: scale(0.94);
+    transition: transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.25);
+}
+
+#logoutModal.show .modal-dialog {
+    transform: none;
+}
+
+.logout-badge {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    margin-bottom: 14px;
+    background: #fef2f2;
+    border: 1.5px solid #fecaca;
+    border-radius: 50%;
+}
+
+.logout-badge svg {
+    width: 26px;
+    height: 26px;
+    fill: none;
+    stroke: var(--ix-brick);
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* the arrow steps out of the door once the window has opened */
+#logoutModal.show .logout-arrow {
+    animation: logout-arrow-out 0.5s 0.2s ease-in-out;
+}
+
+@keyframes logout-arrow-out {
+    50% { transform: translateX(3px); }
+}
+
+.logout-title {
+    margin: 0 0 4px;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--ix-green-700);
+}
+
+.logout-note {
+    margin: 0 0 20px;
+    font-size: 0.9rem;
+    color: var(--ix-muted);
+}
+
+.logout-acts {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.logout-acts .confirm-toast-btn {
+    flex: 1;
+    padding: 9px 14px;
+    text-decoration: none;      /* Log out is a link to /logout */
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #logoutModal.fade .modal-dialog { transition: none; }
+    #logoutModal.show .logout-arrow { animation: none; }
+}
+
 /* The layout keeps its scrollbar at all times (overflow-y-scroll on <html>, dashboard.html), so a popup must not get
    Bootstrap's padding for a scrollbar that would disappear: it narrowed every table by that width while open */
 html.overflow-y-scroll body.modal-open {

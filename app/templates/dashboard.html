@@ -76,11 +76,28 @@
                     </dl>
                 </div>
                 {% endif %}
-                <a href="{{ url_for('main.logout') }}" class="btn btn-danger w-100">
+                <button type="button" class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#logoutModal">
                     Logout
-                </a>
+                </button>
             </li>
         </ul>
+    </div>
+
+    {# Asks before signing out; Bootstrap gives focus back to the Logout button on Cancel or Escape #}
+    <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutTitle" aria-describedby="logoutNote" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <span class="logout-badge" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path class="logout-arrow" d="M16 17l5-5-5-5M21 12H9"/></svg>
+                </span>
+                <h2 class="logout-title" id="logoutTitle">Log out?</h2>
+                <p class="logout-note" id="logoutNote">You will need to sign in again to continue.</p>
+                <div class="logout-acts">
+                    <button type="button" class="confirm-toast-btn" data-bs-dismiss="modal">Cancel</button>
+                    <a href="{{ url_for('main.logout') }}" class="confirm-toast-btn is-danger">Log out</a>
+                </div>
+            </div>
+        </div>
     </div>
 
     {% if can('view_activity') %}
