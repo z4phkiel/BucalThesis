@@ -44,8 +44,8 @@
     opacity: 0;
 }
 
-/* The docked bar spreads under the sidebar's edge where the sidebar's 200px minimum is wider than
-   the page area's 15% margin, so the sidebar stays on top */
+/* The docked bar spreads to the page area's left edge, which meets the sidebar (index.css); should they
+   ever overlap, the sidebar stays on top */
 .sidebar {
     z-index: 101;
 }

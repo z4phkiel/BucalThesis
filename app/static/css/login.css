@@ -370,6 +370,44 @@ body {
     display: block;
 }
 
+/* ---------- An empty field on Sign In (login.js): brick border, icon and ring, a short shake, and the message
+   in the gap under the box, so nothing moves. Overrides hover and focus, which come earlier. ---------- */
+.field.is-invalid input,
+.field.is-invalid input:hover {
+    border-color: var(--danger-text);
+}
+
+.field.is-invalid input:focus {
+    border-color: var(--danger-text);
+    box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.18);
+}
+
+.field.is-invalid .field-icon {
+    stroke: var(--danger-text);
+}
+
+.field-error {
+    position: absolute;
+    top: calc(100% + 3px);
+    left: 2px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--danger-text);
+}
+
+/* the whole box (icon and eye button ride along), settling quickly: a nudge, not an alarm */
+.field.is-shaking {
+    animation: field-shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+@keyframes field-shake {
+    15% { transform: translateX(-5px); }
+    35% { transform: translateX(5px); }
+    55% { transform: translateX(-3px); }
+    75% { transform: translateX(2px); }
+}
+
 /* sits on the label's row, so showing it moves nothing */
 .caps-hint {
     position: absolute;
@@ -631,7 +669,8 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
     .login-shell,
-    .photo-dot.is-active::after {
+    .photo-dot.is-active::after,
+    .field.is-shaking {
         animation: none;
     }
 

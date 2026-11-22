@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, redirect, request, url_for, sessio
 from app.models import User, Enrollment, YearlyMetric, Grades, CalendarEvent, LinkItem, FileItem, PictureItem, ActivityLog, ROLES, SUPER_ADMIN, utc_now
 from app.permissions import NAV_PAGES, NAV_SECTIONS, NO_PERMISSION_NEEDED, assignable_roles, can, may_open
 from app.forecast import METRIC_FIELDS, forecast_values, prediction_history
+from sqlalchemy import or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import undefer
 from app import db
@@ -1882,6 +1883,10 @@ def purge_expired_archives():
     and one another request already deleted isn't logged twice. A failure never breaks the page being opened."""
     cutoff = utc_now() - timedelta(days=ARCHIVE_DAYS)
     try:
+        # Usually nothing has expired: one query to the cloud database answers that, instead of one per kind
+        if not db.session.scalar(select(or_(*(select(model.id).where(model.archived_at <= cutoff).exists()
+                                              for model, *_ in ARCHIVE_KINDS.values())))):
+            return
         for model, label, area, name_column in ARCHIVE_KINDS.values():
             columns = LOG_FIELDS[model]     # never a report card's file
             expired = model.query.filter(model.archived_at <= cutoff).with_entities(
@@ -1926,8 +1931,9 @@ def archives():
         Enrollment.archived_at,
     ).all()
     cards = {}
+    # No archived students, no query: each one is a round trip to the cloud database
     for card in active(Grades).filter(Grades.student_id.in_([s.id for s in students])).with_entities(
-            Grades.id, Grades.student_id, Grades.grade_level, Grades.original_filename).order_by(Grades.id):
+            Grades.id, Grades.student_id, Grades.grade_level, Grades.original_filename).order_by(Grades.id) if students else ():
         cards.setdefault(card.student_id, []).append(card)
     students = [SimpleNamespace(**s._asdict(), name=full_name(s), report_cards=cards.get(s.id, [])) for s in students]
 

@@ -2,9 +2,9 @@
     width: 15%;
     min-width: 200px;
 }
+/* starts where the sidebar ends: below a 1333px window its 200px minimum is wider than 15% */
 .main-content {
-    width: 85%;
-    margin-left: 15%;
+    margin-left: max(15%, 200px);
 }
 
 /* ---------- Palette ---------- */
@@ -112,6 +112,15 @@
     color: var(--ix-green-900);
     font-weight: 700;
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+}
+
+/* separates the admin pages from the daily ones; a role that sees neither gets no line. Inset like the
+   Logout button, in the logout line's green but stronger */
+.sidebar .nav-item:not(.nav-admin) + .nav-admin::before {
+    content: "";
+    display: block;
+    margin: 0.5rem 1rem;
+    border-top: 1px solid rgba(102, 151, 81, 0.65);
 }
 
 /* logout button */

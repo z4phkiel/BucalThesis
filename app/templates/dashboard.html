@@ -52,8 +52,9 @@
         <ul class="nav flex-column gap-1 flex-grow-1 text-center">
             {# aria-current="page" marks the page already open, and page-skeleton.js ignores plain clicks on it;
                "true" marks the sidebar page that the open page belongs to, which stays a working link #}
+            {# nav-admin: index.css draws a line above the first of these that this role can see #}
             {% for href, label, current, endpoint in nav_pages() %}
-            <li class="nav-item">
+            <li class="nav-item{% if endpoint in ('archives', 'accounts') %} nav-admin{% endif %}">
                 <a href="{{ href }}" class="nav-link"{% if current %} aria-current="{{ current }}"{% endif %}>
                     {{ nav_icon(endpoint) }}
                     <span>{{ label }}</span>

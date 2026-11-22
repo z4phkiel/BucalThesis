@@ -16,7 +16,41 @@ document.addEventListener('DOMContentLoaded', function () {
         button.innerHTML = original;
     }
 
-    form.addEventListener('submit', function () {
+    // An empty field turns red, shakes and says what's missing under it, instead of the browser's bubble.
+    // A password is never trimmed: spaces can be part of one. The server checks again.
+    function isEmpty(field) {
+        return field === password ? !field.value : !field.value.trim();
+    }
+
+    function mark(field) {
+        const box = field.closest('.field');
+        document.getElementById(field.getAttribute('aria-describedby')).textContent = field.dataset.required;
+        field.setAttribute('aria-invalid', 'true');
+        box.classList.add('is-invalid');
+        box.classList.remove('is-shaking');
+        void box.offsetWidth;           // restarts the shake on every try
+        box.classList.add('is-shaking');
+    }
+
+    function unmark(field) {
+        if (field.getAttribute('aria-invalid') !== 'true') return;
+        field.removeAttribute('aria-invalid');
+        field.closest('.field').classList.remove('is-invalid', 'is-shaking');
+        document.getElementById(field.getAttribute('aria-describedby')).textContent = '';
+    }
+
+    form.addEventListener('input', function (event) {
+        if (event.target.hasAttribute('required')) unmark(event.target);
+    });
+
+    form.addEventListener('submit', function (event) {
+        const empty = Array.from(form.querySelectorAll('[required]')).filter(isEmpty);
+        if (empty.length) {
+            event.preventDefault();
+            empty.forEach(mark);
+            empty[0].focus();
+            return;
+        }
         password.type = 'password';     // password managers only save what was sent from a password field
         button.disabled = true;
         button.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>Signing in…';
