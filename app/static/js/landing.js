@@ -13,3 +13,13 @@ document.querySelectorAll('.section-head > *, .card').forEach(function (item) {
     item.classList.add('reveal');
     revealObserver.observe(item);
 });
+
+// Scroll hint: once the visitor has scrolled down it has done its job, so it goes for good.
+// 120px matches the end of its fade in landing.css, so it is already invisible when removed.
+const scrollHint = document.querySelector('.scroll-hint');
+window.addEventListener('scroll', function hideScrollHint() {
+    if (window.scrollY >= 120) {
+        scrollHint.remove();
+        window.removeEventListener('scroll', hideScrollHint);
+    }
+}, { passive: true });

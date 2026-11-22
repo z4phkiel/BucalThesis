@@ -238,6 +238,71 @@ a { color: inherit; }
     gap: 14px;
 }
 
+/* Tells first-time visitors there is more below; also a link to About.
+   Sits just under the hero, in the white gap above About's heading. */
+.hero {
+    position: relative;
+}
+
+.scroll-hint {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 50%;
+    translate: -50% 0;
+    display: flex;
+    padding: 4px;
+    color: var(--green-600);
+    border-radius: 10px;
+    transition: color 0.15s;
+}
+
+.scroll-hint:hover {
+    color: var(--green-900);
+}
+
+.scroll-hint:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(102, 151, 81, 0.7);
+}
+
+/* Fades out over the first 120px of scrolling (landing.js then removes it; keep the two in step).
+   Opacity only, so it also runs with reduced motion. Unsupported browsers: it just scrolls away. */
+@keyframes hint-fade {
+    to {
+        opacity: 0;
+        visibility: hidden;
+    }
+}
+
+@supports ((animation-timeline: scroll()) and (animation-range: 0% 100%)) {
+    .scroll-hint {
+        animation: hint-fade linear both;
+        animation-timeline: scroll();
+        animation-range: 0 120px;
+    }
+}
+
+.scroll-hint svg {
+    width: 40px;
+    height: 40px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* 3 bounces (under 5 s) so it gets noticed without moving forever */
+@keyframes hint-bounce {
+    50% { translate: 0 6px; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .scroll-hint svg {
+        animation: hint-bounce 1.4s ease-in-out 1s 3;
+    }
+}
+
 /* ---------- Sections ---------- */
 .section {
     padding: 88px 0;
