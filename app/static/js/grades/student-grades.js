@@ -1,7 +1,7 @@
-// A student's grade files: checks a chosen or dropped file before it is uploaded,
-// and asks before a stored file is replaced or deleted.
+// A student's grade files: checks a chosen or dropped file before it is uploaded, and asks (in the shared
+// confirmation toast, confirm-toast.js) before a stored file is replaced. Delete asks through its form's data-confirm-toast.
 document.addEventListener('DOMContentLoaded', function () {
-    const MAX_BYTES = 10 * 1024 * 1024;     // MAX_REPORT_SIZE in routes.py
+    const MAX_BYTES = 10 * 1024 * 1024;     // MAX_FILE_SIZE in routes.py
 
     function showError(level, message) {
         const error = level.querySelector('.sg-error');
@@ -31,14 +31,37 @@ document.addEventListener('DOMContentLoaded', function () {
             problem = 'The file must be 10 MB or smaller.';
         }
         showError(level, problem);
-
-        const replacing = input.dataset.replace;
-        if (problem || (replacing && !confirm('Replace "' + replacing + '" with "' + file.name + '"?'))) {
+        if (problem) {
             input.value = '';
             return;
         }
-        setBusy(level, 'Uploading ' + file.name + '...');
-        input.form.submit();
+
+        function upload() {
+            setBusy(level, 'Uploading ' + file.name + '...');
+            input.form.submit();
+        }
+
+        const replacing = input.dataset.replace;
+        if (!replacing) {
+            upload();
+            return;
+        }
+        // Replacing overwrites the stored file (it does not go to the Archives), so the toast says so
+        confirmToast.ask({
+            title: 'Replace “' + replacing + '” with “' + file.name + '”?',
+            note: 'The current file is replaced for good. It does not go to the Archives.',
+            yes: 'Replace file',
+            busy: 'Uploading...',
+            icon: 'replace',
+            opener: input,
+            onYes: function () {
+                upload();
+                return Promise.resolve();   // the toast closes; the level's own "Uploading..." cover takes over
+            },
+            onCancel: function () {
+                input.value = '';
+            },
+        });
     }
 
     function hasFiles(event) {
@@ -47,6 +70,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.querySelectorAll('.sg-level').forEach(function (level) {
         const input = level.querySelector('.sg-file-input');
+        if (!input) {   // a role that only views grades gets no upload field
+            return;
+        }
         input.addEventListener('change', function () {
             sendFile(input);
         });
@@ -96,14 +122,43 @@ document.addEventListener('DOMContentLoaded', function () {
         event.preventDefault();
     });
 
-    document.querySelectorAll('form[data-confirm]').forEach(function (form) {
-        form.addEventListener('submit', function (event) {
-            if (!confirm(form.dataset.confirm)) {
-                event.preventDefault();
-                return;
-            }
-            setBusy(form.closest('.sg-level'), 'Deleting...');
-        });
+    // Preview: clicking a stored file opens the popup with its contents, read on the server (preview_report_card)
+    const preview = document.getElementById('previewModal');
+    const previewBody = document.getElementById('previewBody');
+    const previewLoading = previewBody.innerHTML;
+    let previewRequest = 0;     // only the newest answer counts, if another file is opened meanwhile
+
+    preview.addEventListener('show.bs.modal', function (event) {
+        const file = event.relatedTarget;
+        const request = ++previewRequest;
+        document.getElementById('previewTitle').textContent = file.dataset.name;
+        document.getElementById('previewLevel').textContent = file.dataset.level;
+        document.getElementById('previewDownload').href = file.dataset.downloadUrl;
+        previewBody.innerHTML = previewLoading;
+        previewBody.setAttribute('aria-busy', 'true');
+
+        fetch(file.dataset.previewUrl, { cache: 'no-store' })
+            .then(function (res) {
+                if (res.status === 401) {
+                    window.location.reload();       // signed out meanwhile: the reload goes to sign in
+                    return new Promise(function () {});
+                }
+                if (!res.ok) {
+                    throw new Error('status ' + res.status);
+                }
+                return res.text();
+            })
+            .then(function (html) {
+                if (request === previewRequest) previewBody.innerHTML = html;
+            })
+            .catch(function () {
+                if (request === previewRequest) {
+                    previewBody.innerHTML = '<p class="sg-preview-problem">The preview could not be loaded. Close this and try again, or download the file.</p>';
+                }
+            })
+            .finally(function () {
+                if (request === previewRequest) previewBody.removeAttribute('aria-busy');
+            });
     });
 
     // The Back button can bring this page back exactly as it was left, still showing "Uploading..."

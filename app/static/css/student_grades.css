@@ -1,13 +1,6 @@
 /* A student's grade files: one Excel file per level, Kindergarten to Grade 6.
    Colors come from the --ix-* palette in index.css. */
 
-/* this page is reached from the Masterlist, so that stays highlighted (this file loads on this page only) */
-.sidebar .nav-item:nth-child(3) .nav-link {
-    background-color: var(--ix-khaki-500);
-    color: var(--ix-green-900);
-    font-weight: 700;
-}
-
 /* ---------- Icons ---------- */
 .sg-sprite {
     position: absolute;
@@ -72,7 +65,7 @@
     height: 70%;
     transform: translateY(-50%);
     border-radius: 6px;
-    background: linear-gradient(180deg, var(--ix-khaki-500), var(--ix-green-500));
+    background: var(--ix-khaki-500);
 }
 
 /* ---------- Student card ---------- */
@@ -86,21 +79,6 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 16px 20px;
-}
-
-.sg-avatar {
-    display: grid;
-    flex: 0 0 64px;
-    place-items: center;
-    height: 64px;
-    font-size: 1.35rem;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-    color: var(--ix-green-900);
-    background: linear-gradient(135deg, var(--ix-khaki-300), var(--ix-khaki-500));
-    border: 3px solid var(--ix-white);
-    border-radius: 50%;
-    box-shadow: 0 0 0 2px var(--ix-khaki-500);
 }
 
 .sg-identity {
@@ -190,7 +168,7 @@
     color: var(--ix-muted);
     text-decoration: none;
     background: var(--ix-white);
-    border: 2px dashed var(--ix-khaki-500);
+    border: 2px solid var(--ix-khaki-400);
     border-radius: 50%;
     transition: transform 0.15s;
 }
@@ -207,7 +185,7 @@
 }
 
 .sg-step:focus-visible {
-    outline: 3px solid rgba(79, 125, 69, 0.45);
+    outline: 3px solid rgba(93, 134, 75, 0.45);
     outline-offset: 2px;
 }
 
@@ -220,15 +198,15 @@
     font-size: 0.85rem;
     color: var(--ix-green-900);
     background: var(--ix-khaki-100);
-    border-top: 1px dashed var(--ix-khaki-500);
+    border-top: 1px solid var(--ix-border);
 }
 
 .sg-note .sg-icon {
     color: var(--ix-green-600);
 }
 
-/* ---------- Timeline of levels ---------- */
-.sg-timeline {
+/* ---------- The levels, one row each ---------- */
+.sg-levels {
     display: grid;
     gap: 12px;
     margin: 0;
@@ -237,58 +215,7 @@
 }
 
 .sg-level {
-    --sg-mark: 48px;
-    position: relative;
-    display: grid;
-    grid-template-columns: var(--sg-mark) minmax(0, 1fr);
-    gap: 16px;
-    align-items: center;
     scroll-margin-top: 24px;
-}
-
-/* Each level draws its part of the line, half the gap above and below it, so the line stays joined
-   whatever the rows' heights. Green through the levels that have a file. */
-.sg-level::before {
-    content: "";
-    position: absolute;
-    left: calc(var(--sg-mark) / 2 - 1px);
-    top: -6px;
-    bottom: -6px;
-    width: 2px;
-    background: var(--ix-khaki-300);
-}
-
-.sg-level:first-child::before {
-    top: 50%;
-}
-
-.sg-level:last-child::before {
-    bottom: 50%;
-}
-
-.sg-level.is-filed::before {
-    background: var(--ix-green-500);
-}
-
-.sg-mark {
-    position: relative;
-    display: grid;
-    place-items: center;
-    width: var(--sg-mark);
-    height: var(--sg-mark);
-    font-size: 1rem;
-    font-weight: 800;
-    color: var(--ix-green-700);
-    background: var(--ix-white);
-    border: 2px dashed var(--ix-khaki-500);
-    border-radius: 50%;
-    box-shadow: 0 0 0 4px var(--ix-page);
-}
-
-.is-filed .sg-mark {
-    color: #fff;
-    background: linear-gradient(135deg, var(--ix-green-600), var(--ix-green-700));
-    border: 2px solid var(--ix-khaki-500);
 }
 
 .sg-row {
@@ -302,7 +229,7 @@
     border: 1px solid var(--ix-border);
     border-left: 4px solid var(--ix-khaki-400);
     border-radius: 14px;
-    box-shadow: 0 8px 22px -14px rgba(36, 61, 40, 0.35);
+    box-shadow: 0 8px 22px -14px rgba(53, 90, 37, 0.35);
     transition: border-color 0.15s, box-shadow 0.15s;
 }
 
@@ -332,22 +259,72 @@
     text-transform: uppercase;
     color: var(--ix-muted);
     background: var(--ix-khaki-100);
-    border: 1px dashed var(--ix-khaki-500);
+    border: 1px solid var(--ix-border);
     border-radius: 999px;
 }
 
 .sg-status.is-filed {
     color: var(--ix-green-700);
-    background: #e8efe3;
-    border: 1px solid rgba(79, 125, 69, 0.35);
+    background: #edf3ea;
+    border: 1px solid rgba(93, 134, 75, 0.35);
 }
 
 /* ---------- A stored file ---------- */
+/* a stored file: a button that opens its preview; "Preview" shows on hover and keyboard focus */
 .sg-file {
     display: flex;
     align-items: center;
     gap: 12px;
     min-width: 0;
+    margin: -6px -8px;      /* the hover background reaches a little past the icon and text */
+    padding: 6px 8px;
+    font: inherit;
+    text-align: left;
+    color: inherit;
+    background: none;
+    border: 0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.sg-file:hover,
+.sg-file:focus-visible {
+    background: var(--ix-khaki-100);
+}
+
+.sg-file:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(93, 134, 75, 0.45);
+}
+
+.sg-file:hover .sg-file-name,
+.sg-file:focus-visible .sg-file-name {
+    color: var(--ix-green-700);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.sg-file-hint {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 5px;
+    margin-left: auto;
+    padding: 3px 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--ix-green-700);
+    background: var(--ix-white);
+    border: 1px solid var(--ix-khaki-500);
+    border-radius: 999px;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.sg-file:hover .sg-file-hint,
+.sg-file:focus-visible .sg-file-hint {
+    opacity: 1;
 }
 
 .sg-file-icon {
@@ -355,7 +332,7 @@
     height: 40px;
     padding: 8px;
     color: var(--ix-green-600);
-    background: #e8efe3;
+    background: #edf3ea;
     border-radius: 10px;
 }
 
@@ -399,7 +376,7 @@
 }
 
 .main-content .sg-actions .btn-primary {
-    box-shadow: 0 4px 10px rgba(47, 82, 51, 0.22);
+    box-shadow: 0 4px 10px rgba(67, 106, 51, 0.22);
 }
 
 .main-content .sg-btn-ghost {
@@ -415,20 +392,20 @@
 
 .main-content .sg-btn-danger {
     --bs-btn-color: var(--ix-brick);
-    --bs-btn-border-color: #d9a79e;
+    --bs-btn-border-color: #fca5a5;
     --bs-btn-hover-color: #fff;
     --bs-btn-hover-bg: var(--ix-brick);
     --bs-btn-hover-border-color: var(--ix-brick);
     --bs-btn-active-color: #fff;
-    --bs-btn-active-bg: #8c2f22;
-    --bs-btn-active-border-color: #8c2f22;
-    --bs-btn-focus-shadow-rgb: 163, 57, 42;
+    --bs-btn-active-bg: #991b1b;
+    --bs-btn-active-border-color: #991b1b;
+    --bs-btn-focus-shadow-rgb: 185, 28, 28;
 }
 
 /* the file inputs are hidden, so their focus shows on the button or drop zone they belong to */
 .sg-actions form:has(.sg-file-input:focus-visible) .sg-btn-ghost,
 .sg-drop:has(.sg-file-input:focus-visible) .sg-drop-zone {
-    outline: 3px solid rgba(79, 125, 69, 0.45);
+    outline: 3px solid rgba(93, 134, 75, 0.45);
     outline-offset: 2px;
 }
 
@@ -449,7 +426,7 @@
     text-align: center;
     color: var(--ix-muted);
     background: var(--ix-khaki-100);
-    border: 2px dashed var(--ix-khaki-500);
+    border: 1.5px solid var(--ix-khaki-400);
     border-radius: 12px;
     cursor: pointer;
     transition: background-color 0.15s, border-color 0.15s, color 0.15s;
@@ -467,20 +444,19 @@
 
 .sg-drop-zone:hover {
     color: var(--ix-text);
-    background: #eef3e9;
+    background: #edf3ea;
     border-color: var(--ix-green-500);
 }
 
 /* ---------- Dragging a file over a level ---------- */
 .sg-level.is-dragover .sg-row {
     border-color: var(--ix-green-500);
-    box-shadow: 0 0 0 4px rgba(79, 125, 69, 0.18);
+    box-shadow: 0 0 0 4px rgba(93, 134, 75, 0.18);
 }
 
 .sg-level.is-dragover .sg-drop-zone {
     color: var(--ix-green-900);
-    background: #e8efe3;
-    border-style: solid;
+    background: #edf3ea;
     border-color: var(--ix-green-500);
 }
 
@@ -492,8 +468,8 @@
     place-items: center;
     font-weight: 700;
     color: var(--ix-green-700);
-    background: rgba(232, 239, 227, 0.94);
-    border: 2px dashed var(--ix-green-500);
+    background: rgba(237, 243, 234, 0.94);
+    border: 2px solid var(--ix-green-500);
     border-radius: inherit;
 }
 
@@ -505,7 +481,7 @@
     font-size: 0.85rem;
     font-weight: 500;
     color: var(--ix-brick);
-    background: #fbeeea;
+    background: #fef2f2;
     border-radius: 8px;
 }
 
@@ -524,7 +500,7 @@
     padding: 0 16px;
     font-weight: 600;
     color: var(--ix-green-700);
-    background: rgba(253, 252, 247, 0.96);
+    background: rgba(255, 255, 255, 0.96);
     border-radius: inherit;
 }
 
@@ -563,6 +539,139 @@
     }
 }
 
+/* ---------- Preview popup ----------
+   The app's popup look (khaki top edge, rounded, green title), with the file's sheets as plain grid tables. */
+.sg-preview .modal-content {
+    border: 0;
+    border-top: 6px solid var(--ix-khaki-500);
+    border-radius: 18px;
+    box-shadow: 0 30px 60px -15px rgba(30, 48, 22, 0.55);
+}
+
+.sg-preview .modal-header {
+    gap: 12px;
+    padding: 18px 24px 14px;
+    border-bottom: 1px dashed var(--ix-khaki-500);
+}
+
+.sg-preview-heading {
+    display: grid;
+    min-width: 0;
+}
+
+.sg-preview .modal-title {
+    overflow: hidden;
+    font-weight: 700;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--ix-green-700);
+}
+
+.sg-preview-level {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--ix-muted);
+}
+
+.sg-preview .btn-close {
+    align-self: flex-start;
+    margin-left: auto;
+}
+
+.sg-preview .modal-body {
+    padding: 18px 24px;
+    background: var(--ix-khaki-100);
+}
+
+.sg-preview .modal-footer {
+    gap: 10px;
+    padding: 12px 24px 18px;
+    border-top: 0;
+}
+
+.sg-preview-hint-text {
+    margin-right: auto;
+    font-size: 0.78rem;
+    color: var(--ix-muted);
+}
+
+.sg-preview .modal-footer .btn {
+    padding: 8px 18px;
+    font-weight: 600;
+    border-radius: 10px;
+}
+
+.sg-preview-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 160px;
+    font-weight: 600;
+    color: var(--ix-green-700);
+}
+
+.sg-preview-problem {
+    margin: 0;
+    padding: 14px 16px;
+    color: var(--ix-green-900);
+    background: var(--ix-white);
+    border: 1px solid var(--ix-border);
+    border-left: 4px solid var(--ix-khaki-500);
+    border-radius: 10px;
+}
+
+.sg-preview-sheet + .sg-preview-sheet {
+    margin-top: 22px;
+}
+
+.sg-preview-sheet-name {
+    margin: 0 0 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ix-green-700);
+}
+
+/* a wide sheet scrolls sideways inside its box, not the whole popup */
+.sg-preview-scroll {
+    overflow-x: auto;
+    background: var(--ix-white);
+    border: 1px solid var(--ix-border);
+    border-radius: 10px;
+}
+
+.sg-preview-table {
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    color: var(--ix-text);
+}
+
+.sg-preview-table td {
+    min-width: 48px;
+    max-width: 320px;
+    padding: 5px 9px;
+    vertical-align: top;
+    white-space: pre-line;      /* line breaks typed in a cell */
+    overflow-wrap: anywhere;
+    border: 1px solid #e4e9e2;
+}
+
+.sg-preview-table td.is-bold {
+    font-weight: 700;
+}
+
+.sg-preview-table td.is-center {
+    text-align: center;
+}
+
+.sg-preview-note {
+    margin: 8px 0 0;
+    font-size: 0.78rem;
+    color: var(--ix-muted);
+}
+
 /* ---------- Smaller screens ---------- */
 @media (max-width: 991.98px) {
     .sg-row,
@@ -594,15 +703,6 @@
 
     .sg-note {
         padding: 10px 1rem;
-    }
-
-    .sg-level {
-        --sg-mark: 36px;
-        gap: 10px;
-    }
-
-    .sg-mark {
-        font-size: 0.85rem;
     }
 
     .sg-row {

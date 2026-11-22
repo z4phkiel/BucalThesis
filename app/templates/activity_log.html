@@ -6,7 +6,7 @@
     {% set short, day, clock = when(log.created_at) %}
     <li>
         <a class="activity-item" href="{{ url_for(pages[log.area]) }}#activity-{{ log.id }}">
-            <span class="activity-badge {{ log.action | lower }}">{{ log.action }}</span>
+            <span class="activity-operation">{{ log.action }}</span>
             <span class="dash-item-text">
                 <span class="activity-text">{{ log.description }}</span>
                 <span class="dash-item-meta">

@@ -53,24 +53,30 @@
 </div>
 {% endmacro %}
 
-{# The Masterlist, Calendar and Linkage/Files tab strip (activity_tabs.html). .page-tabs is in activity-log.css,
+{# The Masterlist, Calendar, Linkage/Files and statistics tab strip (activity_tabs.html). .page-tabs is in activity-log.css,
    which no page stylesheet restyles, so the placeholder uses the real look. #}
 {% macro page_tabs(main_label) %}
+{% if can('view_activity') %}
 <div class="page-tabs" aria-hidden="true">
     <span class="page-tab active">{{ main_label }}</span>
     <span class="page-tab">Activity Log</span>
 </div>
+{% endif %}
 {% endmacro %}
 
-{# Archives: one card per kind of item; each table ends with the same Archived and Actions columns #}
+{# A table's Actions column: the three dots, centered (row_menu.html), as on the Masterlist #}
+{% set row_menu_column = {'label': 'Actions', 'width': 'auto', 'align': 'center', 'bars': ['16px']} %}
+
+{# Archives: one card per kind of item; each table ends with the same Archived, Time left and Actions columns #}
 {% macro archive_section(title, columns) %}
 <div class="skel-card skel-card-linkage">
     <div class="skel-card-body">
         <div class="skel-section-title">{{ title }}</div>
         <div class="skel-table-frame">
             {{ table(columns + [
-                {'label': 'Archived', 'width': '14%', 'bars': ['62%', '54%']},
-                {'label': 'Actions', 'width': 'auto', 'align': 'end', 'pills': 2},
+                {'label': 'Archived', 'width': '19%', 'bars': ['62%', '54%']},
+                {'label': 'Time left', 'width': '17%', 'bars': ['58px', '52px']},
+                row_menu_column,
             ], 2, 'skel-table-tight skel-table-striped') }}
         </div>
     </div>
@@ -108,6 +114,7 @@
 
 <template data-skeleton-path="{{ url_for('main.statistics') }}">
     <span class="visually-hidden">Loading the enrollment comparison</span>
+    {{ page_tabs('Statistics') }}
     <div class="skel-head">
         <div class="skel-title skel-title-stat">Predicted vs Actual Enrollment</div>
         <span class="skel skel-stat-button"></span>
@@ -166,6 +173,11 @@
                     <span class="skel skel-pill" style="width: 82px"></span>
                 </div>
             </div>
+            <div class="skel-cal-legend">
+                <span class="skel" style="width: 72px"></span>
+                <span class="skel" style="width: 60px"></span>
+                <span class="skel" style="width: 56px"></span>
+            </div>
             <div class="skel-cal-grid">
                 {% for day in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] %}
                 <div class="skel-cal-dow">{{ day }}</div>
@@ -205,9 +217,9 @@
             {{ upload_form() }}
             <div class="skel-table-frame">
                 {{ table([
-                    {'label': 'Title', 'width': '25%', 'bars': ['64%', '78%', '56%']},
-                    {'label': 'Link', 'width': '40%', 'bars': ['72%', '58%', '66%']},
-                    {'label': 'Actions', 'width': 'auto', 'align': 'end', 'pills': 2},
+                    {'label': 'Title', 'width': '28%', 'bars': ['64%', '78%', '56%']},
+                    {'label': 'Link', 'width': '50%', 'bars': ['72%', '58%', '66%']},
+                    row_menu_column,
                 ], 3, 'skel-table-tight skel-table-striped') }}
             </div>
         </div>
@@ -219,11 +231,11 @@
             <span class="skel skel-help"></span>
             <div class="skel-table-frame">
                 {{ table([
-                    {'label': 'Title', 'width': '18%', 'bars': ['64%', '78%', '56%']},
-                    {'label': 'File', 'width': '15%', 'bars': ['72%', '58%', '66%']},
-                    {'label': 'Size', 'width': '9.5%', 'bars': ['62%', '54%']},
-                    {'label': 'Uploaded', 'width': '15.5%', 'bars': ['58%', '52%']},
-                    {'label': 'Actions', 'width': 'auto', 'align': 'end', 'pills': 3},
+                    {'label': 'Title', 'width': '31%', 'bars': ['64%', '78%', '56%']},
+                    {'label': 'File', 'width': '19%', 'bars': ['72%', '58%', '66%']},
+                    {'label': 'Size', 'width': '14.5%', 'bars': ['62%', '54%']},
+                    {'label': 'Uploaded', 'width': '20%', 'bars': ['58%', '52%']},
+                    row_menu_column,
                 ], 3, 'skel-table-tight skel-table-striped') }}
             </div>
         </div>
@@ -256,26 +268,88 @@
 <template data-skeleton-path="{{ url_for('main.archives') }}">
     <span class="visually-hidden">Loading the archives</span>
     <div class="skel-title skel-title-list">Archives</div>
-    <p class="skel-intro">Deleted items stay here until they are restored or deleted permanently.</p>
+    <p class="skel-intro">Deleted items stay here for 30 days, then are deleted permanently. Restore an item before then to keep it.</p>
     {% set file_columns = [
-        {'label': 'Title', 'width': '24%', 'bars': ['64%', '78%']},
-        {'label': 'File', 'width': '24%', 'bars': ['72%', '58%']},
-        {'label': 'Size', 'width': '10%', 'bars': ['62%', '54%']},
+        {'label': 'Title', 'width': '18%', 'bars': ['64%', '78%']},
+        {'label': 'File', 'width': '14%', 'bars': ['72%', '58%']},
+        {'label': 'Size', 'width': '12%', 'bars': ['62%', '54%']},
     ] %}
+    {{ archive_section('Students', [
+        {'label': 'Student', 'width': '18%', 'bars': ['64%', '78%']},
+        {'label': 'LRN', 'width': '12%', 'bars': ['72%', '58%']},
+        {'label': 'Grade Level', 'width': '11%', 'bars': ['52%', '45%']},
+        {'label': 'Report Cards', 'width': '16%', 'bars': ['72%', '58%']},
+    ]) }}
     {{ archive_section('Report Cards', [
-        {'label': 'Student', 'width': '24%', 'bars': ['64%', '78%']},
-        {'label': 'Grade Level', 'width': '14%', 'bars': ['52%', '45%']},
-        {'label': 'File', 'width': '20%', 'bars': ['72%', '58%']},
+        {'label': 'Student', 'width': '20%', 'bars': ['64%', '78%']},
+        {'label': 'Grade Level', 'width': '18%', 'bars': ['52%', '45%']},
+        {'label': 'File', 'width': '15%', 'bars': ['72%', '58%']},
     ]) }}
     {{ archive_section('Calendar Events', [
-        {'label': 'Description', 'width': '28%', 'bars': ['72%', '58%']},
+        {'label': 'Description', 'width': '22%', 'bars': ['72%', '58%']},
         {'label': 'Tag', 'width': '10%', 'bars': ['60%', '52%']},
-        {'label': 'Date', 'width': '20%', 'bars': ['64%', '70%']},
+        {'label': 'Date', 'width': '19%', 'bars': ['64%', '70%']},
     ]) }}
     {{ archive_section('Links', [
-        {'label': 'Title', 'width': '24%', 'bars': ['64%', '78%']},
-        {'label': 'Link', 'width': '34%', 'bars': ['72%', '58%']},
+        {'label': 'Title', 'width': '17%', 'bars': ['64%', '78%']},
+        {'label': 'Link', 'width': '29%', 'bars': ['72%', '58%']},
     ]) }}
     {{ archive_section('Files', file_columns) }}
     {{ archive_section('Pictures', file_columns) }}
+</template>
+
+{# A student's grade files (student_grades.html), at any /grades/<id> address; the sidebar keeps Masterlist marked.
+   The note and the level names mirror the real page; which levels have a file isn't known yet, so each row is bars. #}
+<template data-skeleton-prefix="{{ url_for('main.grades') }}/" data-skeleton-nav="{{ url_for('main.enrolled') }}">
+    <span class="visually-hidden">Loading the grade files</span>
+    <span class="skel skel-grades-back"></span>
+    <div class="skel-title skel-title-grades">Grade Files</div>
+    <div class="skel-card skel-grades-student">
+        <div class="skel-card-body">
+            <div class="skel-grades-identity">
+                <span class="skel skel-grades-name"></span>
+                <span class="skel skel-grades-lrn"></span>
+            </div>
+            <div class="skel-grades-progress">
+                <span class="skel skel-grades-count"></span>
+                <div class="skel-grades-steps">{% for step in range(7) %}<span class="skel skel-grades-step"></span>{% endfor %}</div>
+            </div>
+        </div>
+        {% if can('submit_grades') %}<div class="skel-grades-note"><span class="skel"></span></div>{% endif %}
+    </div>
+    <div class="skel-grades-levels">
+        {% for level in ['Kindergarten', 'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6'] %}
+        <div class="skel-grades-row">
+            <div>
+                <div class="skel-grades-level">{{ level }}</div>
+                <span class="skel skel-grades-status"></span>
+            </div>
+            <span class="skel skel-grades-file"></span>
+        </div>
+        {% endfor %}
+    </div>
+</template>
+
+{# The button and the Actions column (three dots, as on the Masterlist) follow the same permissions as accounts.html.
+   Column widths copy where the real table's columns land, with and without Actions. #}
+{% set account_actions = can('edit_accounts') or can('delete_accounts') %}
+<template data-skeleton-path="{{ url_for('main.accounts') }}">
+    <span class="visually-hidden">Loading the accounts</span>
+    <div class="skel-head skel-head-accounts">
+        <div class="skel-title skel-title-list">Accounts</div>
+        {% if can('create_accounts') %}<span class="skel skel-button skel-button-accounts"></span>{% endif %}
+    </div>
+    <p class="skel-intro">Accounts of the authorized personnel who can sign in to the system.</p>
+    <div class="skel-card skel-card-linkage">
+        <div class="skel-card-body">
+            <div class="skel-table-frame">
+                {{ table([
+                    {'label': 'Name', 'width': '28%' if account_actions else '38%', 'bars': ['64%', '78%', '56%', '70%']},
+                    {'label': 'Username', 'width': '24%' if account_actions else '27%', 'bars': ['58%', '70%', '50%']},
+                    {'label': 'Role', 'width': '30%' if account_actions else 'auto', 'bars': ['64px', '84px', '64px']},
+                ] + ([{'label': 'Actions', 'width': 'auto', 'align': 'center', 'bars': ['16px']}] if account_actions else []),
+                4, 'skel-table-tight skel-table-striped') }}
+            </div>
+        </div>
+    </div>
 </template>

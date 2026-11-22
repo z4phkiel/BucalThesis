@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bucal II Elementary School</title>
-    <meta name="description" content="Official website of Bucal II Elementary School. Visit our Facebook page for the latest school news and sign in to the school portal.">
+    <meta name="description" content="Official website of Bucal II Elementary School. Read our vision and mission, and visit our Facebook page for the latest school news.">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
 </head>
 <body>
@@ -19,7 +19,7 @@
 
             <nav class="site-nav" aria-label="Main">
                 <a href="#about">About</a>
-                <a href="#portal">School Management System</a>
+                <a href="#vision-mission">Vision and Mission</a>
             </nav>
 
             <a href="{{ url_for('main.login') }}" class="btn btn-login">Staff Login</a>
@@ -30,7 +30,7 @@
 
         <!-- ================= Hero ================= -->
         <section class="hero" id="home">
-            <div class="container hero-inner">
+            <div class="container">
                 <div class="hero-text">
                     <span class="eyebrow">DepEd Tayo &middot; BES 108039</span>
                     <h1>Welcome to <span>Bucal II Elementary School</span></h1>
@@ -39,7 +39,7 @@
                         <a href="https://www.facebook.com/DepEdTayoBES108039" class="btn btn-outline" target="_blank" rel="noopener noreferrer">Visit Our Facebook Page</a>
                     </div>
                 </div>
-
+            </div>
         </section>
 
         <!-- ================= About ================= -->
@@ -77,55 +77,24 @@
             </div>
         </section>
 
-        <!-- ================= School portal ================= -->
-        <section class="section section-tint" id="portal">
+        <!-- ================= Vision and Mission ================= -->
+        <section class="section section-tint" id="vision-mission">
             <div class="container">
                 <div class="section-head">
-                    <span class="kicker">For School Staff</span>
-                    <h2>School Management System</h2>
-                    <p>Our school management system keeps everyday school records in one place. Sign in to use it.</p>
+                    <span class="kicker">What We Stand For</span>
+                    <h2>Vision and Mission</h2>
+                    <p>The future we work toward for every learner, and how we get there.</p>
                 </div>
 
-                <div class="grid grid-5">
-                    <article class="card card-small">
-                        <div class="icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h7"/></svg>
-                        </div>
-                        <h3>Enrollment Form</h3>
-                        <p>Register new learners.</p>
+                <div class="grid grid-2">
+                    <article class="card card-statement">
+                        <h3>Vision</h3>
+                        <p>Bucal II Elementary School envisions a nurturing and dynamic learning institution that develops lifelong learners who are academically competent, morally upright, and socially responsible. The school aspires to empower every pupil with the knowledge, skills, and values necessary to become productive individuals who can positively contribute to their community and the nation. Through a culture of excellence, integrity, and collaboration, Bucal II Elementary School aims to inspire young minds to dream, lead, and succeed in an ever-changing world.</p>
                     </article>
-                    <article class="card card-small">
-                        <div class="icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 11l2 2 4-4"/></svg>
-                        </div>
-                        <h3>Masterlist</h3>
-                        <p>See enrolled students.</p>
+                    <article class="card card-statement">
+                        <h3>Mission</h3>
+                        <p>Bucal II Elementary School is committed to providing quality, inclusive, and learner-centered education that nurtures the holistic development of every child. The school strives to strengthen literacy, numeracy, and critical thinking through effective teaching strategies and engaging learning experiences. It fosters a safe, supportive, and motivating environment where learners are encouraged to develop their talents, leadership skills, and strong moral character. Furthermore, the school promotes active collaboration with parents, stakeholders, and the community to support programs and initiatives that enrich the learning journey of every pupil.</p>
                     </article>
-                    <article class="card card-small">
-                        <div class="icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
-                        </div>
-                        <h3>Dashboard</h3>
-                        <p>See next year’s predicted enrollment.</p>
-                    </article>
-                    <article class="card card-small">
-                        <div class="icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
-                        </div>
-                        <h3>Calendar</h3>
-                        <p>Holidays, events and exams.</p>
-                    </article>
-                    <article class="card card-small">
-                        <div class="icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1"/></svg>
-                        </div>
-                        <h3>Linkage/Files</h3>
-                        <p>Important links and files.</p>
-                    </article>
-                </div>
-
-                <div class="center">
-                    <a href="{{ url_for('main.login') }}" class="btn btn-green">Go to Staff Login</a>
                 </div>
             </div>
         </section>
@@ -140,10 +109,12 @@
                 <div>
                     <strong>Bucal II Elementary School</strong>
                     <span>Department of Education &middot; Republic of the Philippines</span>
+                    <address class="footer-address">Col. E. Riego de Dios / Barangay Bucal 2, Maragondon, Cavite, Philippines</address>
                 </div>
             </div>
         </div>
     </footer>
 
+    <script src="{{ url_for('static', filename='js/landing.js') }}"></script>
 </body>
 </html>

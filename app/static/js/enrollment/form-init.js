@@ -1,22 +1,13 @@
 document.addEventListener('DOMContentLoaded', function () {
     
     // ----------------------------------------------------
-    // 1. Auto-fill School Year (e.g., 2026-2027)
-    // ----------------------------------------------------
-    const schoolYearInput = document.getElementById('school_year');
-    if (schoolYearInput && !schoolYearInput.value) {    // a saved form keeps its own school year
-        const currentYear = new Date().getFullYear();
-        const nextYear = currentYear + 1;
-        schoolYearInput.value = `${currentYear}-${nextYear}`;
-    }
-
-    // ----------------------------------------------------
-    // 1.1 Populate "Last School Year Completed" Dropdown
+    // 1. Populate "Last School Year Completed" Dropdown
+    //    (the School Year box is filled by the server, which turns the year over on June 1)
     // ----------------------------------------------------
     const lastSchoolYearSelect = document.getElementById('last_school_year_completed');
     if (lastSchoolYearSelect) {
-        const currentYear = new Date().getFullYear();
-        const maxEndYear = currentYear - 1;
+        // The newest completed school year ends in the year the current one began, as the server checks
+        const maxEndYear = Number(lastSchoolYearSelect.dataset.maxEndYear);
         const minStartYear = 2001;
 
         lastSchoolYearSelect.innerHTML = '<option value="" disabled selected>Select School Year</option>';

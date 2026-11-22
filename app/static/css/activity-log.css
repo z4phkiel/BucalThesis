@@ -37,12 +37,36 @@
 .activity-toggle:hover,
 .activity-toggle[aria-expanded="true"] {
     color: var(--ix-green-900);
-    background: var(--ix-khaki-500);
+    background: var(--ix-khaki-300);
 }
 
 .activity-toggle:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(201, 185, 143, 0.55);
+    box-shadow: 0 0 0 3px rgba(102, 151, 81, 0.55);
+}
+
+/* ---------- Red dot: entries by other users not seen yet (activity-log.js sets has-unseen) ---------- */
+.activity-toggle.has-unseen::after {
+    content: "";
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    width: 12px;
+    height: 12px;
+    background: var(--ix-brick);
+    border: 2px solid #fff;     /* red and the sidebar's green are about as dark, so the ring keeps the dot visible */
+    border-radius: 50%;
+}
+
+.page-tab.has-unseen::after {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-left: 6px;
+    vertical-align: 1px;
+    background: var(--ix-brick);
+    border-radius: 50%;
 }
 
 /* ---------- Card: floats beside the sidebar, styled like the dashboard's cards ---------- */
@@ -60,7 +84,7 @@
     border: 1px solid var(--ix-border);
     border-top: 5px solid var(--ix-khaki-500);
     border-radius: 16px;
-    box-shadow: 0 24px 48px -12px rgba(20, 40, 25, 0.45);
+    box-shadow: 0 24px 48px -12px rgba(30, 48, 22, 0.45);
     animation: activity-in 0.15s ease-out;
 }
 
@@ -123,7 +147,7 @@
 .activity-filters button:focus-visible,
 .activity-retry:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(79, 125, 69, 0.3);
+    box-shadow: 0 0 0 3px rgba(93, 134, 75, 0.3);
 }
 
 .activity-body {
@@ -145,8 +169,9 @@
     margin-bottom: 10px;
 }
 
-/* ---------- Entries ---------- */
-.activity-item {
+/* ---------- Entries, and their loading rows (dashboard.html) ---------- */
+.activity-item,
+.activity-placeholder-item {
     display: flex;
     align-items: flex-start;
     gap: 10px;
@@ -168,24 +193,14 @@
 
 .activity-item:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(79, 125, 69, 0.3);
+    box-shadow: 0 0 0 3px rgba(93, 134, 75, 0.3);
 }
 
-/* POST / UPDATE / DELETE, in the calendar's tag colors */
-.activity-badge {
-    flex: 0 0 56px;
-    margin-top: 1px;
-    padding: 3px 0;
-    font-size: 0.6rem;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    text-align: center;
-    border-radius: 6px;
+/* POST / UPDATE / DELETE as plain text, in a column wide enough for UPDATE so the descriptions line up */
+.activity-operation {
+    flex: 0 0 60px;
+    font-size: 0.84rem;
 }
-
-.activity-badge.post   { color: var(--ix-green-700); background: #dfeadb; }
-.activity-badge.update { color: #6e5f2a; background: var(--ix-khaki-300); }
-.activity-badge.delete { color: var(--ix-brick); background: #f6e0da; }
 
 /* the whole description shows, over two or more lines if needed */
 .activity-text {
@@ -234,7 +249,7 @@ button.page-tab:hover {
 
 .page-tab:focus-visible {
     outline: none;
-    box-shadow: inset 0 0 0 2px rgba(79, 125, 69, 0.35);
+    box-shadow: inset 0 0 0 2px rgba(93, 134, 75, 0.35);
 }
 
 /* ---------- The Activity Log tab's card ---------- */
@@ -274,7 +289,7 @@ button.page-tab:hover {
     text-transform: uppercase;
     white-space: nowrap;
     color: #fff;
-    background: linear-gradient(135deg, var(--ix-green-600), var(--ix-green-700));
+    background: var(--ix-green-700);
     border-bottom: 3px solid var(--ix-khaki-500);
 }
 
@@ -315,9 +330,9 @@ button.page-tab:hover {
     overflow-wrap: anywhere;
 }
 
-.activity-table .activity-badge {
-    display: inline-block;
-    width: 56px;
+/* the placeholder's two lines in one cell (activity_tabs.html) */
+.activity-table .skel + .skel {
+    margin-top: 10px;
 }
 
 /* the values that were added, changed (old crossed out, new marked) or removed */
@@ -342,7 +357,7 @@ button.page-tab:hover {
 
 .activity-changes del {
     color: var(--ix-muted);
-    text-decoration-color: rgba(163, 57, 42, 0.6);
+    text-decoration-color: rgba(185, 28, 28, 0.6);
 }
 
 .activity-changes ins {
@@ -350,7 +365,7 @@ button.page-tab:hover {
     font-weight: 600;
     color: var(--ix-green-900);
     text-decoration: none;
-    background: #e8efe3;
+    background: #edf3ea;
     border-radius: 4px;
 }
 

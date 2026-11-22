@@ -34,7 +34,7 @@
     <li class="skel-dash-item">
         <span class="skel skel-dash-marker {{ 'is-square' if marker == 'square' }}"></span>
         <span class="skel-dash-text">
-            <span class="skel" style="width: {{ width }}"></span>
+            <span class="skel"{{ {'style': 'width: ' ~ width} | xmlattr }}></span>
             <span class="skel" style="width: 52%"></span>
         </span>
     </li>

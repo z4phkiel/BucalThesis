@@ -1,0 +1,14 @@
+{# A table row's actions: three dots that open a small menu, as on the Masterlist. The call block gives the menu's
+   <li> items. Fixed positioning lets the menu open past the table's edge. Styled by .row-actions and .row-menu in
+   linkagefiles.css; row-menu.js gives focus back to the dots when a popup opened from the menu closes. #}
+{% macro row_menu(label) %}
+<div class="dropdown">
+    <button type="button" class="row-actions" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}'
+            aria-expanded="false" aria-label="Actions for {{ label }}">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13" cy="8" r="1.5"/></svg>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end row-menu">
+        {{ caller() }}
+    </ul>
+</div>
+{% endmacro %}

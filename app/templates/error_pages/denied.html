@@ -1,0 +1,9 @@
+{% extends 'dashboard.html' %}
+
+{# Shown with a 403 when a signed-in role may not open a page or make a change (check_permission in routes.py) #}
+{% block content %}
+<h1 class="h3 mb-3">Not allowed</h1>
+<p class="text-muted">Your account's role cannot open this page or make this change. Ask a Super Admin if you need it.</p>
+{% endblock %}
+
+{% block scripts %}{% endblock %}

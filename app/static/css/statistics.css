@@ -1,15 +1,8 @@
 /* Chart colors were checked for colorblind separation and contrast against the card surface */
 #statisticsPage {
-    --stat-actual: #3b6f35;
-    --stat-predicted: #c0851a;
+    --stat-actual: #436a33;
+    --stat-predicted: #669751;
     --stat-peek: 52px;      /* how much of the table card shows at the bottom of the first screen */
-}
-
-/* this page belongs to the Dashboard section of the sidebar */
-.sidebar .nav-item:nth-child(1) .nav-link {
-    color: var(--ix-green-900);
-    font-weight: 700;
-    background-color: var(--ix-khaki-500);
 }
 
 /* ---------- First screen ----------
@@ -114,7 +107,7 @@
 
 .stat-stepper .form-select:focus {
     border-color: var(--ix-green-500);
-    box-shadow: 0 0 0 4px rgba(79, 125, 69, 0.18);
+    box-shadow: 0 0 0 4px rgba(93, 134, 75, 0.18);
 }
 
 .stat-step {
@@ -166,7 +159,7 @@
     background: var(--ix-white);
     border: 1px solid var(--ix-border);
     border-radius: 12px;
-    box-shadow: 0 8px 18px -12px rgba(36, 61, 40, 0.28);
+    box-shadow: 0 8px 18px -12px rgba(53, 90, 37, 0.28);
 }
 
 .stat-tile .stat-label,
@@ -192,7 +185,7 @@
 
 /* the difference is the point of the comparison, so it gets the page's strongest tile */
 .stat-tile-lead {
-    background: linear-gradient(135deg, var(--ix-green-600), var(--ix-green-900));
+    background: var(--ix-green-700);
     border: 0;
     border-bottom: 3px solid var(--ix-khaki-500);
 }
@@ -282,7 +275,7 @@
 }
 
 .stat-chart:focus-visible {
-    outline: 3px solid rgba(79, 125, 69, 0.45);
+    outline: 3px solid rgba(93, 134, 75, 0.45);
     outline-offset: 2px;
 }
 
@@ -400,7 +393,7 @@
     background: #fff;
     border: 1px solid var(--ix-border);
     border-radius: 10px;
-    box-shadow: 0 12px 28px -8px rgba(36, 61, 40, 0.45);
+    box-shadow: 0 12px 28px -8px rgba(53, 90, 37, 0.45);
 }
 
 .stat-tooltip[hidden] {
@@ -501,6 +494,30 @@
 
 .stat-year-btn:hover {
     text-decoration: underline;
+}
+
+/* ---------- Abnormal years form, under the table ---------- */
+.stat-abnormal {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--ix-khaki-500);
+}
+
+.stat-abnormal-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.stat-abnormal-fields .form-select {
+    flex: 0 1 16rem;
+    width: auto;
+}
+
+.stat-abnormal-fields .form-control {
+    flex: 1 1 14rem;
+    width: auto;
 }
 
 @media (max-width: 767.98px) {

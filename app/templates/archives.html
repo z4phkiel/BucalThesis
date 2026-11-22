@@ -1,19 +1,19 @@
 {% extends 'dashboard.html' %}
 
 {% block head %}
-{# Reuses the Linkage/Files title, tables, row buttons and popups. Linked in the head, not the page body,
-   because index.css marks the Linkage tab as the open page when linkagefiles.css is linked from the body. #}
+{# Reuses the Linkage/Files title, tables, row buttons and popups #}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/linkagefiles.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/archives.css') }}">
 {% endblock %}
 
 {% block content %}
+{% from 'row_menu.html' import row_menu %}
 {% macro size(bytes) -%}
 {% if bytes is none %}—{% elif bytes >= 1048576 %}{{ (bytes / 1048576) | round(1) }} MB{% else %}{{ (bytes / 1024) | round(1) }} KB{% endif %}
 {%- endmacro %}
 
-{# One card per kind of item. The caller fills in the item's own cells; the date and actions are the same for all.
-   name is the field the delete popup shows, so it is clear what is about to go. #}
+{# One card per kind of item. The caller fills in the item's own cells; the date, time left and actions are the same
+   for all. name is the field the delete popup shows, so it is clear what is about to go. #}
 {% macro section(kind, title, items, columns, name) %}
 <section class="card shadow-sm mb-3" aria-labelledby="{{ kind }}-title">
     <div class="card-body">
@@ -24,28 +24,41 @@
                     <tr>
                         {% for column in columns %}<th>{{ column }}</th>{% endfor %}
                         <th>Archived</th>
-                        <th class="text-end">Actions</th>
+                        <th>Time left</th>
+                        <th class="text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for item in items %}
+                    {% set days, goes = countdown(item.archived_at) %}
                     <tr>
                         {{ caller(item) }}
                         <td class="text-nowrap">{{ item.archived_at.strftime('%b %d, %Y') }}</td>
-                        <td class="text-end text-nowrap">
-                            <form action="{{ url_for('main.restore_archived', kind=kind, item_id=item.id) }}" method="POST" class="d-inline">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button type="submit" class="btn btn-sm btn-outline-primary">Restore</button>
-                            </form>
-                            <button type="button" class="btn btn-sm btn-outline-danger"
-                                    data-bs-toggle="modal" data-bs-target="#deleteForeverModal"
-                                    data-action="{{ url_for('main.delete_archived', kind=kind, item_id=item.id) }}"
-                                    data-name="{{ item[name] or 'This item' }}">Delete permanently</button>
+                        <td class="text-nowrap">
+                            {# amber in its last week #}
+                            <span class="archives-left{{ ' is-soon' if days <= 7 }}" title="Deleted for good on {{ goes }}">{{ days }} day{{ '' if days == 1 else 's' }}</span>
+                            <span class="visually-hidden">left, deleted for good on {{ goes }}</span>
+                        </td>
+                        <td class="text-center">
+                            {% call row_menu(item[name] or 'this item') %}
+                            <li>
+                                <form action="{{ url_for('main.restore_archived', kind=kind, item_id=item.id) }}" method="POST"
+                                      data-restore="{{ item[name] or '' }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="dropdown-item">Restore</button>
+                                </form>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button type="button" class="dropdown-item row-menu-danger"
+                                        data-bs-toggle="modal" data-bs-target="#deleteForeverModal"
+                                        data-action="{{ url_for('main.delete_archived', kind=kind, item_id=item.id) }}"
+                                        data-name="{{ item[name] or 'This item' }}">Delete permanently</button></li>
+                            {% endcall %}
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="{{ columns | length + 2 }}" class="text-center text-muted py-4">No archived {{ title | lower }}.</td>
+                        <td colspan="{{ columns | length + 3 }}" class="text-center text-muted py-4">No archived {{ title | lower }}.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -56,7 +69,24 @@
 {% endmacro %}
 
 <h1 class="h3 mb-1">Archives</h1>
-<p class="archives-intro">Deleted items stay here until they are restored or deleted permanently.</p>
+<p class="archives-intro">Deleted items stay here for {{ archive_days }} days, then are deleted permanently. Restore an item before then to keep it.</p>
+{# Says "Restoring ..." to screen readers while archives.js covers the row #}
+<div id="archivesStatus" class="visually-hidden" role="status"></div>
+
+{% call(s) section('students', 'Students', students, ['Student', 'LRN', 'Grade Level', 'Report Cards'], 'name') %}
+<td><a href="{{ url_for('main.student_detail', student_id=s.id) }}">{{ s.name or '—' }}<span class="visually-hidden">, view enrollment form</span></a></td>
+<td class="archives-lrn">{{ s.lrn_no or '—' }}</td>
+<td>{{ s.grade_level.replace('_', ' ') if s.grade_level else '—' }}</td>
+<td>
+    {% if s.report_cards %}
+    <ul class="archives-cards">
+        {% for r in s.report_cards %}
+        <li><span class="archives-card-level">{{ r.grade_level }}</span> <a href="{{ url_for('main.download_report_card', report_id=r.id) }}">{{ r.original_filename }}</a></li>
+        {% endfor %}
+    </ul>
+    {% else %}—{% endif %}
+</td>
+{% endcall %}
 
 {% call(r) section('report-cards', 'Report Cards', report_cards, ['Student', 'Grade Level', 'File'], 'original_filename') %}
 <td>{{ [r.last_name, r.first_name] | select | join(', ') or '—' }}</td>
@@ -89,8 +119,10 @@
 <td class="text-nowrap">{{ size(p.size) }}</td>
 {% endcall %}
 
-<!-- Permanent delete: one shared popup, filled in by archives.js with the row that was clicked -->
-<div class="modal fade" id="deleteForeverModal" tabindex="-1" aria-labelledby="deleteForeverTitle" aria-hidden="true">
+<!-- Permanent delete: one shared popup, filled in by archives.js with the row that was clicked. Delete permanently
+     waits for "I understand" to be ticked; the server checks it again. -->
+<div class="modal fade" id="deleteForeverModal" tabindex="-1" aria-labelledby="deleteForeverTitle"
+     aria-describedby="deleteForeverName deleteForeverWarning" aria-hidden="true">
     <div class="modal-dialog">
         <form method="POST" class="modal-content">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -100,7 +132,14 @@
             </div>
             <div class="modal-body">
                 <p class="archives-confirm-name" id="deleteForeverName"></p>
-                <p>This removes it from the database for good. It cannot be restored afterwards.</p>
+                <div class="archives-warning" id="deleteForeverWarning">
+                    <svg class="archives-warning-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>
+                    <p><strong>This cannot be undone.</strong> The item is removed from the database for good, and a student goes with their enrollment form and report cards. It cannot be recovered, not even from the Archives.</p>
+                </div>
+                <div class="form-check archives-understood">
+                    <input class="form-check-input" type="checkbox" id="deleteForeverUnderstood" name="understood" value="yes" required>
+                    <label class="form-check-label" for="deleteForeverUnderstood">I understand that this item cannot be recovered.</label>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -113,5 +152,6 @@
 
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/row-menu.js') }}"></script>
 <script src="{{ url_for('static', filename='js/archives/archives.js') }}"></script>
 {% endblock %}

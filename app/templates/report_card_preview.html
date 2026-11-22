@@ -1,0 +1,26 @@
+{# A report card's contents for the Grade Files preview popup (preview_report_card in routes.py); student-grades.js
+   puts this into the popup. Each visible sheet is a table, merged cells spanning as in Excel. #}
+{% if problem or not sheets %}
+<p class="sg-preview-problem">{{ problem or 'This file has nothing to show.' }} Download it to open it in Excel.</p>
+{% else %}
+{% for name, rows, cut_off in sheets %}
+<section class="sg-preview-sheet" aria-label="{{ name }}">
+    {% if sheets | length > 1 %}<h3 class="sg-preview-sheet-name">{{ name }}</h3>{% endif %}
+    <div class="sg-preview-scroll">
+        <table class="sg-preview-table">
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    {% for cell in row %}
+                    <td{% if cell.rowspan > 1 %} rowspan="{{ cell.rowspan }}"{% endif %}{% if cell.colspan > 1 %} colspan="{{ cell.colspan }}"{% endif %}
+                        {%- if cell.bold or cell.center %} class="{{ 'is-bold' if cell.bold }} {{ 'is-center' if cell.center }}"{% endif %}>{{ cell.text }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if cut_off %}<p class="sg-preview-note">Only the first {{ max_rows }} rows and {{ max_columns }} columns are shown. Download the file to see all of it.</p>{% endif %}
+</section>
+{% endfor %}
+{% endif %}

@@ -9,35 +9,35 @@
 
 /* ---------- Palette ---------- */
 :root {
-    --ix-green-900: #243d28;
-    --ix-green-700: #2f5233;
-    --ix-green-600: #3f6b3a;
-    --ix-green-500: #4f7d45;
-    --ix-khaki-500: #c9b98f;
-    --ix-khaki-400: #d6c9a3;
-    --ix-khaki-300: #e3d9b8;
-    --ix-khaki-100: #f6f2e4;
-    --ix-white: #fdfcf7;
-    --ix-page: #f4f1e6;
-    --ix-text: #26312a;
-    --ix-muted: #7a8272;
-    --ix-border: #e8e3cf;
-    --ix-brick: #a3392a;
+    --ix-green-900: #355a25;
+    --ix-green-700: #436a33;
+    --ix-green-600: #4f763e;
+    --ix-green-500: #5d864b;
+    --ix-khaki-500: #669751;
+    --ix-khaki-400: #bad0b1;
+    --ix-khaki-300: #d9e5d4;
+    --ix-khaki-100: #f3f7f1;
+    --ix-white: #ffffff;
+    --ix-page: #f3f6f2;
+    --ix-text: #242a21;
+    --ix-muted: #677062;
+    --ix-border: #e4e9e2;
+    --ix-brick: #b91c1c;
 }
 
 /* ==========================================================
    Sidebar
    ========================================================== */
 .sidebar.bg-dark {
-    background: linear-gradient(180deg, var(--ix-green-900) 0%, var(--ix-green-700) 100%) !important;
-    box-shadow: 4px 0 24px rgba(20, 40, 25, 0.25);
+    background: var(--ix-green-900) !important;
+    box-shadow: 4px 0 24px rgba(30, 48, 22, 0.25);
     border-right: 3px solid var(--ix-khaki-500);
     overflow-y: auto;
 }
 
 /* brand area */
 .sidebar .border-secondary {
-    border-color: rgba(201, 185, 143, 0.45) !important;
+    border-color: rgba(102, 151, 81, 0.45) !important;
 }
 
 .sidebar > div:first-child {
@@ -69,7 +69,7 @@
 
 .sidebar .nav-link {
     position: relative;
-    color: rgba(253, 252, 247, 0.78);
+    color: rgba(255, 255, 255, 0.78);
     border-radius: 0.5rem;
     padding: 0.75rem 1rem;
     font-weight: 500;
@@ -80,16 +80,35 @@
     font-size: 13px;
 }
 
+/* each page's icon before its name (dashboard.html): the bell's line style, in the link's color, so it
+   follows hover, the current page and the navigation highlight on its own */
+.sidebar .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sidebar .nav-icon {
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
 .sidebar .nav-link:hover,
 .sidebar .nav-link:focus-visible {
-    background-color: rgba(227, 217, 184, 0.16);
+    background-color: rgba(217, 229, 212, 0.16);
     color: #ffffff;
     transform: translateX(3px);
     outline: none;
 }
 
 .sidebar .nav-link.active {
-    background-color: var(--ix-khaki-500);
+    background-color: var(--ix-khaki-300);
     color: var(--ix-green-900);
     font-weight: 700;
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
@@ -104,13 +123,120 @@
     --bs-btn-hover-bg: var(--ix-brick);
     --bs-btn-hover-border-color: var(--ix-brick);
     --bs-btn-active-color: #fff;
-    --bs-btn-active-bg: #8c2f22;
-    --bs-btn-active-border-color: #8c2f22;
-    --bs-btn-focus-shadow-rgb: 201, 185, 143;
+    --bs-btn-active-bg: #991b1b;
+    --bs-btn-active-border-color: #991b1b;
+    --bs-btn-focus-shadow-rgb: 102, 151, 81;
     border-width: 1.5px;
     border-radius: 0.6rem;
     font-weight: 600;
     letter-spacing: 0.04em;
+}
+
+/* signed-in account, above the logout button: lined up with the nav labels, a long name ends in "...".
+   contain: the nav is a wrapping flex column, which would otherwise widen the sidebar to fit a long name */
+.sidebar-user {
+    contain: inline-size;
+    margin-bottom: 0.5rem;
+    text-align: left;
+    line-height: 1.25;
+}
+
+.sidebar-user-name,
+.sidebar-user-role {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.sidebar-user-name {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.sidebar-user-role {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ix-khaki-400);
+}
+
+/* Hover or focus: a small see-through black popup above with the full name, username and role (dashboard.html).
+   It stays inside the sidebar, whose scrolling would cut off anything sticking out of it. */
+.sidebar-user {
+    position: relative;
+    border-radius: 6px;
+    cursor: default;
+}
+
+.sidebar-user:focus-visible {
+    outline: 2px solid var(--ix-khaki-400);
+    outline-offset: 3px;
+}
+
+.sidebar-user-card {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 0;
+    z-index: 10;
+    width: max-content;     /* as wide as its text, up to the sidebar's column */
+    max-width: 100%;
+    margin: 0;
+    padding: 6px 9px;
+    font-size: 0.7rem;
+    line-height: 1.25;
+    color: #fff;
+    background: rgba(48, 50, 49, 0.6);     /* see-through dark grey: the sidebar's green shows through */
+    border-radius: 7px;
+    box-shadow: 0 8px 18px -6px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(4px);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+}
+
+/* the little arrow pointing down at the name */
+.sidebar-user-card::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 12px;
+    border: 5px solid transparent;
+    border-top-color: rgba(48, 50, 49, 0.6);
+}
+
+.sidebar-user:hover .sidebar-user-card,
+.sidebar-user:focus-visible .sidebar-user-card {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+}
+
+.sidebar-user-card dt {
+    font-size: 0.56rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.sidebar-user-card dd {
+    margin: 0 0 4px;
+    font-weight: 600;
+    overflow-wrap: anywhere;    /* the full name shows here, however long */
+}
+
+.sidebar-user-card dd:last-child {
+    margin-bottom: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sidebar-user-card {
+        transition: none;
+    }
 }
 
 /* ==========================================================
@@ -140,7 +266,7 @@
     height: 72%;
     transform: translateY(-50%);
     border-radius: 6px;
-    background: linear-gradient(180deg, var(--ix-khaki-500), var(--ix-green-500));
+    background: var(--ix-khaki-500);
 }
 
 /* ==========================================================
@@ -151,7 +277,7 @@
     border: 1px solid var(--ix-border);
     border-top: 5px solid var(--ix-khaki-500);
     border-radius: 16px;
-    box-shadow: 0 12px 30px -12px rgba(36, 61, 40, 0.28) !important;
+    box-shadow: 0 12px 30px -12px rgba(53, 90, 37, 0.28) !important;
 }
 
 .main-content .card-body {
@@ -200,7 +326,7 @@
     text-transform: uppercase;
     white-space: nowrap;
     color: #fff;
-    background: linear-gradient(135deg, var(--ix-green-600), var(--ix-green-700));
+    background: var(--ix-green-700);
     border-bottom: 3px solid var(--ix-khaki-500);
 }
 
@@ -232,7 +358,7 @@
 
 .main-content .form-control:focus {
     border-color: var(--ix-green-500);
-    box-shadow: 0 0 0 4px rgba(79, 125, 69, 0.18);
+    box-shadow: 0 0 0 4px rgba(93, 134, 75, 0.18);
 }
 
 .main-content .input-group-text {
@@ -255,32 +381,32 @@
     --bs-btn-active-color: #fff;
     --bs-btn-active-bg: var(--ix-green-900);
     --bs-btn-active-border-color: var(--ix-green-900);
-    --bs-btn-focus-shadow-rgb: 79, 125, 69;
+    --bs-btn-focus-shadow-rgb: 93, 134, 75;
     --bs-btn-disabled-bg: var(--ix-green-600);
     --bs-btn-disabled-border-color: var(--ix-green-600);
     border-radius: 10px;
     font-weight: 600;
     letter-spacing: 0.02em;
-    box-shadow: 0 8px 18px rgba(47, 82, 51, 0.28);
+    box-shadow: 0 8px 18px rgba(67, 106, 51, 0.28);
     transition: transform 0.15s, box-shadow 0.2s, background-color 0.2s;
 }
 
 .main-content .btn-primary:hover {
     transform: translateY(-1px);
-    box-shadow: 0 12px 24px rgba(47, 82, 51, 0.38);
+    box-shadow: 0 12px 24px rgba(67, 106, 51, 0.38);
 }
 
 .main-content .btn-success {
     --bs-btn-color: var(--ix-green-900);
-    --bs-btn-bg: var(--ix-khaki-500);
+    --bs-btn-bg: var(--ix-khaki-300);
     --bs-btn-border-color: var(--ix-khaki-500);
     --bs-btn-hover-color: var(--ix-green-900);
     --bs-btn-hover-bg: var(--ix-khaki-400);
-    --bs-btn-hover-border-color: var(--ix-khaki-400);
+    --bs-btn-hover-border-color: var(--ix-khaki-500);
     --bs-btn-active-color: var(--ix-green-900);
-    --bs-btn-active-bg: #b9a878;
-    --bs-btn-active-border-color: #b9a878;
-    --bs-btn-focus-shadow-rgb: 201, 185, 143;
+    --bs-btn-active-bg: var(--ix-khaki-400);
+    --bs-btn-active-border-color: var(--ix-green-600);
+    --bs-btn-focus-shadow-rgb: 102, 151, 81;
     border-radius: 8px;
     font-weight: 700;
 }
@@ -311,7 +437,7 @@
 
 .main-content .alert-secondary {
     --bs-alert-color: var(--ix-green-900);
-    --bs-alert-bg: #e8efe3;
+    --bs-alert-bg: #edf3ea;
     --bs-alert-border-color: var(--ix-green-500);
 }
 
@@ -334,7 +460,7 @@
     margin-bottom: 8px;
     overflow-y: auto;
     pointer-events: auto;
-    box-shadow: 0 12px 28px -8px rgba(36, 61, 40, 0.45);
+    box-shadow: 0 12px 28px -8px rgba(53, 90, 37, 0.45);
     scrollbar-width: none;  /* a long message still scrolls with the mouse wheel */
 }
 
@@ -354,20 +480,149 @@
 
 .main-content .alert-success {
     --bs-alert-color: var(--ix-green-900);
-    --bs-alert-bg: #e8efe3;
+    --bs-alert-bg: #edf3ea;
     --bs-alert-border-color: var(--ix-green-500);
 }
 
 .main-content .alert-danger {
     --bs-alert-color: var(--ix-brick);
-    --bs-alert-bg: #fbeeea;
+    --bs-alert-bg: #fef2f2;
     --bs-alert-border-color: var(--ix-brick);
 }
 
+/* ---------- Confirmation toast (confirm-toast.js): asks before an item moves to the Archives ----------
+   In the message stack above, so it sits over popups too. Brick edge like the Delete buttons that open it,
+   the sidebar's archive box, and the Calendar's khaki and brick buttons. */
+.confirm-toast {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 8px;
+    padding: 14px 16px;
+    pointer-events: auto;       /* the stack lets clicks through */
+    color: var(--ix-text);
+    background: var(--ix-white);
+    border: 1px solid var(--ix-border);
+    border-left: 5px solid var(--ix-brick);
+    border-radius: 12px;
+    box-shadow: 0 12px 28px -8px rgba(53, 90, 37, 0.45);
+    animation: confirm-toast-in 0.18s ease-out;
+}
+
+/* only focused by confirm-toast.js while it waits, never tabbed to */
+.confirm-toast:focus {
+    outline: none;
+}
+
+.confirm-toast-icon {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    margin-top: 1px;
+    fill: none;
+    stroke: var(--ix-brick);
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.confirm-toast-body {
+    flex: 1;
+    min-width: 0;
+}
+
+/* a long name stops at 3 lines */
+.confirm-toast-title {
+    display: -webkit-box;
+    margin: 0;
+    overflow: hidden;
+    font-weight: 700;
+    color: var(--ix-green-700);
+    word-break: break-word;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+}
+
+.confirm-toast-note {
+    margin: 2px 0 12px;
+    font-size: 0.85rem;
+    color: var(--ix-muted);
+}
+
+.confirm-toast-acts {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.confirm-toast-btn {
+    padding: 7px 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ix-green-700);
+    background: var(--ix-khaki-100);
+    border: 1.5px solid var(--ix-khaki-500);
+    border-radius: 10px;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.confirm-toast-btn:hover {
+    background: var(--ix-khaki-300);
+}
+
+.confirm-toast-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(102, 151, 81, 0.6);
+}
+
+.confirm-toast-btn.is-danger {
+    color: var(--ix-brick);
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+
+.confirm-toast-btn.is-danger:hover {
+    color: #fff;
+    background: var(--ix-brick);
+    border-color: var(--ix-brick);
+}
+
+/* locked while it sends: keeps its colors, faded */
+.confirm-toast-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.confirm-toast-btn:disabled:hover {
+    background: var(--ix-khaki-100);
+}
+
+.confirm-toast-btn.is-danger:disabled:hover {
+    color: var(--ix-brick);
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+
+@keyframes confirm-toast-in {
+    from { opacity: 0; transform: translateY(-8px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .confirm-toast { animation: none; }
+}
+
+/* The layout keeps its scrollbar at all times (overflow-y-scroll on <html>, dashboard.html), so a popup must not get
+   Bootstrap's padding for a scrollbar that would disappear: it narrowed every table by that width while open */
+html.overflow-y-scroll body.modal-open {
+    padding-right: 0 !important;
+}
+
+/* warnings and holidays stay amber: status colors, kept apart from the green palette */
 .main-content .alert-warning {
-    --bs-alert-color: #6e5f2a;
-    --bs-alert-bg: var(--ix-khaki-100);
-    --bs-alert-border-color: var(--ix-khaki-500);
+    --bs-alert-color: #92400e;
+    --bs-alert-bg: #fffbeb;
+    --bs-alert-border-color: #f59e0b;
 }
 
 @media (max-width: 768px) {
@@ -553,7 +808,7 @@
     --bs-pagination-hover-border-color: var(--ix-khaki-500);
     --bs-pagination-focus-color: var(--ix-green-900);
     --bs-pagination-focus-bg: var(--ix-khaki-100);
-    --bs-pagination-focus-box-shadow: 0 0 0 4px rgba(79, 125, 69, 0.18);
+    --bs-pagination-focus-box-shadow: 0 0 0 4px rgba(93, 134, 75, 0.18);
     --bs-pagination-active-color: #fff;
     --bs-pagination-active-bg: var(--ix-green-600);
     --bs-pagination-active-border-color: var(--ix-green-600);
@@ -567,20 +822,15 @@
 
 /* pressed state: shows the moment a link is clicked */
 .sidebar .nav-link:active {
-    background-color: var(--ix-khaki-500);
+    background-color: var(--ix-khaki-300);
     color: var(--ix-green-900);
     transform: scale(0.97);
 }
 
-/* current page */
-body:has(#metricsCard) .sidebar .nav-item:nth-child(1) .nav-link,
-body:has(link[href*="enrollment.css"]) .sidebar .nav-item:nth-child(2) .nav-link,
-body:has(link[href*="enrolled.css"]) .sidebar .nav-item:nth-child(3) .nav-link,
-body:has(link[href*="calendar.css"]) .sidebar .nav-item:nth-child(4) .nav-link,
-body:has(link[href*="linkage"]) .sidebar .nav-item:nth-child(5) .nav-link,
-body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(5) .nav-link,
-.sidebar .nav-link[aria-current="page"] {
-    background-color: var(--ix-khaki-500);
+/* current page, or the sidebar page that the open page belongs to (aria-current "page" or "true"). It comes from
+   the server (nav_pages in routes.py), so it follows each role's own sidebar. */
+.sidebar .nav-link[aria-current] {
+    background-color: var(--ix-khaki-300);
     color: var(--ix-green-900);
     font-weight: 700;
     box-shadow: inset 4px 0 0 var(--ix-green-600), 0 6px 14px rgba(0, 0, 0, 0.25);
@@ -597,7 +847,7 @@ body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(5) .nav-link,
 .sidebar .nav > li:last-child {
     margin-top: auto;
     padding: 1rem 0.25rem 0.75rem !important;
-    border-top: 1px solid rgba(201, 185, 143, 0.35);
+    border-top: 1px solid rgba(102, 151, 81, 0.35);
 }
 
 /* ==========================================================
@@ -620,13 +870,7 @@ body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(5) .nav-link,
 }
 
 /* flat highlight: just the green marker on the left edge */
-body:has(#metricsCard) .sidebar .nav-item:nth-child(1) .nav-link,
-body:has(link[href*="enrollment.css"]) .sidebar .nav-item:nth-child(2) .nav-link,
-body:has(link[href*="enrolled.css"]) .sidebar .nav-item:nth-child(3) .nav-link,
-body:has(link[href*="calendar.css"]) .sidebar .nav-item:nth-child(4) .nav-link,
-body:has(link[href*="linkage"]) .sidebar .nav-item:nth-child(5) .nav-link,
-body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(5) .nav-link,
-.sidebar .nav-link[aria-current="page"] {
+.sidebar .nav-link[aria-current] {
     box-shadow: inset 5px 0 0 var(--ix-green-600);
 }
 
@@ -639,23 +883,11 @@ body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(5) .nav-link,
     --ix-nav-marker: 9px;
 }
 
-body:has(#metricsCard) .sidebar .nav-item:nth-child(1) .nav-link,
-body:has(link[href*="enrollment.css"]) .sidebar .nav-item:nth-child(2) .nav-link,
-body:has(link[href*="enrolled.css"]) .sidebar .nav-item:nth-child(3) .nav-link,
-body:has(link[href*="calendar.css"]) .sidebar .nav-item:nth-child(4) .nav-link,
-body:has(link[href*="linkage"]) .sidebar .nav-item:nth-child(5) .nav-link,
-body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(5) .nav-link,
-.sidebar .nav-link[aria-current="page"] {
+.sidebar .nav-link[aria-current] {
     box-shadow: inset var(--ix-nav-marker) 0 0 var(--ix-green-600);
 }
 
-body:has(#metricsCard) .sidebar .nav-item:nth-child(1) .nav-link,
-body:has(link[href*="enrollment.css"]) .sidebar .nav-item:nth-child(2) .nav-link,
-body:has(link[href*="enrolled.css"]) .sidebar .nav-item:nth-child(3) .nav-link,
-body:has(link[href*="calendar.css"]) .sidebar .nav-item:nth-child(4) .nav-link,
-body:has(link[href*="linkage"]) .sidebar .nav-item:nth-child(5) .nav-link,
-body:has(link[href*="files.css"]) .sidebar .nav-item:nth-child(5) .nav-link,
-.sidebar .nav-link[aria-current="page"],
+.sidebar .nav-link[aria-current],
 .sidebar .nav-link.active {
     box-shadow: none;
 }
@@ -749,7 +981,6 @@ body:has(#metricEditFab) .main-content > .p-4 {
 #forecastCard.is-updating .card-body > p.mt-3 {
     color: transparent !important;
     background: var(--ix-skel-shimmer);
-    background-size: 200% 100%;
     border-radius: 6px;
     animation: skel-shimmer 1.5s linear infinite;
 }
@@ -772,10 +1003,10 @@ body:has(#metricEditFab) .main-content > .p-4 {
     padding: 0;
     overflow: hidden;
     color: #fff;
-    background: linear-gradient(135deg, var(--ix-green-600), var(--ix-green-700));
+    background: var(--ix-green-700);
     border: 2px solid var(--ix-khaki-500);
     border-radius: 999px;
-    box-shadow: 0 8px 18px rgba(47, 82, 51, 0.28);
+    box-shadow: 0 8px 18px rgba(67, 106, 51, 0.28);
     transition: box-shadow 0.2s, transform 0.15s;
 }
 
@@ -785,12 +1016,12 @@ body:has(#metricEditFab) .main-content > .p-4 {
 
 .metric-fab:hover,
 .metric-fab:focus-visible {
-    box-shadow: 0 12px 24px rgba(47, 82, 51, 0.38);
+    box-shadow: 0 12px 24px rgba(67, 106, 51, 0.38);
     transform: translateY(-1px);
 }
 
 .metric-fab:focus-visible {
-    outline: 3px solid rgba(79, 125, 69, 0.45);
+    outline: 3px solid rgba(93, 134, 75, 0.45);
     outline-offset: 2px;
 }
 
@@ -801,7 +1032,7 @@ body:has(#metricEditFab) .main-content > .p-4 {
 
 .metric-fab.is-editing {
     color: var(--ix-green-900);
-    background: var(--ix-khaki-500);
+    background: var(--ix-khaki-300);
     border-color: var(--ix-green-600);
 }
 
@@ -867,7 +1098,7 @@ body:has(#metricEditFab) .main-content > .p-4 {
     pointer-events: auto;
     background: var(--ix-white);
     border: 1px solid var(--ix-border);
-    box-shadow: 0 12px 28px -8px rgba(36, 61, 40, 0.45);
+    box-shadow: 0 12px 28px -8px rgba(53, 90, 37, 0.45);
     animation: metric-pop-in 0.2s ease-out;
 }
 
@@ -892,7 +1123,7 @@ body:has(#metricEditFab) .main-content > .p-4 {
     display: block;
     height: 6px;
     border-radius: 999px;
-    background: linear-gradient(90deg, var(--ix-green-600), var(--ix-khaki-500));
+    background: var(--ix-green-500);
     transform-origin: left;
     animation: metric-loading-fill 0.6s ease-in-out;
 }
@@ -976,7 +1207,7 @@ body:has(#metricEditFab) .main-content > .p-4 {
     font-size: 0.85rem;
     font-weight: 500;
     color: var(--ix-brick);
-    background: #fbeeea;
+    background: #fef2f2;
     border-top: 1px solid var(--ix-border);
 }
 
@@ -993,7 +1224,7 @@ body:has(#metricEditFab) .main-content > .p-4 {
     display: block;
     width: 0;
     height: 100%;
-    background: linear-gradient(90deg, var(--ix-green-600), var(--ix-khaki-500));
+    background: var(--ix-green-500);
     transition: width 0.2s ease;
 }
 
@@ -1004,7 +1235,7 @@ body:has(#metricEditFab) .main-content > .p-4 {
     padding: 10px 18px;
     font-weight: 600;
     color: var(--ix-green-900);
-    background: #e8efe3;
+    background: #edf3ea;
     border-color: var(--ix-green-500);
     border-radius: 999px;
 }
@@ -1067,19 +1298,18 @@ body:has(#metricEditFab) .main-content > .p-4 {
    shows on the page being left, before the next page's stylesheet has loaded.
    ========================================================== */
 :root {
-    --ix-skel-shimmer: linear-gradient(90deg, var(--ix-border) 30%, var(--ix-khaki-100) 50%, var(--ix-border) 70%);
+    --ix-skel-shimmer: var(--ix-border);
 }
 
+/* a flat pulse, no gradient sweep */
 @keyframes skel-shimmer {
-    from { background-position: 150% 0; }
-    to   { background-position: -50% 0; }
+    50% { background-color: var(--ix-khaki-100); }
 }
 
 .skel {
     display: block;
     height: 14px;
     background: var(--ix-skel-shimmer);
-    background-size: 200% 100%;
     border-radius: 6px;
     animation: skel-shimmer 1.5s linear infinite;
 }
@@ -1091,7 +1321,7 @@ body.is-page-loading #pageContent {
 
 /* the sidebar moves to the clicked page straight away */
 body.is-navigating .sidebar .nav-link {
-    color: rgba(253, 252, 247, 0.78) !important;
+    color: rgba(255, 255, 255, 0.78) !important;
     font-weight: 500 !important;
     background-color: transparent !important;
 }
@@ -1099,7 +1329,7 @@ body.is-navigating .sidebar .nav-link {
 body.is-navigating .sidebar .nav-link.is-navigation-target {
     color: var(--ix-green-900) !important;
     font-weight: 700 !important;
-    background-color: var(--ix-khaki-500) !important;
+    background-color: var(--ix-khaki-300) !important;
 }
 
 /* ---------- Page headings ---------- */
@@ -1126,7 +1356,7 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
     top: 50%;
     width: 6px;
     height: 70%;
-    background: linear-gradient(180deg, var(--ix-khaki-500), var(--ix-green-500));
+    background: var(--ix-khaki-500);
     border-radius: 6px;
     transform: translateY(-50%);
 }
@@ -1165,7 +1395,7 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
     border: 1px solid var(--ix-border);
     border-top: 5px solid var(--ix-khaki-500);
     border-radius: 16px;
-    box-shadow: 0 12px 30px -12px rgba(36, 61, 40, 0.28);
+    box-shadow: 0 12px 30px -12px rgba(53, 90, 37, 0.28);
 }
 
 .skel-card {
@@ -1241,12 +1471,26 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
     height: 34px;
 }
 
-/* Archives: the line under the title */
+/* Archives and Accounts: the line under the title */
 .skel-intro {
     margin: 0.25rem 0 1rem 2px;
     font-size: 0.82rem;
     line-height: 1.5;
     color: var(--ix-muted);
+}
+
+/* Accounts: the title shares its row with the Create account button, right above the intro line */
+.skel-head-accounts {
+    margin-bottom: 0;
+}
+
+/* the real heading's mb-1, which sets the row's height when there is no button */
+.skel-head-accounts .skel-title {
+    margin-bottom: 0.25rem;
+}
+
+.skel-button-accounts {
+    width: 139px;
 }
 
 /* ---------- Dashboard ---------- */
@@ -1271,7 +1515,7 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
 .skel-alert-green {
     display: flex;
     align-items: center;
-    background: #e8efe3;
+    background: #edf3ea;
     border-color: var(--ix-green-500);
 }
 
@@ -1360,7 +1604,7 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
     text-transform: uppercase;
     white-space: nowrap;
     color: #fff;
-    background: linear-gradient(135deg, var(--ix-green-600), var(--ix-green-700));
+    background: var(--ix-green-700);
     border-bottom: 3px solid var(--ix-khaki-500);
 }
 
@@ -1440,7 +1684,7 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
 .skel-picture {
     overflow: hidden;
     border-radius: 16px;
-    box-shadow: 0 12px 30px -12px rgba(36, 61, 40, 0.28);
+    box-shadow: 0 12px 30px -12px rgba(53, 90, 37, 0.28);
 }
 
 .skel-picture-image {
@@ -1467,12 +1711,185 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
     margin: 0;
 }
 
+/* ---------- A student's grade files (student_grades.html / .css) ---------- */
+.skel-grades-back {
+    width: 112px;
+    height: 20px;
+    margin: 4px 0 12px 8px;
+    border-radius: 999px;
+}
+
+.skel-title-grades {
+    margin-bottom: 1rem;
+    font-size: calc(1.3rem + 0.6vw);      /* Bootstrap's h3 */
+}
+
+@media (min-width: 1200px) {
+    .skel-title-grades {
+        font-size: 1.75rem;
+    }
+}
+
+.skel-grades-student {
+    margin-bottom: 1.75rem;
+    overflow: hidden;
+}
+
+.skel-grades-student .skel-card-body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px 20px;
+}
+
+.skel-grades-identity {
+    display: grid;
+    flex: 1 1 220px;
+    gap: 12px;
+}
+
+.skel-grades-name {
+    width: min(320px, 70%);
+    height: 22px;
+}
+
+.skel-grades-lrn {
+    width: 150px;
+    height: 24px;
+    border-radius: 999px;
+}
+
+.skel-grades-progress {
+    display: grid;
+    justify-items: end;
+    gap: 10px;
+}
+
+.skel-grades-count {
+    width: 130px;
+    margin: 6px 0;      /* the height of the "3 of 7 levels on file" line */
+}
+
+.skel-grades-steps {
+    display: flex;
+    gap: 8px;
+}
+
+.skel-grades-step {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+}
+
+.skel-grades-note {
+    padding: 13px 1.5rem;
+    background: var(--ix-khaki-100);
+    border-top: 1px solid var(--ix-border);
+}
+
+.skel-grades-note .skel {
+    width: 52%;
+}
+
+.skel-grades-levels {
+    display: grid;
+    gap: 12px;
+}
+
+.skel-grades-row {
+    display: grid;
+    grid-template-columns: 170px minmax(0, 1fr);
+    gap: 10px 20px;
+    align-items: center;
+    min-height: 82px;
+    padding: 14px 18px;
+    background: var(--ix-white);
+    border: 1px solid var(--ix-border);
+    border-left: 4px solid var(--ix-khaki-400);
+    border-radius: 14px;
+    box-shadow: 0 8px 22px -14px rgba(53, 90, 37, 0.35);
+}
+
+.skel-grades-level {
+    margin-bottom: 6px;
+    font-weight: 700;
+    color: var(--ix-green-700);
+}
+
+.skel-grades-status {
+    width: 72px;
+    height: 18px;
+    border-radius: 999px;
+}
+
+.skel-grades-file {
+    height: 44px;
+    border-radius: 12px;
+}
+
+@media (max-width: 991.98px) {
+    .skel-grades-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
 /* ---------- Calendar ---------- */
+/* Same layout as calendar.css: the month full width, Current and Upcoming side by side below it (right column when wide) */
 .skel-cal {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 320px;
+    grid-template-columns: minmax(0, 1fr);
     gap: 24px;
     align-items: start;
+}
+
+.skel-cal-side {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 28px;
+}
+
+.skel-cal-side .skel-side-section {
+    margin-bottom: 0;
+}
+
+.skel-cal-side .skel-side-section + .skel-side-section {
+    padding-top: 0;
+    padding-left: 28px;
+    border-top: 0;
+    border-left: 1px dashed var(--ix-khaki-500);
+}
+
+@media (min-width: 1800px) {
+    .skel-cal {
+        grid-template-columns: minmax(0, 1fr) 320px;
+    }
+
+    .skel-cal-side {
+        display: block;
+    }
+
+    .skel-cal-side .skel-side-section {
+        margin-bottom: 20px;
+    }
+
+    .skel-cal-side .skel-side-section + .skel-side-section {
+        padding: 20px 0 0;
+        border-top: 1px dashed var(--ix-khaki-500);
+        border-left: 0;
+    }
+}
+
+.skel-cal-legend {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    height: 19px;       /* the legend's line on the real page */
+    margin: -4px 0 14px;
+}
+
+.skel-cal-legend .skel {
+    height: 14px;
 }
 
 .skel-cal-card {
@@ -1506,10 +1923,15 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
     border-radius: 999px;
 }
 
+/* one connected grid, as in calendar.css */
 .skel-cal-grid {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 6px;
+    gap: 1px;
+    overflow: hidden;
+    background: var(--ix-border);
+    border: 1px solid var(--ix-border);
+    border-radius: 12px;
 }
 
 .skel-cal-dow {
@@ -1520,27 +1942,25 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
     text-align: center;
     text-transform: uppercase;
     color: #fff;
-    background: linear-gradient(135deg, var(--ix-green-600), var(--ix-green-700));
+    background: var(--ix-green-700);
     border-bottom: 3px solid var(--ix-khaki-500);
-    border-radius: 8px;
+    box-shadow: 1px 0 0 var(--ix-green-700);
 }
 
 .skel-cal-day {
     display: grid;
     align-content: start;
-    gap: 4px;
-    height: 120px;
-    padding: 8px;
+    gap: 3px;
+    min-height: 118px;
+    padding: 6px 7px 8px;
     background: #fff;
-    border: 1px solid var(--ix-border);
-    border-radius: 10px;
 }
 
 .skel-cal-num {
-    justify-self: center;
+    justify-self: start;
     width: 20px;
     height: 20px;
-    margin-bottom: 4px;
+    margin: 3px 0 6px 3px;
     border-radius: 50%;
 }
 
@@ -1588,6 +2008,16 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
     .skel-cal {
         grid-template-columns: 1fr;
     }
+
+    .skel-cal-side {
+        grid-template-columns: 1fr;
+    }
+
+    .skel-cal-side .skel-side-section + .skel-side-section {
+        padding: 20px 0 0;
+        border-top: 1px dashed var(--ix-khaki-500);
+        border-left: 0;
+    }
 }
 
 @media (max-width: 767.98px) {
@@ -1611,12 +2041,8 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
         padding: 14px;
     }
 
-    .skel-cal-grid {
-        gap: 4px;
-    }
-
     .skel-cal-day {
-        height: 84px;
+        min-height: 84px;
         padding: 4px;
     }
 
@@ -1663,7 +2089,7 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
 
 .dash-item:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(79, 125, 69, 0.3);
+    box-shadow: 0 0 0 3px rgba(93, 134, 75, 0.3);
 }
 
 .dash-item-text {
@@ -1709,7 +2135,7 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
     font-weight: 800;
     letter-spacing: 0.04em;
     color: var(--ix-green-900);
-    background: linear-gradient(135deg, var(--ix-khaki-300), var(--ix-khaki-500));
+    background: var(--ix-khaki-300);
     border-radius: 50%;
 }
 
@@ -1752,15 +2178,15 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
     text-transform: uppercase;
 }
 
-.event-tile.holiday { color: #6e5f2a; background: var(--ix-khaki-300); }
-.event-tile.event   { color: var(--ix-green-700); background: #dfeadb; }
-.event-tile.exam    { color: var(--ix-brick); background: #f6e0da; }
+.event-tile.holiday { color: #92400e; background: #fde68a; }
+.event-tile.event   { color: var(--ix-green-700); background: #e0eadc; }
+.event-tile.exam    { color: var(--ix-brick); background: #fee2e2; }
 
 .event-tag {
     font-weight: 700;
 }
 
-.event-tag.holiday { color: #6e5f2a; }
+.event-tag.holiday { color: #92400e; }
 .event-tag.event   { color: var(--ix-green-600); }
 .event-tag.exam    { color: var(--ix-brick); }
 
@@ -1781,16 +2207,16 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
 
 /* Ongoing: happening today, or a multi-day event already under way. Tinted, with a live dot on the tile. */
 .dash-item.is-ongoing {
-    background: #eef3e9;
+    background: #edf3ea;
     box-shadow: inset 3px 0 0 var(--ix-green-500);
 }
 
 .dash-item.is-ongoing:hover {
-    background: #e3ecdd;
+    background: #e0eadc;
 }
 
 .dash-item.is-ongoing:focus-visible {
-    box-shadow: inset 3px 0 0 var(--ix-green-500), 0 0 0 3px rgba(79, 125, 69, 0.3);
+    box-shadow: inset 3px 0 0 var(--ix-green-500), 0 0 0 3px rgba(93, 134, 75, 0.3);
 }
 
 .is-ongoing .event-tile::after {
@@ -1807,8 +2233,8 @@ body.is-navigating .sidebar .nav-link.is-navigation-target {
 }
 
 @keyframes event-live {
-    0%        { box-shadow: 0 0 0 0 rgba(79, 125, 69, 0.55); }
-    70%, 100% { box-shadow: 0 0 0 6px rgba(79, 125, 69, 0); }
+    0%        { box-shadow: 0 0 0 0 rgba(93, 134, 75, 0.55); }
+    70%, 100% { box-shadow: 0 0 0 6px rgba(93, 134, 75, 0); }
 }
 
 /* ---------- Their placeholders, and the dashboard skeleton's card grid ---------- */

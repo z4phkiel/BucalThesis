@@ -6,6 +6,94 @@
     color: var(--lf-muted);
 }
 
+/* days until an item is deleted for good: a pill like the Accounts roles, amber (the app's warning color) in its last week */
+.archives-left {
+    display: inline-block;
+    padding: 2px 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--lf-green-700);
+    background: var(--lf-khaki-100);
+    border: 1px solid var(--lf-khaki-400);
+    border-radius: 999px;
+    cursor: default;
+}
+
+.archives-left.is-soon {
+    color: #92400e;
+    background: #fffbeb;
+    border-color: #f59e0b;
+}
+
+/* Students: the LRN in even-width digits, as on the Masterlist */
+.archives-lrn {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.03em;
+}
+
+/* a student's report cards: a list, one per line, each file after a small level pill like the time-left one */
+.archives-cards {
+    display: grid;
+    gap: 3px;
+    margin: 4px 0;
+    padding: 0;
+    list-style: none;
+}
+
+.archives-card-level {
+    display: inline-block;
+    margin-right: 4px;
+    padding: 0 7px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--lf-green-700);
+    background: var(--lf-khaki-100);
+    border: 1px solid var(--lf-khaki-400);
+    border-radius: 999px;
+}
+
+/* Restore in progress (archives.js): a cover over the whole row, like the Grade Files "Deleting..." cover.
+   On top of the row, so no column changes width; the green edge marks it as the safe action. */
+tr.is-restoring {
+    position: relative;
+}
+
+.archives-restoring {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 0 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--lf-green-700);
+    background: rgba(243, 247, 241, 0.94);
+    box-shadow: inset 4px 0 0 var(--lf-khaki-500);
+    animation: archives-restoring-in 0.15s ease-out;    /* a near-instant reply doesn't flash */
+}
+
+.archives-restoring .spinner-border {
+    flex: none;
+    color: var(--lf-green-600);
+}
+
+.archives-restoring-text {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+@keyframes archives-restoring-in {
+    from { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .archives-restoring { animation: none; }
+}
+
 /* the item about to be deleted, shown at the top of the popup */
 .archives-confirm-name {
     padding: 10px 14px;
@@ -17,13 +105,97 @@
     border-radius: 8px;
 }
 
+/* "Delete permanently?" popup: the reminder and the box that unlocks the button. Brick, like the button it guards.
+   Own class names, since the Accounts page links this file too. */
+.archives-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    font-size: 0.88rem;
+    color: #7f1d1d;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+}
+
+.archives-warning p {
+    margin: 0;
+}
+
+.archives-warning-icon {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    margin-top: 1px;
+    fill: none;
+    stroke: var(--lf-brick);
+    stroke-width: 2;
+    stroke-linecap: round;
+}
+
+/* An outlined row with a larger box: Bootstrap's faint grey box was easy to miss */
+.archives-understood {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--lf-text);
+    background: var(--lf-white);
+    border: 1.5px solid var(--lf-border);
+    border-radius: 10px;
+    transition: border-color 0.15s, background-color 0.15s;
+}
+
+.archives-understood:hover,
+.archives-understood:has(.form-check-input:checked) {
+    border-color: #fecaca;
+    background: #fffafa;
+}
+
+.archives-understood .form-check-input {
+    flex: none;
+    width: 1.3rem;
+    height: 1.3rem;
+    margin: 0;          /* Bootstrap's float layout, replaced by the flex row */
+    border: 2px solid var(--lf-brick);     /* about 6.5:1 on white */
+}
+
+.archives-understood .form-check-input,
+.archives-understood .form-check-label {
+    cursor: pointer;
+}
+
+.archives-understood .form-check-input:checked {
+    background-color: var(--lf-brick);
+    border-color: var(--lf-brick);
+}
+
+.archives-understood .form-check-input:focus {
+    border-color: var(--lf-brick);
+    box-shadow: 0 0 0 4px rgba(185, 28, 28, 0.18);
+}
+
+/* While it is deleting, Cancel keeps its khaki (Bootstrap's disabled look is grey) */
+#deleteForeverModal .btn-secondary {
+    --bs-btn-disabled-color: var(--lf-green-700);
+    --bs-btn-disabled-bg: var(--lf-khaki-100);
+    --bs-btn-disabled-border-color: var(--lf-khaki-500);
+}
+
 /* Delete permanently: the brick of the row buttons, not Bootstrap's red */
 .modal .btn-danger {
     --bs-btn-bg: var(--lf-brick);
     --bs-btn-border-color: var(--lf-brick);
-    --bs-btn-hover-bg: #8c2f22;
-    --bs-btn-hover-border-color: #8c2f22;
-    --bs-btn-active-bg: #7a281d;
-    --bs-btn-active-border-color: #7a281d;
-    --bs-btn-focus-shadow-rgb: 163, 57, 42;
+    --bs-btn-hover-bg: #991b1b;
+    --bs-btn-hover-border-color: #991b1b;
+    --bs-btn-active-bg: #7f1d1d;
+    --bs-btn-active-border-color: #7f1d1d;
+    --bs-btn-disabled-bg: var(--lf-brick);              /* locked until "I understand", and while deleting */
+    --bs-btn-disabled-border-color: var(--lf-brick);
+    --bs-btn-focus-shadow-rgb: 185, 28, 28;
 }

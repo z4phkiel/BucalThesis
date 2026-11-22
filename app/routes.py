@@ -1,24 +1,29 @@
-from flask import Blueprint, render_template, redirect, request, url_for, session, flash, current_app, send_file, jsonify, abort
-from app.models import User, Enrollment, YearlyMetric, Grades, CalendarEvent, LinkItem, FileItem, PictureItem, ActivityLog # Make sure to import your User model instead of or alongside myTask
+from flask import Blueprint, render_template, redirect, request, url_for, session, flash, current_app, send_file, jsonify, abort, g
+from app.models import User, Enrollment, YearlyMetric, Grades, CalendarEvent, LinkItem, FileItem, PictureItem, ActivityLog, ROLES, SUPER_ADMIN, utc_now
+from app.permissions import NAV_PAGES, NAV_SECTIONS, NO_PERMISSION_NEEDED, assignable_roles, can, may_open
+from app.forecast import METRIC_FIELDS, forecast_values, prediction_history
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import undefer
 from app import db
 from datetime import date, datetime, timedelta
 import base64
+import hashlib
 import math
 import re
 import threading
 import time
 import zipfile
-import pandas as pd
+import openpyxl
 from PIL import Image
-from sklearn.linear_model import Ridge
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
 import os
 import io
 from io import BytesIO
 from werkzeug.utils import secure_filename
 import uuid
-from urllib.parse import urlparse
+import json
+from types import SimpleNamespace
+from urllib.parse import urlencode, urlparse
+from urllib.request import urlopen
 
 
 
@@ -34,27 +39,48 @@ def keep_private_pages_out_of_browser_history(response):
 
 
 # SOFT DELETE
-# Deleting a report card, calendar event, link, file or picture only sets its archived_at, which moves it
-# to the Archives page. Only that page deletes for good.
+# Deleting a report card, calendar event, link, file or picture, or archiving a student, only sets its archived_at,
+# which moves it to the Archives page. An archived student's report cards stay with them, hidden until they are
+# restored, and are deleted with them. Only that page deletes for good.
 
 def active(model):
     """Rows that are not in the Archives."""
     return model.query.filter_by(archived_at=None)
 
 
+def unless_archived(item):
+    """For the routes that serve a stored file: an archived one is gone (404) for everyone who can't open the Archives,
+    whose links still work."""
+    if item.archived_at and not can(session.get('role'), 'archives'):
+        abort(404)
+    return item
+
+
+def report_card(report_id):
+    """A report card for the routes that serve its file: like unless_archived, and also gone while its student is."""
+    report = unless_archived(Grades.query.get_or_404(report_id))
+    unless_archived(db.session.get(Enrollment, report.student_id))
+    return report
+
+
 # ACTIVITY LOG
-# Every add (POST), change (UPDATE) and delete (DELETE) on the Masterlist, Calendar and Linkage/Files.
+# Every add (POST), change (UPDATE) and delete (DELETE) on the Masterlist, Calendar, Linkage/Files and yearly metrics,
+# and each forecast the dashboard showed (record_forecast).
 # The sidebar's bell opens a card with the latest entries (/activity-log). Each of those pages also has an
 # Activity Log tab (/activity-log/<area>) with every entry's details: the item's values, or what changed.
+# The yearly metrics' tab is on the statistics page.
 
-ACTIVITY_AREAS = {'masterlist': 'Masterlist', 'calendar': 'Calendar', 'linkage': 'Linkage/Files'}
-ACTIVITY_PAGES = {'masterlist': 'main.enrolled', 'calendar': 'main.calendar', 'linkage': 'main.linkagefiles'}
+ACTIVITY_AREAS = {'masterlist': 'Masterlist', 'calendar': 'Calendar', 'linkage': 'Linkage/Files', 'metrics': 'Yearly Metrics'}
+ACTIVITY_PAGES = {'masterlist': 'main.enrolled', 'calendar': 'main.calendar', 'linkage': 'main.linkagefiles',
+                  'metrics': 'main.statistics'}
 ACTIVITY_SHOWN = 30
 NAME_IN_LOG_LENGTH = 60
 VALUE_IN_LOG_LENGTH = 200
 
 # The values an entry's details list for each kind of item: column -> label
 LOG_FIELDS = {
+    Enrollment: {'last_name': 'Last name', 'first_name': 'First name', 'lrn_no': 'LRN', 'grade_level': 'Grade level',
+                 'school_year': 'School year'},
     Grades: {'grade_level': 'Grade level', 'original_filename': 'File'},
     CalendarEvent: {'tag': 'Tag', 'description': 'Description', 'event_date': 'Start date', 'end_date': 'End date', 'link_url': 'Link'},
     LinkItem: {'title': 'Title', 'url': 'Link'},
@@ -63,10 +89,10 @@ LOG_FIELDS = {
 }
 
 
-def log_activity(area, action, description, details=None):
+def log_activity(area, action, description, details=None, username=None):
     """Adds the entry to the session, so it is saved by the same commit as the change, or not at all.
-    details is a list of [label, old value, new value]; see log_changes()."""
-    db.session.add(ActivityLog(username=session.get('username', ''), area=area, action=action,
+    details is a list of [label, old value, new value]; see log_changes(). username defaults to whoever is signed in."""
+    db.session.add(ActivityLog(username=username or session.get('username', ''), area=area, action=action,
                                description=description[:255], details=details))
 
 
@@ -121,7 +147,7 @@ def activity_time(logged_at):
     local = logged_at + timedelta(hours=8)
     day = f'{local:%b} {local.day}, {local.year}'
     clock = f"{int(local.strftime('%I'))}:{local:%M %p}"
-    seconds = (datetime.utcnow() - logged_at).total_seconds()
+    seconds = (utc_now() - logged_at).total_seconds()
     if seconds < 60:
         short = 'Just now'
     elif seconds < 3600:
@@ -148,25 +174,50 @@ def latest_activity(area='', before=None, limit=ACTIVITY_SHOWN):
     return logs.order_by(ActivityLog.id.desc()).limit(limit).all()
 
 
+def mark_activity_seen(logs, areas):
+    """Records that this user has seen every entry up to the newest of logs (newest first) in each of areas."""
+    user = db.session.get(User, session['user_id'])
+    if not logs or user is None:
+        return
+    seen = dict(user.activity_seen or {})
+    seen.update({area: max(seen.get(area, 0), logs[0].id) for area in areas})
+    if seen != user.activity_seen:
+        user.activity_seen = seen
+        db.session.commit()
+
+
 @main_bp.route("/activity-log")
 def activity_log():
-    if 'user_id' not in session:
-        return {'error': 'Unauthorized'}, 401
-
-    logs = latest_activity(request.args.get('area', ''))
+    area = request.args.get('area', '')
+    logs = latest_activity(area)
+    # Opening the card counts as seeing everything up to its newest entry, in the area it is filtered to or in all
+    mark_activity_seen(logs, [area] if area in ACTIVITY_AREAS else ACTIVITY_AREAS)
     return render_template('activity_log.html', logs=logs, pages=ACTIVITY_PAGES, when=activity_time)
+
+
+@main_bp.route("/activity-log/unseen")
+def activity_log_unseen():
+    """The areas with entries by other users newer than this user has seen, for the red dots (activity-log.js)."""
+    user = db.session.get(User, session['user_id'])
+    seen = (user and user.activity_seen) or {}
+    newest = (db.session.query(ActivityLog.area, db.func.max(ActivityLog.id))
+              .filter(ActivityLog.username != session.get('username', ''),
+                      ActivityLog.id > min(seen.get(area, 0) for area in ACTIVITY_AREAS))   # older rows are all seen
+              .group_by(ActivityLog.area).all())
+    return {'areas': [area for area, last in newest if area in ACTIVITY_AREAS and last > seen.get(area, 0)]}
 
 
 @main_bp.route("/activity-log/<area>")
 def activity_log_details(area):
     """One page of an Activity Log tab; ?before=<id> gives the page after the entry with that id."""
-    if 'user_id' not in session:
-        return {'error': 'Unauthorized'}, 401
     if area not in ACTIVITY_AREAS:
         abort(404)
 
     # One extra entry shows whether there is an older page
-    logs = latest_activity(area, request.args.get('before', type=int), ACTIVITY_SHOWN + 1)
+    before = request.args.get('before', type=int)
+    logs = latest_activity(area, before, ACTIVITY_SHOWN + 1)
+    if not before:
+        mark_activity_seen(logs, [area])
     return render_template('activity_log_details.html', logs=logs[:ACTIVITY_SHOWN],
                            has_more=len(logs) > ACTIVITY_SHOWN, when=activity_time)
 
@@ -225,12 +276,74 @@ def count_login_attempt(key):
         return 0
 
 
+def password_fingerprint(user):
+    # Changes when the password does, so a reset ends the logins made with the old one.
+    # Not the hash itself: the cookie is signed, but anyone holding it can read it.
+    return hashlib.sha256(user.password_hash.encode()).hexdigest()[:16]
+
+
 @main_bp.before_request
-def end_session_of_deleted_user():
-    # The signed cookie can't know the account was removed, so check that it still exists
+def sync_session_with_account():
+    # The signed cookie can't know the account was removed, renamed, given another role or another password,
+    # so check the database
     user_id = session.get('user_id')
-    if user_id is not None and db.session.get(User, user_id) is None:
+    if user_id is None:
+        return
+    # Kept on g for this request, so the sidebar's name needs no second read
+    user = g.user = db.session.get(User, user_id)
+    if user is None or session.get('pw') != password_fingerprint(user):
         session.clear()
+    elif (session.get('username'), session.get('role')) != (user.username, user.role):
+        session['username'], session['role'] = user.username, user.role
+
+
+# ROLES
+# permissions.py says what each role may do. check_permission() also turns signed-out visitors away from every
+# route but the public ones (NO_PERMISSION_NEEDED), so a route needs no sign-in check of its own.
+
+def nav_pages():
+    """(link, label, aria-current, endpoint) of the sidebar pages this user's role may open. aria-current is 'page' for
+    the page that is open and 'true' for the sidebar page a sub-page belongs to (NAV_SECTIONS), else None.
+    The endpoint picks the page's icon in dashboard.html."""
+    role = session.get('role')
+    section = NAV_SECTIONS.get((request.endpoint or '').removeprefix('main.'))
+    pages = []
+    for endpoint, label in NAV_PAGES.items():
+        if may_open(role, endpoint):
+            href = url_for('main.' + endpoint)
+            pages.append((href, label, 'page' if request.path == href else 'true' if endpoint == section else None, endpoint))
+    return pages
+
+
+def signed_in():
+    """(name, username, role label) for the sidebar, or None when nobody is signed in. Uses the account row that
+    sync_session_with_account already read for this request."""
+    user = g.get('user') if 'user_id' in session else None
+    return (user.full_name or user.username, user.username, ROLES.get(user.role, user.role or '')) if user else None
+
+
+@main_bp.before_request
+def check_permission():
+    endpoint = request.endpoint.removeprefix('main.')
+    if endpoint in NO_PERMISSION_NEEDED:
+        return
+    if 'user_id' not in session:
+        # The page's own JavaScript (fetch) gets 401; a page that was opened or a form that was sent goes to sign in
+        if request.headers.get('Sec-Fetch-Mode', 'navigate') != 'navigate':
+            return {'error': 'Unauthorized'}, 401
+        return redirect(url_for('main.landing' if endpoint == 'index' else 'main.login'))
+    if may_open(session.get('role'), endpoint, request.method):
+        return
+    pages = nav_pages()
+    if endpoint == 'index' and pages:   # a role without the Dashboard starts on its first page
+        return redirect(pages[0][0])
+    return render_template('error_pages/denied.html'), 403
+
+
+@main_bp.app_context_processor
+def permissions_for_templates():
+    # can('edit_files') in a template hides the buttons this role cannot use
+    return {'nav_pages': nav_pages, 'can': lambda permission: can(session.get('role'), permission), 'signed_in': signed_in}
 
 
 @main_bp.route("/login", methods=['GET', 'POST'])
@@ -262,6 +375,7 @@ def login():
             session['user_id'] = user.id
             session['username'] = user.username
             session['role'] = user.role
+            session['pw'] = password_fingerprint(user)
             flash('Login successful!', 'success')
             return redirect(url_for('main.index'))
         else:
@@ -278,19 +392,21 @@ def logout():
 
 # Dashboard/Base View
 # DASHBOARD
-METRIC_FIELDS = [
-    'enrollee_count', 'promotion_rate', 'cohort_survival_rate',
-    'completion_rate', 'transition_rate', 'dropout_rate',
-    'graduation_rate', 'retention_rate',
-]
+# The forecast itself is in forecast.py; these routes give it the yearly metrics and the current school year.
 
 def get_current_start_year():
 
     # for testing date
     # today = datetime(2027, 6, 1)
 
-    today = datetime.utcnow()
+    today = school_today()      # the school's date, so the year rolls over at midnight in the Philippines, not 8 hours later
     return today.year if today.month >= SCHOOL_YEAR_ROLLOVER_MONTH else today.year - 1
+
+
+@main_bp.app_context_processor
+def school_year_for_templates():
+    # The enrollment and student forms show the school year, and offer past ones, by the server's rule
+    return {'current_start_year': get_current_start_year}
  
  
 def ensure_current_school_year_metric():
@@ -308,6 +424,13 @@ def ensure_current_school_year_metric():
 
 MAX_ENROLLEE_COUNT = 2147483647     # largest value the INT column holds
 MAX_RATE = 150                      # rates can pass 100; this only catches typos such as 985 for 98.5
+MAX_REASON_LENGTH = 255             # what the abnormal_reason column holds
+
+# A real school year can have 0% dropout, but not 0% on these
+NONZERO_RATES = [
+    'promotion_rate', 'cohort_survival_rate', 'completion_rate',
+    'transition_rate', 'graduation_rate', 'retention_rate',
+]
 
 
 def _parse_metric_payload(data):
@@ -362,249 +485,96 @@ def _parse_metric_payload(data):
 
 @main_bp.route("/metrics/<int:metric_id>/update", methods=['POST'])
 def update_metric(metric_id):
-    if 'user_id' not in session:
-        return {'error': 'Unauthorized'}, 401
- 
     metric = YearlyMetric.query.get_or_404(metric_id)
 
     values, error = _parse_metric_payload(request.get_json(silent=True) or {})
     if error:
         return {'error': error}, 400
 
+    before = metric_snapshot(metric)
     for field, value in values.items():
         setattr(metric, field, value)
 
+    # The edit history of the figures the forecast is built on. A year is all or nothing, so blank before means submitted now.
+    changes = log_changes(before, metric_snapshot(metric))
+    if changes:
+        if not any(before.values()):
+            log_activity('metrics', 'POST', f'Submitted the yearly metrics of S.Y. {metric.school_year}', changes)
+        elif values['enrollee_count'] is None:
+            log_activity('metrics', 'DELETE', f'Cleared the yearly metrics of S.Y. {metric.school_year}', changes)
+        else:
+            log_activity('metrics', 'UPDATE', f'Edited the yearly metrics of S.Y. {metric.school_year}', changes)
     db.session.commit()
     return {'success': True}
 
-# RIDGE REGRESSION ALGORITHM
+
+def plain_number(value):
+    """A metric as the log shows it: blank when not submitted, and 410 or 92.5, never 410.0."""
+    if value is None:
+        return ''
+    return str(int(value)) if float(value).is_integer() else str(value)
 
 
-# The model's inputs: this year's count, the share of students who stay, and how well the school holds students over time
-FORECAST_RATES = ['retention_rate', 'cohort_survival_rate']
-FORECAST_FEATURES = ['enrollee_count', *FORECAST_RATES]
-
-# A real school year can have 0% dropout, but not 0% on these
-NONZERO_RATES = [
-    'promotion_rate', 'cohort_survival_rate', 'completion_rate',
-    'transition_rate', 'graduation_rate', 'retention_rate',
-]
-
-MIN_FORECAST_YEARS = 9      # usable years needed to forecast or score, which leaves at least 4 past predictions to score
-MIN_BACKTEST_YEARS = 5      # fewest earlier years a past prediction is trained on; must stay below MIN_FORECAST_YEARS
-RANGE_SHARE = 0.8          # share of past misses the forecast range is built to cover
+def metric_snapshot(metric):
+    """{label: value} of a year's metrics, for the activity log."""
+    return {field.replace('_', ' ').capitalize(): plain_number(getattr(metric, field)) for field in METRIC_FIELDS}
 
 
-def _new_forecast_model():
-    return make_pipeline(StandardScaler(), Ridge(alpha=1.0))
+FORECAST_LOG_START = 'Forecast for S.Y. '
 
 
-def _predicted_count(model, row):
-    """The model's prediction for one row, as a whole number of enrollees that can't be negative."""
-    return max(0, round(float(model.predict(row)[0])))
-
-
-def _forecast_frame(metrics_oldest_first):
-    """One row per calendar year, plus which of those years the model can use."""
-    df = pd.DataFrame([{
-        'school_year': m.school_year,
-        **{field: getattr(m, field) for field in METRIC_FIELDS},
-    } for m in metrics_oldest_first])
-    df[METRIC_FIELDS] = df[METRIC_FIELDS].apply(pd.to_numeric, errors='coerce')
-    df['start_year'] = df['school_year'].str.split('-').str[0].str.strip().astype(int)
-
-    # One row per calendar year, so shift() can't pair non-consecutive years. Blank rows sort first, so a duplicate keeps its submitted row
-    df = df.sort_values('enrollee_count', na_position='first', kind='stable')
-    df = df.drop_duplicates('start_year', keep='last').set_index('start_year').sort_index()
-    df = df.reindex(range(df.index.min(), df.index.max() + 1))
-
-    # A year's count and rates are submitted together, so they predict the next year's count
-    df['next_enrollee_count'] = df['enrollee_count'].shift(-1)
-
-    # Only the rates the model uses need to be filled in
-    has_count = df['enrollee_count'] > 0
-    is_complete = (df[FORECAST_RATES] > 0).all(axis=1)
-    train_df = df[has_count & is_complete & (df['next_enrollee_count'] > 0)]
-    return df, has_count, is_complete, train_df
-
-
-def _backtest(train_df):
-    """Predict each past year from a model trained only on the years before it, as a real forecast would be."""
-    X = train_df[FORECAST_FEATURES]
-    y = train_df['next_enrollee_count']
-
-    tests = []
-    for i in range(MIN_BACKTEST_YEARS, len(train_df)):
-        model = _new_forecast_model().fit(X.iloc[:i], y.iloc[:i])
-        predicted = _predicted_count(model, X.iloc[[i]])
-        actual = int(y.iloc[i])
-        tests.append({
-            'start_year': int(train_df.index[i]) + 1,
-            'predicted': predicted,
-            'actual': actual,
-            'previous_count': int(X['enrollee_count'].iloc[i]),
-            'earlier_average': float(y.iloc[:i].mean()),
-            'trained_on': i,
-            'difference': predicted - actual,
-            'percent_off': round(abs(predicted - actual) / actual * 100, 1),
-        })
-    return tests
-
-
-def _score_backtest(tests):
-    """The figures both pages report, all from the same past predictions."""
-    misses = sorted(abs(test['difference']) for test in tests)
-    covered = min(len(tests), math.ceil((len(tests) + 1) * RANGE_SHARE))
-    baseline = [abs(test['previous_count'] - test['actual']) / test['actual'] * 100 for test in tests]
-
-    # R2 against guessing the average of the earlier years, the fair rival, since the test years' own average wasn't known yet
-    model_error = sum(test['difference'] ** 2 for test in tests)
-    average_error = sum((test['actual'] - test['earlier_average']) ** 2 for test in tests)
-
-    return {
-        'mape': round(sum(test['percent_off'] for test in tests) / len(tests), 1),
-        'baseline_mape': round(sum(baseline) / len(baseline), 1),
-        'r2_score': round(1 - model_error / average_error, 2) if average_error else None,
-        'tested_years': len(tests),
-        'range_margin': misses[covered - 1],
-        'range_covered': covered,
+def record_forecast(forecast):
+    """Keeps what the dashboard showed: a forecast is logged (by "System", under Yearly Metrics) the first time it is
+    seen, and again whenever its number, range, inputs or scores change, with the old values beside the new. The
+    pages recompute the forecast from today's metrics, so without this an edit to an old year would silently rewrite
+    what was predicted. A failure never breaks the page being opened."""
+    if forecast['pred_next_year'] is None:
+        return
+    inputs = forecast['forecast_inputs']
+    shown = {
+        'School year': forecast['target_year'],
+        'Forecast': f"{forecast['pred_next_year']} enrollees",
+        'Likely range': f"{forecast['range_low']} to {forecast['range_high']}",
+        'Based on': (f"S.Y. {forecast['based_on_year']}: {plain_number(inputs['enrollee_count'])} enrollees, "
+                     f"retention {plain_number(inputs['retention_rate'])}%, "
+                     f"cohort survival {plain_number(inputs['cohort_survival_rate'])}%"),
+        'Years learned from': str(forecast['trained_years']),
+        'Average miss': f"{forecast['mape']}% across {forecast['tested_years']} past years",
+        'Best on past years': forecast['best_method'],
     }
+    try:
+        last = (ActivityLog.query.filter_by(area='metrics', username='System')
+                .filter(ActivityLog.description.startswith(FORECAST_LOG_START)).order_by(ActivityLog.id.desc()).first())
+        before = {label: new for label, old, new in last.details} if last else {}
+        if before == shown:
+            return
+        # Every value is listed, changed or not, so the next comparison has the whole forecast to compare with
+        # shortcut: two people opening the dashboard at the same moment after an edit can log the same forecast twice;
+        # harmless, add a lock or a unique key if the log is ever counted
+        log_activity('metrics', 'UPDATE' if last else 'POST',
+                     f"{FORECAST_LOG_START}{shown['School year']}: {shown['Forecast']}, likely {shown['Likely range']}",
+                     [[label, before.get(label, ''), value] for label, value in shown.items()], username='System')
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception('Could not record the forecast.')
 
-
-def forecast_values(metrics_oldest_first):
-    """Train the model on the yearly metrics and return what the dashboard and statistics pages show."""
-    pred_next_year = None
-    based_on_year = None
-    target_year = None
-    forecast_note = None
-    actual_year = None
-    actual_count = None
-    range_low = None
-    range_high = None
-    tests = []
-    trained_years = 0
-    scores = dict.fromkeys(['mape', 'baseline_mape', 'r2_score', 'tested_years', 'range_margin', 'range_covered'])
-
-    if metrics_oldest_first:
-        df, has_count, is_complete, train_df = _forecast_frame(metrics_oldest_first)
-        features = FORECAST_FEATURES
-        trained_years = len(train_df)
-        tests = _backtest(train_df)
-
-        # The same minimum as the forecast, so both pages report scores under one rule
-        if len(train_df) >= MIN_FORECAST_YEARS:
-            scores = _score_backtest(tests)
-
-        if has_count.any():
-            anchor = int(df.index[has_count][-1])   # latest recorded enrollment
-            target_year = f'{anchor + 1}-{anchor + 2}'
-            based_on_year = f'{anchor}-{anchor + 1}'
-
-            # Show the current year's submitted count; until then, the forecast year's actual is pending
-            if anchor >= get_current_start_year():
-                actual_year = based_on_year
-                actual_count = int(df.loc[anchor, 'enrollee_count'])
-            else:
-                actual_year = target_year
-
-            # if len(train_df) <= len(features):
-            #     forecast_note = (
-            #         f'Not enough complete years: the model has {len(features)} inputs '
-            #         f'but only {len(train_df)} usable years.'
-            #     )
-
-            if not is_complete.loc[anchor]:
-                forecast_note = (
-                    f'No forecast yet: S.Y. {based_on_year} has a blank or 0% retention or cohort survival rate. '
-                    'Complete that year to see the forecast.'
-                )
-
-            elif len(train_df) < MIN_FORECAST_YEARS:
-                forecast_note = (
-                    f'Not enough complete years: the forecast needs {MIN_FORECAST_YEARS} usable years '
-                    f'but there are only {len(train_df)}.'
-                )
-
-            else:
-                X = train_df[features]
-                y = train_df['next_enrollee_count']
-
-                model = _new_forecast_model().fit(X, y)
-                pred_next_year = _predicted_count(model, df.loc[[anchor], features])
-                range_low = max(0, pred_next_year - scores['range_margin'])
-                range_high = pred_next_year + scores['range_margin']
-
-    return {
-        'pred_next_year': pred_next_year,
-        'based_on_year': based_on_year,
-        'target_year': target_year,
-        'forecast_note': forecast_note,
-        'actual_year': actual_year,
-        'actual_count': actual_count,
-        'range_low': range_low,
-        'range_high': range_high,
-        'tests': tests,
-        'trained_years': trained_years,
-        **scores,
-    }
-
-
-def prediction_history(metrics_oldest_first):
-    """The dashboard's forecast and scores, plus each year's actual count beside its past prediction."""
-    forecast = forecast_values(metrics_oldest_first)
-    history = {**forecast, 'years': [], 'min_years': MIN_BACKTEST_YEARS}
-    if not metrics_oldest_first:
-        return history
-
-    df, has_count, _, _ = _forecast_frame(metrics_oldest_first)
-    actual = {int(year): int(df.loc[year, 'enrollee_count']) for year in df.index[has_count]}
-    tested = {test['start_year']: test for test in forecast['tests']}
-
-    forecast_year = None
-    if forecast['pred_next_year'] is not None:
-        forecast_year = int(forecast['target_year'].split('-')[0])
-
-    known = sorted({*actual, *tested, *([forecast_year] if forecast_year else [])})
-    if not known:
-        return history
-
-    # Every calendar year stays on the list, so a missing year shows as a gap in the chart
-    for year in range(known[0], known[-1] + 1):
-        test = tested.get(year, {})
-        is_forecast = year == forecast_year
-        history['years'].append({
-            'year': f'{year}-{year + 1}',
-            'actual': actual.get(year),
-            'predicted': forecast['pred_next_year'] if is_forecast else test.get('predicted'),
-            'trained_on': forecast['trained_years'] if is_forecast else test.get('trained_on'),
-            'is_forecast': is_forecast,
-            'difference': test.get('difference'),
-            'percent_off': test.get('percent_off'),
-            'range': [forecast['range_low'], forecast['range_high']] if is_forecast else None,
-        })
-    return history
 
 
 @main_bp.route("/")
 def index():
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
     # The table and forecast load separately from /dashboard/data, so the page can appear straight away
     return render_template('dashboard.html', username=session['username'])
 
 
 @main_bp.route("/dashboard/data")
 def dashboard_data():
-    if 'user_id' not in session:
-        return {'error': 'Unauthorized'}, 401
-
     ensure_current_school_year_metric()
     metrics = YearlyMetric.query.order_by(YearlyMetric.school_year.desc()).all()
     all_metrics_asc = YearlyMetric.query.order_by(YearlyMetric.school_year.asc()).all()
 
     # Newest first, as on the Masterlist. Only the columns the card shows: a full row carries the signature image.
-    recent_students = Enrollment.query.with_entities(
+    recent_students = active(Enrollment).with_entities(
         Enrollment.id, Enrollment.last_name, Enrollment.first_name, Enrollment.middle_name,
         Enrollment.extension_name, Enrollment.grade_level, Enrollment.age, Enrollment.sex,
     ).order_by(Enrollment.id.desc()).limit(4).all()
@@ -616,27 +586,53 @@ def dashboard_data():
         CalendarEvent.event_date <= week_end,
         db.func.coalesce(CalendarEvent.end_date, CalendarEvent.event_date) >= today,
     ).order_by(CalendarEvent.event_date.asc(), CalendarEvent.id.asc()).all()
+    # Google's holidays that week join them, turned into the attributes the template reads
+    week_events += [SimpleNamespace(event_date=date.fromisoformat(h['date']), end_date=date.fromisoformat(h['end_date']),
+                                    tag=h['tag'], description=h['description'])
+                     for h in cached_holidays() if h['date'] <= week_end.isoformat() and h['end_date'] >= today.isoformat()]
+    week_events.sort(key=lambda e: e.event_date)    # stable: on the same day the school's own entries come first
 
+    forecast = forecast_values(all_metrics_asc, get_current_start_year())
+    record_forecast(forecast)
     return render_template('dashboard_data.html', metrics=metrics, recent_students=recent_students,
-                           today=today, week_end=week_end, week_events=week_events,
-                           **forecast_values(all_metrics_asc))
+                           today=today, week_end=week_end, week_events=week_events, **forecast)
 
 
 @main_bp.route("/statistics")
 def statistics():
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
     metrics = YearlyMetric.query.order_by(YearlyMetric.school_year.asc()).all()
-    return render_template('statistics.html', **prediction_history(metrics))
+    history = prediction_history(metrics, get_current_start_year())
+    record_forecast(history)    # this page shows the forecast too
+    return render_template('statistics.html', **history)
+
+
+@main_bp.route("/statistics/abnormal-year", methods=['POST'])
+def mark_abnormal_year():
+    """The statistics page's form: a reason marks the year abnormal, which leaves it out of the forecast's
+    training and scoring; a blank reason makes it a normal year again."""
+    metric = db.session.get(YearlyMetric, request.form.get('metric_id', type=int) or 0)
+    if metric is None:
+        abort(404)
+
+    reason = ' '.join(request.form.get('reason', '').split())
+    if len(reason) > MAX_REASON_LENGTH:
+        flash(f'The reason must be {MAX_REASON_LENGTH} characters or fewer.', 'danger')
+    else:
+        if (metric.abnormal_reason or '') != reason:
+            log_activity('metrics', 'UPDATE',
+                         f'Marked S.Y. {metric.school_year} as ' + ('an abnormal year' if reason else 'a normal year again'),
+                         [['Abnormal reason', metric.abnormal_reason or '', reason]])
+        metric.abnormal_reason = reason or None
+        db.session.commit()
+        flash(f'S.Y. {metric.school_year} is marked abnormal and left out of the forecast.' if reason
+              else f'S.Y. {metric.school_year} counts as a normal year.', 'success')
+    return redirect(url_for('main.statistics'))
 
 
 @main_bp.route("/test_signatures")
 def test_signatures():
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
-    enrollments = Enrollment.query.order_by(Enrollment.id.desc()).all()
+    # This page shows every signature, so they come in the same query instead of one query per student
+    enrollments = Enrollment.query.options(undefer(Enrollment.signature_data)).order_by(Enrollment.id.desc()).all()
     return render_template('test_signatures.html', enrollments=enrollments)
 
 # Enrollment rules (the page's JavaScript is only a convenience, these are what count)
@@ -744,7 +740,7 @@ EARLIEST_LAST_SCHOOL_YEAR_END = 2002
 
 def school_today():
     """Today's date at the school (Philippine time), whatever timezone the server uses."""
-    return (datetime.utcnow() + timedelta(hours=8)).date()
+    return (utc_now() + timedelta(hours=8)).date()
 
 
 def signature_problem(signature):
@@ -774,6 +770,7 @@ def validate_enrollment(form, age_on=None):
     values = {}
     today = school_today()
     age_on = age_on or today
+    start_year = get_current_start_year()     # the school year under way, which turns over on June 1
 
     def text(name):
         return form.get(name, '').strip()
@@ -814,7 +811,7 @@ def validate_enrollment(form, age_on=None):
     values['psa_birth_cert_no'] = text('psa_birth_cert_no') or None
 
     # The server works these out itself, so what the browser sends for them is ignored
-    values['school_year'] = f'{today.year}-{today.year + 1}'
+    values['school_year'] = f'{start_year}-{start_year + 1}'
     values['date_signed'] = today
     values['age'] = None
     values['birthdate'] = None
@@ -882,7 +879,8 @@ def validate_enrollment(form, age_on=None):
         last_year = require('last_school_year_completed')
         if last_year:
             match = re.fullmatch(r'([0-9]{4})-([0-9]{4})', last_year)
-            if not match or int(match[2]) != int(match[1]) + 1 or not EARLIEST_LAST_SCHOOL_YEAR_END <= int(match[2]) <= today.year - 1:
+            # Completed: ended no later than the year the current school year began (2025-2026 is done once 2026-2027 starts)
+            if not match or int(match[2]) != int(match[1]) + 1 or not EARLIEST_LAST_SCHOOL_YEAR_END <= int(match[2]) <= start_year:
                 errors.append('Last school year completed is not a valid school year.')
         values['last_school_year_completed'] = last_year or None
 
@@ -923,12 +921,14 @@ def enrollment_form_data(form):
     return data
 
 
+# An added student's log entry says who it is, without copying the whole form into the log
+NEW_STUDENT_LOG_FIELDS = {'school_year': 'School year', 'grade_level': ENROLLMENT_LABELS['grade_level'],
+                          'lrn_no': ENROLLMENT_LABELS['lrn_no'], 'sex': ENROLLMENT_LABELS['sex']}
+
+
 # Enrollment View
 @main_bp.route("/enrollment", methods=['GET', 'POST'])
 def enrollment():
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
     if request.method == 'POST':
         values, errors = validate_enrollment(request.form)
         if errors:
@@ -936,7 +936,10 @@ def enrollment():
             return render_template('enrollment.html', form_data=enrollment_form_data(request.form)), 400
 
         try:
-            db.session.add(Enrollment(**values))
+            student = Enrollment(**values)
+            db.session.add(student)
+            log_activity('masterlist', 'POST', f'Added student {full_name(student)}',
+                         log_changes({}, log_snapshot(student, NEW_STUDENT_LOG_FIELDS)))
             db.session.commit()
 
             flash('Enrollment application submitted successfully!', 'success')
@@ -957,10 +960,7 @@ SCHOOL_YEAR_ROLLOVER_MONTH = 6
 
 @main_bp.route("/enrolled")
 def enrolled():
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-    
-    students = Enrollment.query.order_by(Enrollment.id.desc()).all()
+    students = active(Enrollment).order_by(Enrollment.id.desc()).all()
 
     # Display number of enrollees in terminal for testing
     # print(f"DEBUG: found {len(students)} enrollments")
@@ -969,11 +969,26 @@ def enrolled():
 
 @main_bp.route("/enrolled/<int:student_id>")
 def student_detail(student_id):
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
-    student = Enrollment.query.get_or_404(student_id)
+    # An archived student's form stays readable from the Archives
+    student = unless_archived(Enrollment.query.get_or_404(student_id))
     return render_template('student.html', student=student)
+
+
+@main_bp.route("/enrolled/<int:student_id>/archive", methods=['POST'])
+def archive_student(student_id):
+    """Move the student to the Archives. Their enrollment form and report cards stay with them, untouched."""
+    student = active(Enrollment).filter_by(id=student_id).first_or_404()
+    cards = active(Grades).filter_by(student_id=student.id).count()
+    student.archived_at = utc_now()
+    log_activity('masterlist', 'DELETE', f'Moved {full_name(student)} to the Archives',
+                 log_changes({**log_snapshot(student, LOG_FIELDS[Enrollment]), 'Report cards': str(cards)}, {}))
+    db.session.commit()
+    message = f'Moved {full_name(student)} to the Archives.'
+    # The Masterlist's script (enrolled.js) removes the row itself, so the page keeps its search and page
+    if request.headers.get('Sec-Fetch-Mode', 'navigate') != 'navigate':
+        return {'message': message}
+    flash(message, 'success')
+    return redirect(url_for('main.enrolled'))
 
 
 def student_form_data(student):
@@ -988,10 +1003,7 @@ def student_form_data(student):
 
 @main_bp.route("/enrolled/<int:student_id>/edit", methods=['GET', 'POST'])
 def edit_student(student_id):
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
-    student = Enrollment.query.get_or_404(student_id)
+    student = active(Enrollment).filter_by(id=student_id).first_or_404()
 
     if request.method == 'GET':
         return render_template('student.html', student=student, editing=True, form_data=student_form_data(student))
@@ -1041,13 +1053,6 @@ GRADE_LEVELS = [
     'Grade 5', 'Grade 6'
 ]
 
-ALLOWED_REPORT_EXTENSIONS = { "xlsx" }
-
-REPORT_MIME_TYPES = {
-    "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-}
-
-MAX_REPORT_SIZE = 10 * 1024 * 1024
 MAX_FILENAME_LENGTH = 255
 
 
@@ -1074,10 +1079,7 @@ def grades():
 
 @main_bp.route("/grades/<int:student_id>")
 def student_grades(student_id):
-    if "user_id" not in session:
-        return redirect(url_for("main.login"))
-
-    student = Enrollment.query.get_or_404(student_id)
+    student = active(Enrollment).filter_by(id=student_id).first_or_404()
 
     reports = {
         level: active(Grades).filter_by(
@@ -1100,10 +1102,7 @@ def student_grades(student_id):
 )
 
 def upload_report_card(student_id, level):
-    if "user_id" not in session:
-        return redirect(url_for("main.login"))
-
-    student = Enrollment.query.get_or_404(student_id)
+    student = active(Enrollment).filter_by(id=student_id).first_or_404()
 
     if level not in GRADE_LEVELS:
         flash("Invalid grade level.", "danger")
@@ -1111,52 +1110,15 @@ def upload_report_card(student_id, level):
             url_for("main.student_grades", student_id=student.id)
         )
 
-    uploaded_file = request.files.get("report_card")
-
-    if not uploaded_file or not uploaded_file.filename:
-        flash("Please select a report card file.", "warning")
-        return redirect(
-            url_for("main.student_grades", student_id=student.id)
-        )
-
-    filename = secure_filename(uploaded_file.filename)
-
-    if not filename or "." not in filename or len(filename) > MAX_FILENAME_LENGTH:
-        flash("Invalid filename.", "danger")
-        return redirect(
-            url_for("main.student_grades", student_id=student.id)
-        )
-
-    extension = filename.rsplit(".", 1)[1].lower()
-
-    if extension not in ALLOWED_REPORT_EXTENSIONS:
-        flash(
-            "Invalid file type. Upload an Excel (.xlsx) file only",
-            "danger",
-        )
-        return redirect(
-            url_for("main.student_grades", student_id=student.id)
-        )
-
-    file_data = uploaded_file.read()
-
-    if not file_data:
-        flash("The selected file is empty.", "warning")
-        return redirect(
-            url_for("main.student_grades", student_id=student.id)
-        )
-
-    if len(file_data) > MAX_REPORT_SIZE:
-        flash("The file must be 10 MB or smaller.", "danger")
-        return redirect(
-            url_for("main.student_grades", student_id=student.id)
-        )
-
-    if not is_real_document(extension, file_data):
-        flash("That file is not a valid Excel (.xlsx) file.", "danger")
-        return redirect(
-            url_for("main.student_grades", student_id=student.id)
-        )
+    # The Linkage/Files checks, but Excel only: checked first, so a PDF isn't told PDFs are allowed
+    upload = request.files.get("report_card")
+    if upload and upload.filename and get_extension(upload.filename) != "xlsx":
+        error = "Invalid file type. Upload an Excel (.xlsx) file only."
+    else:
+        filename, file_data, mime_type, error = read_upload(upload)
+    if error:
+        flash(error, "danger")
+        return redirect(url_for("main.student_grades", student_id=student.id))
 
     existing_report = Grades.query.filter_by(
         student_id=student.id,
@@ -1178,12 +1140,10 @@ def upload_report_card(student_id, level):
         if existing_report:
             old_filename = existing_report.original_filename
             existing_report.original_filename = filename
-            existing_report.stored_filename = (
-                f"{uuid.uuid4().hex}.{extension}"
-            )
+            existing_report.stored_filename = f"{uuid.uuid4().hex}.xlsx"
             existing_report.file_data = file_data
-            existing_report.mime_type = REPORT_MIME_TYPES[extension]
-            existing_report.uploaded_at = datetime.utcnow()
+            existing_report.mime_type = mime_type
+            existing_report.uploaded_at = utc_now()
 
             message = f"{level} report card replaced successfully."
             log_activity("masterlist", "UPDATE", f"Replaced the {level} report card of {who}",
@@ -1193,9 +1153,9 @@ def upload_report_card(student_id, level):
                 student_id=student.id,
                 grade_level=level,
                 original_filename=filename,
-                stored_filename=f"{uuid.uuid4().hex}.{extension}",
+                stored_filename=f"{uuid.uuid4().hex}.xlsx",
                 file_data=file_data,
-                mime_type=REPORT_MIME_TYPES[extension],
+                mime_type=mime_type,
             )
             db.session.add(report)
             message = f"{level} report card uploaded successfully."
@@ -1223,10 +1183,7 @@ def upload_report_card(student_id, level):
 @main_bp.route("/report-cards/<int:report_id>/view")
 def view_report_card(report_id):
     """Display a report card retrieved from the MySQL BLOB column."""
-    if "user_id" not in session:
-        return redirect(url_for("main.login"))
-
-    report = Grades.query.get_or_404(report_id)
+    report = report_card(report_id)
 
     if not report.file_data:
         flash(
@@ -1247,10 +1204,7 @@ def view_report_card(report_id):
 @main_bp.route("/report-cards/<int:report_id>/download")
 def download_report_card(report_id):
     """Download a report card retrieved from the MySQL BLOB column."""
-    if "user_id" not in session:
-        return redirect(url_for("main.login"))
-
-    report = Grades.query.get_or_404(report_id)
+    report = report_card(report_id)
 
     if not report.file_data:
         flash(
@@ -1268,23 +1222,108 @@ def download_report_card(report_id):
         download_name=report.original_filename,
     )
 
+
+# PREVIEW: a report card's sheets as tables, so it can be read without downloading it (Grade Files' preview popup)
+PREVIEW_MAX_ROWS = 300
+PREVIEW_MAX_COLUMNS = 40
+# A report card unpacks to under 200 KB. A 10 MB .xlsx is zipped XML and can unpack to far more: a 2.8 MB file of
+# 600,000 cells (28 MB unpacked) took about 6 s and 230 MB to read, which holds up the whole app, so bigger ones
+# only download.
+PREVIEW_MAX_UNPACKED = 5 * 1024 * 1024
+
+
+def preview_text(cell):
+    """A cell's value as Excel would show it, near enough: whole numbers without .0, percentages and dates readable."""
+    value = cell.value
+    if value is None:
+        return ''
+    if isinstance(value, bool):
+        return 'TRUE' if value else 'FALSE'
+    if isinstance(value, date):     # datetime too
+        return f'{value:%b} {value.day}, {value.year}'
+    if isinstance(value, (int, float)):
+        if '%' in (cell.number_format or ''):
+            value *= 100
+        value = round(value, 2)
+        text = str(int(value)) if float(value).is_integer() else str(value)
+        return text + '%' if '%' in (cell.number_format or '') else text
+    return str(value)
+
+
+def sheet_preview(sheet):
+    """(rows, cut_off) of a sheet's used part, or None when it is empty. Each row is a list of cells
+    {text, rowspan, colspan, bold, center}; a cell inside a merged range is left out, its first cell spans it."""
+    rows_shown = min(sheet.max_row, PREVIEW_MAX_ROWS)
+    columns_shown = min(sheet.max_column, PREVIEW_MAX_COLUMNS)
+    filled = [(cell.row, cell.column) for row in sheet.iter_rows(max_row=rows_shown, max_col=columns_shown)
+              for cell in row if cell.value not in (None, '')]
+    if not filled:
+        return None
+    last_row = max(row for row, _ in filled)
+    last_column = max(column for _, column in filled)
+
+    spans, covered = {}, set()
+    for merged in sheet.merged_cells.ranges:
+        if merged.min_row > last_row or merged.min_col > last_column:
+            continue
+        bottom, right = min(merged.max_row, last_row), min(merged.max_col, last_column)
+        spans[(merged.min_row, merged.min_col)] = (bottom - merged.min_row + 1, right - merged.min_col + 1)
+        covered.update((r, c) for r in range(merged.min_row, bottom + 1) for c in range(merged.min_col, right + 1))
+        covered.discard((merged.min_row, merged.min_col))
+
+    rows = []
+    for row in sheet.iter_rows(max_row=last_row, max_col=last_column):
+        cells = []
+        for cell in row:
+            if (cell.row, cell.column) in covered:
+                continue
+            rowspan, colspan = spans.get((cell.row, cell.column), (1, 1))
+            cells.append({'text': preview_text(cell), 'rowspan': rowspan, 'colspan': colspan,
+                          'bold': bool(cell.font.b), 'center': cell.alignment.horizontal in ('center', 'centerContinuous')})
+        rows.append(cells)
+    return rows, sheet.max_row > PREVIEW_MAX_ROWS or sheet.max_column > PREVIEW_MAX_COLUMNS
+
+
+@main_bp.route("/report-cards/<int:report_id>/preview")
+def preview_report_card(report_id):
+    """The report card's visible sheets as tables: a piece of HTML for the Grade Files popup, not a page."""
+    report = report_card(report_id)
+    sheets, problem = [], None
+    try:
+        if not report.file_data:
+            problem = 'This report card has no file stored.'
+        else:
+            with zipfile.ZipFile(BytesIO(report.file_data)) as package:
+                unpacked = sum(item.file_size for item in package.infolist())
+            if unpacked > PREVIEW_MAX_UNPACKED:
+                problem = 'This file is too large to preview.'
+            else:
+                # data_only: the values formulas last worked out in Excel, not the formulas themselves
+                book = openpyxl.load_workbook(BytesIO(report.file_data), data_only=True)
+                for sheet in book.worksheets:
+                    preview = sheet_preview(sheet) if sheet.sheet_state == 'visible' else None
+                    if preview:
+                        sheets.append((sheet.title, *preview))
+    except Exception:   # a damaged or unusual file: it can still be downloaded
+        current_app.logger.exception('Could not preview report card %s.', report_id)
+        problem = "This file can't be previewed."
+    return render_template('report_card_preview.html', sheets=sheets, problem=problem,
+                           max_rows=PREVIEW_MAX_ROWS, max_columns=PREVIEW_MAX_COLUMNS)
+
 @main_bp.route(
     "/report-cards/<int:report_id>/delete",
     methods=["POST"]
 )
 def delete_report_card(report_id):
     """Move the report card to the Archives."""
-    if "user_id" not in session:
-        return redirect(url_for("main.login"))
-
     report = active(Grades).filter_by(id=report_id).first_or_404()
     student_id = report.student_id
 
     # Only the name columns: a full student row carries the signature image
-    student = Enrollment.query.with_entities(Enrollment.last_name, Enrollment.first_name).filter_by(id=student_id).one()
+    student = active(Enrollment).with_entities(Enrollment.last_name, Enrollment.first_name).filter_by(id=student_id).first_or_404()
 
     try:
-        report.archived_at = datetime.utcnow()
+        report.archived_at = utc_now()
         log_activity("masterlist", "DELETE", f"Moved the {report.grade_level} report card of {full_name(student)} to the Archives",
                      log_changes({"Student": full_name(student), **log_snapshot(report, LOG_FIELDS[Grades])}, {}))
         db.session.commit()
@@ -1304,9 +1343,6 @@ def delete_report_card(report_id):
 # Calendar View
 @main_bp.route("/calendar")
 def calendar():
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
     return render_template('calendar.html')
 
 
@@ -1361,9 +1397,6 @@ def _parse_calendar_payload(data):
  
 @main_bp.route("/calendar/events", methods=['GET', 'POST'])
 def calendar_events():
-    if 'user_id' not in session:
-        return {'error': 'Unauthorized'}, 401
- 
     if request.method == 'GET':
         events = active(CalendarEvent).order_by(CalendarEvent.event_date.asc(), CalendarEvent.id.asc()).all()
         return jsonify([e.to_dict() for e in events])
@@ -1381,13 +1414,10 @@ def calendar_events():
  
 @main_bp.route("/calendar/events/<int:event_id>", methods=['PUT', 'DELETE'])
 def calendar_event_detail(event_id):
-    if 'user_id' not in session:
-        return {'error': 'Unauthorized'}, 401
- 
     event = active(CalendarEvent).filter_by(id=event_id).first_or_404()
  
     if request.method == 'DELETE':
-        event.archived_at = datetime.utcnow()
+        event.archived_at = utc_now()
         log_activity('calendar', 'DELETE', f'Moved {event_label(event)} to the Archives',
                      log_changes(log_snapshot(event, LOG_FIELDS[CalendarEvent]), {}))
         db.session.commit()
@@ -1407,6 +1437,57 @@ def calendar_event_detail(event_id):
                  log_changes(before, log_snapshot(event, LOG_FIELDS[CalendarEvent])))
     db.session.commit()
     return jsonify(event.to_dict())
+
+
+# Holidays from Google's Philippine holiday calendar (google_key in .env), shown on the Calendar beside the
+# school's own entries. Read-only and never saved; the key stays on the server.
+GOOGLE_HOLIDAYS_URL = ('https://www.googleapis.com/calendar/v3/calendars/'
+                       'en.philippines%23holiday%40group.v.calendar.google.com/events')
+HOLIDAYS_KEEP_SECONDS = 12 * 3600   # holidays rarely change, so Google is asked about twice a day
+HOLIDAYS_RETRY_SECONDS = 10 * 60    # after a failure, so a refused key or a down API isn't asked on every page load
+HOLIDAYS_TIMEOUT_SECONDS = 4
+holidays_cache = {'holidays': [], 'expires': 0.0}
+holidays_lock = threading.Lock()
+
+
+def fetch_google_holidays(key):
+    """Public holidays (not observances) from last year to the end of next year, shaped like CalendarEvent.to_dict()."""
+    year = school_today().year
+    query = urlencode({'key': key, 'timeMin': f'{year - 1}-01-01T00:00:00Z', 'timeMax': f'{year + 2}-01-01T00:00:00Z',
+                       'singleEvents': 'true', 'orderBy': 'startTime', 'maxResults': 2500})
+    with urlopen(f'{GOOGLE_HOLIDAYS_URL}?{query}', timeout=HOLIDAYS_TIMEOUT_SECONDS) as response:
+        items = json.load(response).get('items', [])
+
+    holidays = []
+    for item in items:
+        start, end = item['start'].get('date'), item['end'].get('date')
+        if not (start and end and (item.get('description') or '').startswith('Public holiday')):
+            continue
+        last = (date.fromisoformat(end) - timedelta(days=1)).isoformat()   # Google's end is the day after
+        holidays.append({'date': start, 'end_date': max(start, last), 'tag': 'holiday', 'link_url': '',
+                         'description': (item.get('summary') or '')[:CALENDAR_MAX_DESCRIPTION]})
+    return holidays
+
+
+def cached_holidays():
+    """The holidays, asked of Google at most once per HOLIDAYS_KEEP_SECONDS. Only one request at a time asks
+    (waiting at most the timeout); every other request gets the last list straight away."""
+    if time.monotonic() >= holidays_cache['expires'] and holidays_lock.acquire(blocking=False):
+        try:
+            if time.monotonic() >= holidays_cache['expires']:      # another request may have just refreshed it
+                holidays_cache['holidays'] = fetch_google_holidays(os.environ['google_key'])
+                holidays_cache['expires'] = time.monotonic() + HOLIDAYS_KEEP_SECONDS
+        except Exception as error:      # no key, no network, a timeout, a refused key or an odd reply: the last list stays
+            current_app.logger.warning('Could not load holidays from Google: %r', error)
+            holidays_cache['expires'] = time.monotonic() + HOLIDAYS_RETRY_SECONDS
+        finally:
+            holidays_lock.release()
+    return holidays_cache['holidays']
+
+
+@main_bp.route("/calendar/holidays")
+def calendar_holidays():
+    return jsonify(cached_holidays())
 
 
 # LINKAGES
@@ -1473,9 +1554,6 @@ def file_too_large(error):
  
 @main_bp.route("/linkagefiles")
 def linkagefiles():
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
     links = active(LinkItem).order_by(LinkItem.created_at.desc()).all()
     files = active(FileItem).order_by(FileItem.uploaded_at.desc()).all()
     pictures = active(PictureItem).order_by(PictureItem.uploaded_at.desc()).all()
@@ -1492,9 +1570,6 @@ def linkagefiles():
  
 @main_bp.route("/linkage/links/add", methods=['POST'])
 def add_link():
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
- 
     title = request.form.get('title', '').strip()
     url = clean_url(request.form.get('url'))
 
@@ -1513,9 +1588,6 @@ def add_link():
  
 @main_bp.route("/linkage/links/<int:link_id>/edit", methods=['POST'])
 def edit_link(link_id):
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
- 
     link = active(LinkItem).filter_by(id=link_id).first_or_404()
     title = request.form.get('title', '').strip()
     url = clean_url(request.form.get('url'))
@@ -1536,11 +1608,8 @@ def edit_link(link_id):
  
 @main_bp.route("/linkage/links/<int:link_id>/delete", methods=['POST'])
 def delete_link(link_id):
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
- 
     link = active(LinkItem).filter_by(id=link_id).first_or_404()
-    link.archived_at = datetime.utcnow()
+    link.archived_at = utc_now()
     log_activity('linkage', 'DELETE', f'Moved link {named(link.title)} to the Archives', log_changes(log_snapshot(link, LOG_FIELDS[LinkItem]), {}))
     db.session.commit()
     flash('Link moved to the Archives.', 'success')
@@ -1551,9 +1620,6 @@ def delete_link(link_id):
  
 @main_bp.route("/linkage/files/upload", methods=['POST'])
 def upload_file():
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
- 
     filename, data, content_type, error = read_upload(request.files.get('file'))
     if error:
         flash(error, 'danger')
@@ -1573,9 +1639,6 @@ def upload_file():
  
 @main_bp.route("/linkage/files/<int:file_id>/edit", methods=['POST'])
 def edit_file(file_id):
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
- 
     item = active(FileItem).filter_by(id=file_id).first_or_404()
     title = request.form.get('title', '').strip()
     upload = request.files.get('file')
@@ -1609,11 +1672,8 @@ def edit_file(file_id):
  
 @main_bp.route("/linkage/files/<int:file_id>/delete", methods=['POST'])
 def delete_file(file_id):
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
- 
     item = active(FileItem).filter_by(id=file_id).first_or_404()
-    item.archived_at = datetime.utcnow()
+    item.archived_at = utc_now()
     log_activity('linkage', 'DELETE', f'Moved file {named(item.title)} to the Archives', log_changes(log_snapshot(item, LOG_FIELDS[FileItem]), {}))
     db.session.commit()
     flash('File moved to the Archives.', 'success')
@@ -1622,10 +1682,7 @@ def delete_file(file_id):
  
 @main_bp.route("/linkage/files/<int:file_id>/download")
 def download_file(file_id):
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
- 
-    item = FileItem.query.get_or_404(file_id)
+    item = unless_archived(FileItem.query.get_or_404(file_id))
     return send_file(
         io.BytesIO(item.data),
         as_attachment=True,
@@ -1691,9 +1748,6 @@ def read_picture(upload):
 
 @main_bp.route("/linkage/pictures/upload", methods=['POST'])
 def upload_picture():
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
     filename, data, content_type, error = read_picture(
         request.files.get('picture')
     )
@@ -1738,10 +1792,7 @@ def upload_picture():
 
 @main_bp.route("/linkage/pictures/<int:picture_id>/view")
 def view_picture(picture_id):
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
-    picture = PictureItem.query.get_or_404(picture_id)
+    picture = unless_archived(PictureItem.query.get_or_404(picture_id))
 
     if not picture.data:
         abort(404)
@@ -1758,13 +1809,10 @@ def view_picture(picture_id):
     methods=['POST']
 )
 def delete_picture(picture_id):
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
     picture = active(PictureItem).filter_by(id=picture_id).first_or_404()
 
     try:
-        picture.archived_at = datetime.utcnow()
+        picture.archived_at = utc_now()
         log_activity('linkage', 'DELETE', f'Moved picture {named(picture.title)} to the Archives',
                      log_changes(log_snapshot(picture, LOG_FIELDS[PictureItem]), {}))
         db.session.commit()
@@ -1783,8 +1831,10 @@ def delete_picture(picture_id):
 
 # ARCHIVES
 
-# The kind in an archive URL: (model, name used in messages, activity log area, column that names the item)
+# The kind in an archive URL: (model, name used in messages, activity log area, column that names the item;
+# None for a student, named by their full name)
 ARCHIVE_KINDS = {
+    'students': (Enrollment, 'Student', 'masterlist', None),
     'report-cards': (Grades, 'Report card', 'masterlist', 'original_filename'),
     'events': (CalendarEvent, 'Event', 'calendar', 'description'),
     'links': (LinkItem, 'Link', 'linkage', 'title'),
@@ -1793,15 +1843,76 @@ ARCHIVE_KINDS = {
 }
 
 
+ARCHIVE_DAYS = 30                  # an item is deleted for good this many days after it was moved to the Archives
+PURGE_EVERY_SECONDS = 60 * 60      # how often requests check for items past that (no scheduler runs in this app)
+last_purge = {'at': None}          # time.monotonic() of this process's last check
+purge_lock = threading.Lock()
+
+
 def archived(model):
     """Rows in the Archives, most recently deleted first."""
     return model.query.filter(model.archived_at.isnot(None)).order_by(model.archived_at.desc())
 
 
+def archived_item_name(label, values, name_column):
+    """e.g. file "Memo", as log entries name an archived item."""
+    name = getattr(values, name_column) if name_column else full_name(values)
+    return f'{label.lower()} {named(name)}'.strip()     # an event can have no description
+
+
+def delete_archived_rows(model, rows):
+    """rows.delete(). A student's report cards, archived or not, go first in the same transaction: the foreign key
+    refuses to leave them without their student. Only those of the students rows still matches are touched."""
+    if model is Enrollment:
+        Grades.query.filter(Grades.student_id.in_(rows.with_entities(Enrollment.id))).delete(synchronize_session=False)
+    return rows.delete()
+
+
+def archive_countdown(archived_at):
+    """(whole days left, the day it goes) for the Archives page. A part day counts as a day, so the last day shows 1."""
+    deadline = archived_at + timedelta(days=ARCHIVE_DAYS)
+    days = max(0, math.ceil((deadline - utc_now()).total_seconds() / 86400))
+    goes = deadline + timedelta(hours=8)    # the school's date
+    return days, f'{goes:%b} {goes.day}, {goes.year}'
+
+
+def purge_expired_archives():
+    """Deletes for good every item that has been in the Archives for ARCHIVE_DAYS, logged like a permanent delete, by
+    "System". Each row is deleted only if it is still archived and expired, so an item restored in the meantime stays,
+    and one another request already deleted isn't logged twice. A failure never breaks the page being opened."""
+    cutoff = utc_now() - timedelta(days=ARCHIVE_DAYS)
+    try:
+        for model, label, area, name_column in ARCHIVE_KINDS.values():
+            columns = LOG_FIELDS[model]     # never a report card's file
+            expired = model.query.filter(model.archived_at <= cutoff).with_entities(
+                model.id, *[getattr(model, column) for column in columns]).all()
+            for values in expired:
+                if delete_archived_rows(model, model.query.filter(model.id == values.id, model.archived_at <= cutoff)):
+                    log_activity(area, 'DELETE',
+                                 f'Deleted {archived_item_name(label, values, name_column)} for good after {ARCHIVE_DAYS} days in the Archives',
+                                 log_changes(log_snapshot(values, columns), {}), username='System')
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception('Could not delete the expired Archives items; the next check tries again.')
+
+
+@main_bp.before_request
+def purge_expired_archives_hourly():
+    # One request an hour (per process) does the check, which is a few small queries; the rest skip it at once
+    now = time.monotonic()
+    due = last_purge['at'] is None or now - last_purge['at'] >= PURGE_EVERY_SECONDS
+    if due and purge_lock.acquire(blocking=False):
+        try:
+            last_purge['at'] = now
+            purge_expired_archives()
+        finally:
+            purge_lock.release()
+
+
 @main_bp.route("/archives")
 def archives():
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
+    purge_expired_archives()    # so nothing past its 30 days is listed, however long since the last hourly check
 
     # Only the columns the page shows: a full report card row carries the file itself
     report_cards = archived(Grades).outerjoin(Enrollment, Grades.student_id == Enrollment.id).with_entities(
@@ -1809,13 +1920,27 @@ def archives():
         Enrollment.last_name, Enrollment.first_name,
     ).all()
 
+    # Each student with the report cards archived with them; ones deleted on their own before are under Report Cards
+    students = archived(Enrollment).with_entities(
+        Enrollment.id, Enrollment.last_name, Enrollment.first_name, Enrollment.lrn_no, Enrollment.grade_level,
+        Enrollment.archived_at,
+    ).all()
+    cards = {}
+    for card in active(Grades).filter(Grades.student_id.in_([s.id for s in students])).with_entities(
+            Grades.id, Grades.student_id, Grades.grade_level, Grades.original_filename).order_by(Grades.id):
+        cards.setdefault(card.student_id, []).append(card)
+    students = [SimpleNamespace(**s._asdict(), name=full_name(s), report_cards=cards.get(s.id, [])) for s in students]
+
     return render_template(
         'archives.html',
+        students=students,
         report_cards=report_cards,
         events=archived(CalendarEvent).all(),
         links=archived(LinkItem).all(),
         files=archived(FileItem).all(),
         pictures=archived(PictureItem).all(),
+        archive_days=ARCHIVE_DAYS,
+        countdown=archive_countdown,
     )
 
 
@@ -1829,7 +1954,7 @@ def change_archived(kind, item_id, restore):
     columns = LOG_FIELDS[model]
     rows = model.query.filter(model.id == item_id, model.archived_at.isnot(None))
     values = rows.with_entities(*[getattr(model, column) for column in columns]).first()
-    changed = values is not None and (rows.update({'archived_at': None}) if restore else rows.delete())
+    changed = values is not None and (rows.update({'archived_at': None}) if restore else delete_archived_rows(model, rows))
 
     # Nothing changed when the item already left the Archives, e.g. a second click or another open tab
     if not changed:
@@ -1837,7 +1962,7 @@ def change_archived(kind, item_id, restore):
         return redirect(url_for('main.archives'))
 
     snapshot = log_snapshot(values, columns)
-    item = f'{label.lower()} {named(getattr(values, name_column))}'.strip()     # an event can have no description
+    item = archived_item_name(label, values, name_column)
     if restore:
         # The item itself is unchanged, so its values are listed as they are
         details = [['Status', 'In the Archives', 'Restored']] + [[field, value, value] for field, value in snapshot.items() if value]
@@ -1851,20 +1976,175 @@ def change_archived(kind, item_id, restore):
 
 @main_bp.route("/archives/<kind>/<int:item_id>/restore", methods=['POST'])
 def restore_archived(kind, item_id):
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
     return change_archived(kind, item_id, restore=True)
 
 
 @main_bp.route("/archives/<kind>/<int:item_id>/delete", methods=['POST'])
 def delete_archived(kind, item_id):
-    if 'user_id' not in session:
-        return redirect(url_for('main.login'))
-
+    # The popup's "I understand" box: ticked there before the button unlocks, and checked again here
+    if request.form.get('understood') != 'yes':
+        flash('Tick "I understand that this item cannot be recovered" to delete it permanently.', 'danger')
+        return redirect(url_for('main.archives'))
     return change_archived(kind, item_id, restore=False)
 
 
 @main_bp.route('/welcome')
 def landing():
     return render_template('landing.html')
+
+
+# ACCOUNTS
+# A Super Admin or an Admin creates the accounts of authorized personnel, changes their names, roles and passwords,
+# and deletes them. An Admin does so only for accounts below Super Admin; a Principal can only look at the list.
+USERNAME_PATTERN = re.compile(r'[A-Za-z0-9._-]{3,50}')
+MAX_FULL_NAME_LENGTH = 100
+MIN_PASSWORD_LENGTH = 8
+MAX_PASSWORD_LENGTH = 128
+DELETE_ACCOUNT_WORD = 'confirm'     # typed in the delete popup, so an account is never deleted by a stray click
+
+
+def account_values(form, user=None):
+    """The name, username and role fields of a submitted form, and what is wrong with them."""
+    values = {
+        'full_name': ' '.join(form.get('full_name', '').split()),
+        'username': form.get('username', '').strip(),
+        'role': form.get('role', ''),
+    }
+    errors = []
+    if not values['full_name'] or len(values['full_name']) > MAX_FULL_NAME_LENGTH:
+        errors.append(f'Enter a name of up to {MAX_FULL_NAME_LENGTH} characters.')
+    # An older username outside the rule can stay as it is
+    if values['username'] != (user.username if user else None) and not USERNAME_PATTERN.fullmatch(values['username']):
+        errors.append('A username is 3 to 50 letters, numbers, dots, dashes or underscores.')
+    elif User.query.filter(db.func.lower(User.username) == values['username'].lower(),
+                           User.id != (user.id if user else 0)).first():
+        errors.append('That username is already taken.')
+    if values['role'] not in ROLES:
+        errors.append('Choose a role.')
+    elif values['role'] not in assignable_roles(session.get('role')):
+        errors.append('You can only give your own role or a lower one.')
+    return values, errors
+
+
+def password_errors(form):
+    password = form.get('password', '')
+    if not MIN_PASSWORD_LENGTH <= len(password) <= MAX_PASSWORD_LENGTH:
+        return [f'A password is {MIN_PASSWORD_LENGTH} to {MAX_PASSWORD_LENGTH} characters.']
+    if password != form.get('confirm_password', ''):
+        return ['The two passwords do not match.']
+    return []
+
+
+def outranks_you(user):
+    """True for an account above your own role (a Super Admin's, for an Admin), which you may not edit, give a
+    new password or delete, as you may not create one."""
+    role = session.get('role')
+    return role != SUPER_ADMIN and user.role not in assignable_roles(role)
+
+
+def account_delete_problem(user):
+    """Why this user may not delete the account, or None. Never your own (nobody locks themselves out, and the
+    last Super Admin stays), and only your own role or a lower one, as when creating."""
+    if user.id == session.get('user_id'):
+        return 'You cannot delete your own account.'
+    if outranks_you(user):
+        return 'You can only delete accounts with your own role or a lower one.'
+    return None
+
+
+def save_account(success_message):
+    """Commits, or reports a username taken in the meantime by another save."""
+    try:
+        db.session.commit()
+        flash(success_message, 'success')
+    except IntegrityError:
+        db.session.rollback()
+        flash('That username is already taken.', 'danger')
+
+
+@main_bp.route('/accounts')
+def accounts():
+    users = User.query.order_by(User.username).all()
+    return render_template('accounts.html', users=users, roles=ROLES, assignable=assignable_roles(session.get('role')),
+                           min_password=MIN_PASSWORD_LENGTH,
+                           max_password=MAX_PASSWORD_LENGTH, max_name=MAX_FULL_NAME_LENGTH,
+                           username_pattern=USERNAME_PATTERN.pattern,
+                           outranks_you=outranks_you, delete_problem=account_delete_problem,
+                           delete_word=DELETE_ACCOUNT_WORD)
+
+
+@main_bp.route('/accounts/create', methods=['POST'])
+def create_account():
+    values, errors = account_values(request.form)
+    errors += password_errors(request.form)
+    if errors:
+        flash(' '.join(errors), 'danger')
+        return redirect(url_for('main.accounts'))
+
+    user = User(**values)
+    user.set_password(request.form['password'])
+    db.session.add(user)
+    save_account(f'Account created for {values["full_name"]}.')
+    return redirect(url_for('main.accounts'))
+
+
+@main_bp.route('/accounts/<int:user_id>/edit', methods=['POST'])
+def edit_account(user_id):
+    user = User.query.get_or_404(user_id)
+    if outranks_you(user):
+        flash('You can only edit accounts with your own role or a lower one.', 'danger')
+        return redirect(url_for('main.accounts'))
+    values, errors = account_values(request.form, user)
+    if (user.role == SUPER_ADMIN and values['role'] != SUPER_ADMIN
+            and User.query.filter_by(role=SUPER_ADMIN).count() == 1):
+        errors.append('This is the only Super Admin, so its role cannot change. Make another account Super Admin first.')
+    if errors:
+        flash(' '.join(errors), 'danger')
+        return redirect(url_for('main.accounts'))
+
+    for column, value in values.items():
+        setattr(user, column, value)
+    save_account(f'Saved the changes to {values["full_name"]}.')
+    # Someone who just gave themselves a role without the Accounts page can no longer open it
+    if user.id == session['user_id'] and not can(user.role, 'view_accounts'):
+        return redirect(url_for('main.index'))
+    return redirect(url_for('main.accounts'))
+
+
+@main_bp.route('/accounts/<int:user_id>/password', methods=['POST'])
+def change_account_password(user_id):
+    user = User.query.get_or_404(user_id)
+    if outranks_you(user):     # a new password would hand over the account
+        flash('You can only change the password of accounts with your own role or a lower one.', 'danger')
+        return redirect(url_for('main.accounts'))
+    errors = password_errors(request.form)
+    if errors:
+        flash(' '.join(errors), 'danger')
+        return redirect(url_for('main.accounts'))
+
+    user.set_password(request.form['password'])
+    save_account(f'Password changed for {user.full_name or user.username}.')
+    if user.id == session['user_id']:   # the new password ends every other login of this account, not this one
+        session['pw'] = password_fingerprint(user)
+    return redirect(url_for('main.accounts'))
+
+
+@main_bp.route('/accounts/<int:user_id>/delete', methods=['POST'])
+def delete_account(user_id):
+    """Deletes for good: accounts never go to the Archives. Its owner is signed out on their next click
+    (sync_session_with_account); their activity log entries keep the username they copied."""
+    user = db.session.get(User, user_id)
+    if user is None:    # a second click, or another tab deleted it first
+        flash('That account is already deleted.', 'success')
+        return redirect(url_for('main.accounts'))
+    name = user.full_name or user.username
+    problem = account_delete_problem(user)
+    if request.form.get('confirm', '').strip() != DELETE_ACCOUNT_WORD:
+        problem = f'Type "{DELETE_ACCOUNT_WORD}" to delete the account of {name}.'
+    if problem:
+        flash(problem, 'danger')
+    else:
+        db.session.delete(user)
+        db.session.commit()
+        flash(f'Deleted the account of {name} permanently.', 'success')
+    return redirect(url_for('main.accounts'))

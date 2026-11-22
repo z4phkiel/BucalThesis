@@ -29,10 +29,58 @@
             });
         });
 
+        // Required fields are checked here, so the browser's own "Please fill out this field" bubbles never show
+        // (the forms are novalidate). The message sits under the field, in brick; the server checks again.
+        function errorFor(field) {
+            let error = field.parentElement.querySelector('.invalid-feedback');
+            if (!error) {
+                error = document.createElement('div');
+                error.className = 'invalid-feedback';
+                error.id = 'error-' + Math.random().toString(36).slice(2);
+                field.after(error);
+            }
+            return error;
+        }
+
+        function unmark(field) {
+            if (!field.classList || !field.classList.contains('is-invalid')) return;
+            field.classList.remove('is-invalid');
+            field.removeAttribute('aria-invalid');
+            field.removeAttribute('aria-describedby');
+        }
+
+        function unmarkAll(form) {
+            form.querySelectorAll('.is-invalid').forEach(unmark);
+        }
+
+        document.querySelectorAll('form[novalidate]').forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                unmarkAll(form);
+                const missing = Array.from(form.querySelectorAll('[required]')).filter(function (field) {
+                    return field.type === 'file' ? !field.files.length : !field.value.trim();
+                });
+                if (!missing.length) return;
+
+                event.preventDefault();
+                missing.forEach(function (field) {
+                    const error = errorFor(field);
+                    error.textContent = field.dataset.required || 'Fill in this field.';
+                    field.classList.add('is-invalid');
+                    field.setAttribute('aria-invalid', 'true');
+                    field.setAttribute('aria-describedby', error.id);
+                });
+                missing[0].focus();
+            });
+            // The message goes as soon as the field is filled in
+            form.addEventListener('input', function (event) { unmark(event.target); });
+            form.addEventListener('change', function (event) { unmark(event.target); });
+        });
+
         // Fill the shared "Edit Link" popup with the row that was clicked
         const linkModal = document.getElementById('editLinkModal');
         linkModal.addEventListener('show.bs.modal', function (event) {
             const btn = event.relatedTarget;
+            unmarkAll(linkModal);
             linkModal.querySelector('form').action = btn.dataset.action;
             linkModal.querySelector('[name="title"]').value = btn.dataset.title;
             linkModal.querySelector('[name="url"]').value = btn.dataset.url;
@@ -42,6 +90,7 @@
         const fileModal = document.getElementById('editFileModal');
         fileModal.addEventListener('show.bs.modal', function (event) {
             const btn = event.relatedTarget;
+            unmarkAll(fileModal);
             fileModal.querySelector('form').action = btn.dataset.action;
             fileModal.querySelector('[name="title"]').value = btn.dataset.title;
             fileModal.querySelector('[name="file"]').value = '';

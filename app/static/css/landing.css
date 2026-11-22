@@ -1,16 +1,16 @@
 :root {
-    --green-900: #243d28;
-    --green-700: #2f5233;
-    --green-600: #3f6b3a;
-    --green-500: #4f7d45;
-    --khaki-500: #c9b98f;
-    --khaki-400: #d6c9a3;
-    --khaki-300: #e3d9b8;
-    --khaki-100: #f6f2e4;
-    --white: #fdfcf7;
-    --text: #26312a;
-    --muted: #6d7566;
-    --border: #e1dcc6;
+    --green-900: #355a25;
+    --green-700: #436a33;
+    --green-600: #4f763e;
+    --green-500: #5d864b;
+    --khaki-500: #669751;
+    --khaki-400: #bad0b1;
+    --khaki-300: #d9e5d4;
+    --khaki-100: #f3f7f1;
+    --white: #ffffff;
+    --text: #242a21;
+    --muted: #4e574a;
+    --border: #cfd6cc;
 }
 
 *, *::before, *::after {
@@ -65,33 +65,22 @@ a { color: inherit; }
 
 .btn:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 4px rgba(201, 185, 143, 0.7);
-}
-
-.btn-green {
-    color: #fff;
-    background: linear-gradient(135deg, var(--green-500), var(--green-700));
-    box-shadow: 0 8px 18px rgba(47, 82, 51, 0.35);
-}
-
-.btn-green:hover {
-    filter: brightness(1.08);
-    box-shadow: 0 12px 24px rgba(47, 82, 51, 0.45);
+    box-shadow: 0 0 0 4px rgba(102, 151, 81, 0.7);
 }
 
 .btn-khaki {
     color: var(--green-900);
-    background: var(--khaki-500);
+    background: var(--khaki-300);
     box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
 }
 
 .btn-khaki:hover {
-    background: var(--khaki-300);
+    background: var(--khaki-100);
 }
 
 .btn-outline {
     color: #fff;
-    border-color: rgba(253, 252, 247, 0.65);
+    border-color: rgba(255, 255, 255, 0.65);
 }
 
 .btn-outline:hover {
@@ -110,17 +99,17 @@ a { color: inherit; }
     position: sticky;
     top: 0;
     z-index: 50;
-    background: rgba(253, 252, 247, 0.92);
+    background: rgba(255, 255, 255, 0.92);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border);
-    box-shadow: 0 6px 20px -12px rgba(36, 61, 40, 0.35);
+    box-shadow: 0 6px 20px -12px rgba(53, 90, 37, 0.35);
 }
 
 .site-header::after {
     content: "";
     display: block;
     height: 3px;
-    background: linear-gradient(90deg, var(--green-700), var(--khaki-500), var(--green-700));
+    background: var(--khaki-500);
 }
 
 .header-inner {
@@ -137,6 +126,7 @@ a { color: inherit; }
     gap: 12px;
     text-decoration: none;
     min-width: 0;
+    border-radius: 8px;     /* shapes the focus ring */
 }
 
 .brand-logo {
@@ -175,12 +165,19 @@ a { color: inherit; }
     background: var(--khaki-300);
 }
 
+/* Same focus ring as the buttons, for keyboard users */
+.site-nav a:focus-visible,
+.brand:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(102, 151, 81, 0.7);
+}
+
 .btn-login {
     padding: 10px 22px;
     color: #fff;
-    background: linear-gradient(135deg, var(--green-500), var(--green-700));
+    background: var(--green-600);
     border-radius: 999px;
-    box-shadow: 0 6px 14px rgba(47, 82, 51, 0.3);
+    box-shadow: 0 6px 14px rgba(67, 106, 51, 0.3);
 }
 
 .btn-login:hover {
@@ -191,18 +188,13 @@ a { color: inherit; }
 .hero {
     padding: 88px 0 104px;
     color: #fff;
-    background:
-        radial-gradient(circle at 12% 18%, rgba(227, 217, 184, 0.35), transparent 40%),
-        radial-gradient(circle at 88% 85%, rgba(201, 185, 143, 0.30), transparent 45%),
-        linear-gradient(135deg, var(--green-900) 0%, var(--green-600) 55%, #8a8a5c 100%);
+    background: var(--green-900);
     border-radius: 0 0 48px 48px;
 }
 
-.hero-inner {
-    display: grid;
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
-    gap: 56px;
-    align-items: center;
+/* One column: the school name fits on one line instead of leaving "School" on its own */
+.hero-text {
+    max-width: 780px;
 }
 
 .eyebrow {
@@ -215,7 +207,7 @@ a { color: inherit; }
     text-transform: uppercase;
     color: var(--khaki-300);
     background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(227, 217, 184, 0.45);
+    border: 1px solid rgba(217, 229, 212, 0.45);
     border-radius: 999px;
 }
 
@@ -225,6 +217,7 @@ a { color: inherit; }
     font-weight: 800;
     line-height: 1.12;
     letter-spacing: -0.02em;
+    text-wrap: balance;     /* narrower screens: even lines, no single word left over */
 }
 
 .hero h1 span {
@@ -236,7 +229,7 @@ a { color: inherit; }
     max-width: 520px;
     margin: 0 0 30px;
     font-size: 1.08rem;
-    color: rgba(253, 252, 247, 0.88);
+    color: rgba(255, 255, 255, 0.88);
 }
 
 .hero-actions {
@@ -267,7 +260,7 @@ a { color: inherit; }
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--green-500);
+    color: var(--green-600);
 }
 
 .section-head h2,
@@ -285,7 +278,7 @@ a { color: inherit; }
     width: 56px;
     height: 4px;
     margin: 14px auto 0;
-    background: linear-gradient(90deg, var(--khaki-500), var(--green-500));
+    background: var(--khaki-500);
     border-radius: 4px;
 }
 
@@ -294,19 +287,14 @@ a { color: inherit; }
     color: var(--muted);
 }
 
-.center {
-    margin-top: 40px;
-    text-align: center;
-}
-
 /* ---------- Cards ---------- */
 .grid {
     display: grid;
     gap: 22px;
 }
 
+.grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.grid-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 
 .card {
     padding: 28px 26px;
@@ -314,13 +302,7 @@ a { color: inherit; }
     border: 1px solid var(--border);
     border-top: 5px solid var(--khaki-500);
     border-radius: 16px;
-    box-shadow: 0 12px 30px -14px rgba(36, 61, 40, 0.3);
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 18px 36px -14px rgba(36, 61, 40, 0.4);
+    box-shadow: 0 12px 30px -14px rgba(53, 90, 37, 0.3);
 }
 
 .card h3 {
@@ -336,13 +318,19 @@ a { color: inherit; }
     color: var(--muted);
 }
 
-.card-small {
-    padding: 24px 18px;
-    text-align: center;
+/* Vision and Mission: long paragraphs, so larger text and more line spacing than the short cards */
+.card-statement {
+    padding: 34px 34px 36px;
 }
 
-.card-small h3 {
+.card-statement h3 {
+    margin-top: 0;      /* no icon above it */
+    font-size: 1.3rem;
+}
+
+.card-statement p {
     font-size: 1rem;
+    line-height: 1.75;
 }
 
 .icon {
@@ -351,9 +339,9 @@ a { color: inherit; }
     justify-content: center;
     width: 52px;
     height: 52px;
-    background: linear-gradient(135deg, var(--green-500), var(--green-700));
+    background: var(--green-600);
     border-radius: 14px;
-    box-shadow: 0 8px 16px rgba(47, 82, 51, 0.28);
+    box-shadow: 0 8px 16px rgba(67, 106, 51, 0.28);
 }
 
 .icon svg {
@@ -376,7 +364,7 @@ a { color: inherit; }
     border: 1px solid var(--border);
     border-left: 8px solid var(--khaki-500);
     border-radius: 20px;
-    box-shadow: 0 18px 40px -16px rgba(36, 61, 40, 0.35);
+    box-shadow: 0 18px 40px -16px rgba(53, 90, 37, 0.35);
 }
 
 .fb-icon {
@@ -386,9 +374,9 @@ a { color: inherit; }
     flex-shrink: 0;
     width: 76px;
     height: 76px;
-    background: linear-gradient(135deg, var(--green-500), var(--green-700));
+    background: var(--green-600);
     border-radius: 20px;
-    box-shadow: 0 10px 20px rgba(47, 82, 51, 0.3);
+    box-shadow: 0 10px 20px rgba(67, 106, 51, 0.3);
 }
 
 .fb-icon svg {
@@ -414,8 +402,8 @@ a { color: inherit; }
 /* ---------- Footer ---------- */
 .site-footer {
     padding: 36px 0;
-    color: rgba(253, 252, 247, 0.85);
-    background: linear-gradient(180deg, var(--green-900), var(--green-700));
+    color: rgba(255, 255, 255, 0.85);
+    background: var(--green-900);
     border-top: 4px solid var(--khaki-500);
 }
 
@@ -452,7 +440,15 @@ a { color: inherit; }
 
 .footer-brand span {
     font-size: 0.82rem;
-    color: rgba(253, 252, 247, 0.7);
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* Gray and smaller than the line above; 0.7 white keeps 4.5:1 contrast on the dark green */
+.footer-address {
+    margin-top: 2px;
+    font-size: 0.76rem;
+    font-style: normal;
+    color: rgba(255, 255, 255, 0.7);
 }
 
 .footer-links {
@@ -465,28 +461,12 @@ a { color: inherit; }
     font-size: 0.9rem;
     font-weight: 600;
     text-decoration: none;
-    color: rgba(253, 252, 247, 0.9);
+    color: rgba(255, 255, 255, 0.9);
 }
 
 .footer-links a:hover {
     color: var(--khaki-300);
     text-decoration: underline;
-}
-
-/* ---------- Tablet ---------- */
-@media (max-width: 992px) {
-    .hero-inner {
-        grid-template-columns: minmax(0, 1fr);
-        gap: 44px;
-    }
-
-    .hero-card {
-        margin: 0 auto;
-    }
-
-    .grid-5 {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
 }
 
 /* ---------- Phone ---------- */
@@ -516,12 +496,13 @@ a { color: inherit; }
         padding: 60px 0;
     }
 
+    .grid-2,
     .grid-3 {
         grid-template-columns: minmax(0, 1fr);
     }
 
-    .grid-5 {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+    .card-statement {
+        padding: 28px 24px;
     }
 
     .fb-band {
@@ -549,21 +530,43 @@ a { color: inherit; }
 
 @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
-    .btn, .card { transition: none; }
+    .btn { transition: none; }
+}
+
+/* ---------- Scroll reveal ---------- */
+/* landing.js adds .reveal, then .is-revealed the first time the element scrolls into view.
+   Without the script, or with reduced motion, everything just shows in place. */
+@media (prefers-reduced-motion: no-preference) {
+    .reveal {
+        opacity: 0;
+        translate: -48px 0;     /* heading lines slide in from the left */
+        transition: opacity 0.9s, translate 0.9s, scale 0.9s;
+        transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);     /* strong ease-out: quick start, long gentle stop */
+    }
+
+    .card.reveal {
+        translate: 0 40px;      /* cards rise and grow into place */
+        scale: 0.92;
+    }
+
+    /* Cards in a row, and the heading lines, arrive one after another */
+    .reveal:nth-child(2) { transition-delay: 0.12s; }
+    .reveal:nth-child(3) { transition-delay: 0.24s; }
+
+    .reveal.is-revealed {
+        opacity: 1;
+        translate: none;
+        scale: none;
+    }
 }
 
 /* ==========================================================
    Hero background photo
    ========================================================== */
 .hero {
+    /* a one-color layer is the flat navy tint over the photo */
     background:
-        radial-gradient(circle at 12% 18%, rgba(227, 217, 184, 0.28), transparent 40%),
-        radial-gradient(circle at 88% 85%, rgba(201, 185, 143, 0.30), transparent 45%),
-        linear-gradient(135deg,
-            rgba(36, 61, 40, 0.93) 0%,
-            rgba(47, 82, 51, 0.82) 45%,
-            rgba(63, 107, 58, 0.62) 75%,
-            rgba(138, 138, 92, 0.55) 100%),
+        linear-gradient(rgba(53, 90, 37, 0.84), rgba(53, 90, 37, 0.84)),
         url("../images/school.jpg") center / cover no-repeat;
     background-color: var(--green-900);
 }

@@ -65,11 +65,19 @@
                 </div>
             </div>
             <div class="col-md-6 d-flex flex-column gap-2">
-                <div class="alert alert-secondary mb-0 flex-grow-1 d-flex justify-content-between align-items-center">
-                    <span><strong>Model Accuracy (R<sup>2</sup> on unseen years):</strong></span>
+                {# The model's miss beside the simplest rival's: R2 against the earlier years' average looked good even when the model lost to it #}
+                <div class="alert alert-secondary mb-0 flex-grow-1 d-flex flex-wrap justify-content-between align-items-center">
+                    <span><strong>Average Forecast Error:</strong></span>
                     <span class="fs-5 fw-bold text-dark">
-                        {{ r2_score if r2_score is not none else 'N/A' }}
+                        {{ mape ~ '%' if mape is not none else 'N/A' }}
                     </span>
+
+                    {% if mape is not none %}
+                    <div class="w-100 d-flex flex-wrap justify-content-between align-items-center border-top border-dark border-opacity-25 mt-2 pt-2 small">
+                        <span><strong>Same as Last Year:</strong></span>
+                        <span class="fw-bold text-dark">{{ baseline_mape }}%</span>
+                    </div>
+                    {% endif %}
                 </div>
                 <a href="{{ url_for('main.statistics') }}" class="btn btn-sm metric-btn-ghost align-self-end">Detailed view</a>
             </div>
@@ -77,11 +85,16 @@
         {% if pred_next_year is not none and mape is not none %}
             <p class="text-muted small mt-3 mb-0">
                 Based on {{ based_on_year }} data. Across {{ tested_years }} past years, each predicted using only the years before it,
-                the model missed by {{ mape }}% on average. Copying the previous year's count would have missed by {{ baseline_mape }}%.
+                the model missed by {{ mape }}% on average{% if average_difference %}, predicting {{ average_difference | abs }} enrollees too {{ 'high' if average_difference > 0 else 'low' }} on average{% endif %}.
+                The model without the two rates missed by {{ count_only_mape }}% and copying the previous year's count by {{ baseline_mape }}%,
+                so {{ best_method }} did best on those years{% if few_tests %}, though {{ tested_years }} years are too few to prove which is better{% endif %}.
                 {{ range_covered }} of those {{ tested_years }} predictions missed by {{ range_margin }} enrollees or fewer,
                 so expect roughly {{ range_low }} to {{ range_high }} enrollees.
-                {% if r2_score is not none and r2_score < 0 %}An R<sup>2</sup> below 0 means the model did worse than guessing the average of the earlier years.{% endif %}
+                {% if abnormal_years %}{{ abnormal_years }} school year{{ 's' if abnormal_years > 1 }} marked abnormal in the detailed view {{ 'are' if abnormal_years > 1 else 'is' }} left out.{% endif %}
             </p>
+            {% if forecast_warning %}
+            <p class="text-muted small mt-2 mb-0"><strong>Caution:</strong> {{ forecast_warning }}</p>
+            {% endif %}
         {% elif forecast_note %}
         <p class="text-muted small mt-3 mb-0">{{ forecast_note }}</p>
         {% endif %}

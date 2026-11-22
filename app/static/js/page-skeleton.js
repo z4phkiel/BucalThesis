@@ -31,6 +31,8 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('template[data-skeleton-path]').forEach(function (template) {
         skeletons.set(template.dataset.skeletonPath, template);
     });
+    // A page with an id in its address (a student's grade files) matches by the address's start
+    const prefixed = Array.from(document.querySelectorAll('template[data-skeleton-prefix]'));
 
     let showTimer = null;
     let giveUpTimer = null;
@@ -108,7 +110,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if (url.hash && url.pathname === window.location.pathname) {
             return null;
         }
-        return skeletons.get(url.pathname) || null;
+        return skeletons.get(url.pathname) || prefixed.find(function (template) {
+            return url.pathname.startsWith(template.dataset.skeletonPrefix);
+        }) || null;
     }
 
     document.addEventListener('click', function (event) {
@@ -119,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         clearTimers();
         body.classList.add('is-navigating');
-        highlight(template.dataset.skeletonPath);
+        highlight(template.dataset.skeletonNav || template.dataset.skeletonPath);   // nav: the sidebar page it belongs to
 
         // Clicking another link while a placeholder is showing swaps it right away
         if (body.classList.contains('is-page-loading')) {

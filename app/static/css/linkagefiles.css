@@ -1,18 +1,18 @@
 
 :root {
-    --lf-green-900: #243d28;
-    --lf-green-700: #2f5233;
-    --lf-green-600: #3f6b3a;
-    --lf-green-500: #4f7d45;
-    --lf-khaki-500: #c9b98f;
-    --lf-khaki-400: #d6c9a3;
-    --lf-khaki-300: #e3d9b8;
-    --lf-khaki-100: #f6f2e4;
-    --lf-white: #fdfcf7;
-    --lf-text: #26312a;
-    --lf-muted: #7a8272;
-    --lf-border: #e8e3cf;
-    --lf-brick: #a3392a;
+    --lf-green-900: #355a25;
+    --lf-green-700: #436a33;
+    --lf-green-600: #4f763e;
+    --lf-green-500: #5d864b;
+    --lf-khaki-500: #669751;
+    --lf-khaki-400: #bad0b1;
+    --lf-khaki-300: #d9e5d4;
+    --lf-khaki-100: #f3f7f1;
+    --lf-white: #ffffff;
+    --lf-text: #242a21;
+    --lf-muted: #677062;
+    --lf-border: #e4e9e2;
+    --lf-brick: #b91c1c;
 }
 
 /* ---------- Page title (same size as the Masterlist's) ---------- */
@@ -34,7 +34,7 @@
     height: 70%;
     transform: translateY(-50%);
     border-radius: 6px;
-    background: linear-gradient(180deg, var(--lf-khaki-500), var(--lf-green-500));
+    background: var(--lf-khaki-500);
 }
 
 /* ---------- Search bar: one slim line, the same as the Masterlist's ---------- */
@@ -59,7 +59,7 @@
     padding: 6px 14px 6px 38px;
     font-size: 0.85rem;
     color: var(--lf-text);
-    background-color: #faf8ef;
+    background-color: #fafaf9;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%232f5233' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M21 21l-4.3-4.3'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: 13px center;
@@ -69,7 +69,7 @@
 }
 
 .main-content #linkageSearch::placeholder {
-    color: #a3a998;
+    color: #9ba595;
 }
 
 .main-content #linkageSearch:hover {
@@ -79,7 +79,7 @@
 .main-content #linkageSearch:focus {
     background-color: #fff;
     border-color: var(--lf-green-500);
-    box-shadow: 0 0 0 4px rgba(79, 125, 69, 0.18);
+    box-shadow: 0 0 0 4px rgba(93, 134, 75, 0.18);
 }
 
 /* ---------- Section headings inside the cards ---------- */
@@ -98,7 +98,29 @@
 }
 
 .card-body > form.row .form-control::placeholder {
-    color: #a3a998;
+    color: #9ba595;
+}
+
+/* A required field left empty (linkages.js, in place of the browser's bubble): brick like the delete buttons,
+   with its message under it, as the Accounts popups mark a field. Bootstrap's own invalid red becomes the app's brick. */
+.main-content {
+    --bs-form-invalid-color: var(--lf-brick);
+    --bs-form-invalid-border-color: var(--lf-brick);
+}
+
+.main-content .form-control.is-invalid {
+    border-color: var(--lf-brick);
+}
+
+.main-content .form-control.is-invalid:focus {
+    border-color: var(--lf-brick);
+    box-shadow: 0 0 0 4px rgba(185, 28, 28, 0.15);
+}
+
+.main-content .invalid-feedback {
+    margin-top: 5px;
+    font-size: 0.78rem;
+    font-weight: 600;
 }
 
 /* file picker button; its margins cancel the field's padding, so it fills the field's height */
@@ -114,6 +136,7 @@
 }
 
 .main-content .form-control[type="file"]:hover::file-selector-button {
+    color: var(--lf-green-900);
     background: var(--lf-khaki-400);
 }
 
@@ -151,7 +174,7 @@
     text-transform: uppercase;
     white-space: nowrap;
     color: #fff;
-    background: linear-gradient(135deg, var(--lf-green-600), var(--lf-green-700));
+    background: var(--lf-green-700);
     border-bottom: 3px solid var(--lf-khaki-500);
 }
 
@@ -168,8 +191,8 @@
     color: var(--lf-green-700);
 }
 
-/* link addresses */
-.card .table td a:not(.btn) {
+/* link addresses (not the items of a row's menu) */
+.card .table td a:not(.btn):not(.dropdown-item) {
     color: var(--lf-green-600);
     text-decoration: none;
     word-break: break-all;
@@ -180,9 +203,9 @@
     transition: color 0.18s ease, background-size 0.25s ease;
 }
 
-.card .table td a:not(.btn):hover,
-.card .table td a:not(.btn):focus-visible {
-    color: var(--lf-green-500);
+.card .table td a:not(.btn):not(.dropdown-item):hover,
+.card .table td a:not(.btn):not(.dropdown-item):focus-visible {
+    color: var(--lf-green-700);
     background-size: 100% 2px;
     outline: none;
 }
@@ -195,55 +218,70 @@
     background: var(--lf-khaki-100);
 }
 
-/* ---------- Row action buttons (Download / Edit / Delete): short enough for a 32px row ---------- */
-.card .table td.text-end .btn {
-    min-width: 4.75rem;
-    padding: 3px 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    border-width: 1.5px;
-    border-radius: 999px;
-    transition: transform 0.15s, background-color 0.2s, color 0.2s, box-shadow 0.2s;
+/* ---------- Row actions: three dots that open a small menu, the Masterlist's look (enrolled.css).
+   Used by the tables on Linkage/Files, Archives and Accounts, which all link this file. ---------- */
+.card .table .dropdown {
+    display: flex;
+    justify-content: center;
 }
 
-.card .table td.text-end > .btn,
-.card .table td.text-end > form {
-    margin-left: 6px;
+.row-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    color: var(--lf-green-700);
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    transition: background-color 0.15s ease;
 }
 
-.card .table td.text-end > form {
-    vertical-align: middle;
+.row-actions svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
 }
 
-.card .table td.text-end .btn:hover {
-    transform: translateY(-1px);
+.row-actions:hover,
+.row-actions.show {
+    background-color: rgba(67, 106, 51, 0.16);
 }
 
-/* Edit: green outline */
-.card .table .btn-outline-primary {
-    --bs-btn-color: var(--lf-green-700);
-    --bs-btn-border-color: var(--lf-green-500);
-    --bs-btn-hover-color: #fff;
-    --bs-btn-hover-bg: var(--lf-green-600);
-    --bs-btn-hover-border-color: var(--lf-green-600);
-    --bs-btn-active-color: #fff;
-    --bs-btn-active-bg: var(--lf-green-900);
-    --bs-btn-active-border-color: var(--lf-green-900);
-    --bs-btn-focus-shadow-rgb: 79, 125, 69;
+.row-actions:focus-visible {
+    outline: 2px solid var(--lf-green-500);
+    outline-offset: 1px;
 }
 
-/* Delete: brick outline */
-.card .table .btn-outline-danger {
-    --bs-btn-color: var(--lf-brick);
-    --bs-btn-border-color: #d9a79e;
-    --bs-btn-hover-color: #fff;
-    --bs-btn-hover-bg: var(--lf-brick);
-    --bs-btn-hover-border-color: var(--lf-brick);
-    --bs-btn-active-color: #fff;
-    --bs-btn-active-bg: #8c2f22;
-    --bs-btn-active-border-color: #8c2f22;
-    --bs-btn-focus-shadow-rgb: 163, 57, 42;
+.row-menu {
+    --bs-dropdown-min-width: 11rem;
+    --bs-dropdown-padding-y: 4px;
+    --bs-dropdown-font-size: 0.82rem;
+    --bs-dropdown-color: var(--lf-text);
+    --bs-dropdown-bg: var(--lf-white);
+    --bs-dropdown-border-color: var(--lf-border);
+    --bs-dropdown-border-radius: 10px;
+    --bs-dropdown-link-color: var(--lf-text);
+    --bs-dropdown-link-hover-color: var(--lf-green-900);
+    --bs-dropdown-link-hover-bg: var(--lf-khaki-100);
+    --bs-dropdown-link-active-color: #fff;
+    --bs-dropdown-link-active-bg: var(--lf-green-600);
+    --bs-dropdown-item-padding-y: 6px;
+    --bs-dropdown-divider-bg: var(--lf-border);
+    box-shadow: 0 12px 28px -8px rgba(53, 90, 37, 0.45);
+}
+
+/* a menu item that deletes: brick, like the other delete buttons */
+.row-menu .row-menu-danger {
+    color: var(--lf-brick);
+}
+
+.row-menu .row-menu-danger:hover,
+.row-menu .row-menu-danger:focus-visible {
+    color: var(--lf-brick);
+    background: #fef2f2;
 }
 
 /* ---------- Edit popups ---------- */
@@ -257,7 +295,7 @@
     border: 0;
     border-top: 6px solid var(--lf-khaki-500);
     border-radius: 18px;
-    box-shadow: 0 30px 60px -15px rgba(20, 40, 25, 0.55);
+    box-shadow: 0 30px 60px -15px rgba(30, 48, 22, 0.55);
 }
 
 .modal .modal-header {
@@ -285,7 +323,7 @@
 
 .modal .form-control {
     padding: 10px 14px;
-    background-color: #faf8ef;
+    background-color: #fafaf9;
     border: 1.5px solid var(--lf-border);
     border-radius: 10px;
 }
@@ -293,7 +331,7 @@
 .modal .form-control:focus {
     background-color: #fff;
     border-color: var(--lf-green-500);
-    box-shadow: 0 0 0 4px rgba(79, 125, 69, 0.18);
+    box-shadow: 0 0 0 4px rgba(93, 134, 75, 0.18);
 }
 
 .modal .form-text {
@@ -323,7 +361,7 @@
     --bs-btn-active-color: var(--lf-green-900);
     --bs-btn-active-bg: var(--lf-khaki-400);
     --bs-btn-active-border-color: var(--lf-khaki-500);
-    --bs-btn-focus-shadow-rgb: 201, 185, 143;
+    --bs-btn-focus-shadow-rgb: 102, 151, 81;
 }
 
 /* Save changes: green (also covers the popup, which sits outside index.css's page area) */
@@ -337,8 +375,8 @@
     --bs-btn-active-color: #fff;
     --bs-btn-active-bg: var(--lf-green-900);
     --bs-btn-active-border-color: var(--lf-green-900);
-    --bs-btn-focus-shadow-rgb: 79, 125, 69;
-    box-shadow: 0 8px 18px rgba(47, 82, 51, 0.28);
+    --bs-btn-focus-shadow-rgb: 93, 134, 75;
+    box-shadow: 0 8px 18px rgba(67, 106, 51, 0.28);
 }
 
 /* ---------- Picture cards: the same text and button sizes as the table rows ---------- */
@@ -362,11 +400,6 @@
         font-size: 1.3rem;
     }
 
-    .card .table td.text-end .btn {
-        min-width: 4.25rem;
-        padding: 3px 10px;
-    }
-
     .modal .modal-header,
     .modal .modal-body,
     .modal .modal-footer {
@@ -385,7 +418,6 @@
     position: absolute;
     inset: 0;
     background: var(--ix-skel-shimmer);
-    background-size: 200% 100%;
     animation: skel-shimmer 1.5s linear infinite;
 }
 
