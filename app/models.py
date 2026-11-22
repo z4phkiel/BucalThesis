@@ -109,6 +109,7 @@ class Enrollment(db.Model):
     date_signed = db.Column(db.Date)
 
     date_submitted = db.Column(db.DateTime, default=utc_now)
+    archived_at = db.Column(db.DateTime, nullable=True)     # NULL = active; set when archived, which moves the student and their report cards to the Archives
 
     def __repr__(self):
         return f'<Enrollment {self.last_name}, {self.first_name}>'

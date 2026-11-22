@@ -21,7 +21,7 @@ PERMISSIONS = {
     'submit_enrollment': 'Open the Enrollment Form and submit new enrollments',
     'view_masterlist':   'Open the Masterlist (the list of enrolled students)',
     'view_enrollment':   "Open a student's submitted enrollment form. Needs view_masterlist",
-    'edit_students':     "Edit a student's submitted enrollment form. Needs view_enrollment",
+    'edit_students':     "Edit a student's submitted enrollment form, and move students (with their report cards) to the Archives. Needs view_enrollment",
     'view_grades':       "Open a student's grade files and download them. Needs view_masterlist",
     'submit_grades':     'Upload, replace and delete grade files. Needs view_grades',
 
@@ -89,7 +89,7 @@ ENDPOINT_PERMISSIONS = {
     'statistics': 'view_metrics', 'update_metric': 'edit_metrics', 'mark_abnormal_year': 'edit_metrics',
     'enrollment': 'submit_enrollment',
     'enrolled': 'view_masterlist', 'grades': 'view_masterlist',
-    'student_detail': 'view_enrollment', 'edit_student': 'edit_students',
+    'student_detail': 'view_enrollment', 'edit_student': 'edit_students', 'archive_student': 'edit_students',
     'student_grades': 'view_grades', 'view_report_card': 'view_grades', 'download_report_card': 'view_grades',
     'preview_report_card': 'view_grades',
     'upload_report_card': 'submit_grades', 'delete_report_card': 'submit_grades',

@@ -275,6 +275,17 @@ th[aria-sort="descending"] .sort-up {
     box-shadow: 0 12px 28px -8px rgba(53, 90, 37, 0.45);
 }
 
+/* Move to Archives: brick, like the delete items in the other row menus (linkagefiles.css) */
+.student-menu .student-menu-danger {
+    color: #b91c1c;
+}
+
+.student-menu .student-menu-danger:hover,
+.student-menu .student-menu-danger:focus-visible {
+    color: #b91c1c;
+    background: #fef2f2;
+}
+
 /* ---------- Page controls: numbers and gaps share one width, so the Next button stays put ---------- */
 #studentPagerList .page-link {
     min-width: 34px;

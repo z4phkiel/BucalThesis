@@ -130,7 +130,7 @@ window.confirmToast = (function () {
         ask({
             title: form.dataset.confirmToast,
             // a menu item is hidden once its menu closes, so focus goes back to the row's dots
-            opener: (menu && menu.querySelector('.row-actions')) || event.submitter,
+            opener: (menu && menu.querySelector('.row-actions, .student-actions')) || event.submitter,
             onYes: function () {
                 form.submit();      // sends without a second submit event
             },

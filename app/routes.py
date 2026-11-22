@@ -39,8 +39,9 @@ def keep_private_pages_out_of_browser_history(response):
 
 
 # SOFT DELETE
-# Deleting a report card, calendar event, link, file or picture only sets its archived_at, which moves it
-# to the Archives page. Only that page deletes for good.
+# Deleting a report card, calendar event, link, file or picture, or archiving a student, only sets its archived_at,
+# which moves it to the Archives page. An archived student's report cards stay with them, hidden until they are
+# restored, and are deleted with them. Only that page deletes for good.
 
 def active(model):
     """Rows that are not in the Archives."""
@@ -53,6 +54,13 @@ def unless_archived(item):
     if item.archived_at and not can(session.get('role'), 'archives'):
         abort(404)
     return item
+
+
+def report_card(report_id):
+    """A report card for the routes that serve its file: like unless_archived, and also gone while its student is."""
+    report = unless_archived(Grades.query.get_or_404(report_id))
+    unless_archived(db.session.get(Enrollment, report.student_id))
+    return report
 
 
 # ACTIVITY LOG
@@ -71,6 +79,8 @@ VALUE_IN_LOG_LENGTH = 200
 
 # The values an entry's details list for each kind of item: column -> label
 LOG_FIELDS = {
+    Enrollment: {'last_name': 'Last name', 'first_name': 'First name', 'lrn_no': 'LRN', 'grade_level': 'Grade level',
+                 'school_year': 'School year'},
     Grades: {'grade_level': 'Grade level', 'original_filename': 'File'},
     CalendarEvent: {'tag': 'Tag', 'description': 'Description', 'event_date': 'Start date', 'end_date': 'End date', 'link_url': 'Link'},
     LinkItem: {'title': 'Title', 'url': 'Link'},
@@ -564,7 +574,7 @@ def dashboard_data():
     all_metrics_asc = YearlyMetric.query.order_by(YearlyMetric.school_year.asc()).all()
 
     # Newest first, as on the Masterlist. Only the columns the card shows: a full row carries the signature image.
-    recent_students = Enrollment.query.with_entities(
+    recent_students = active(Enrollment).with_entities(
         Enrollment.id, Enrollment.last_name, Enrollment.first_name, Enrollment.middle_name,
         Enrollment.extension_name, Enrollment.grade_level, Enrollment.age, Enrollment.sex,
     ).order_by(Enrollment.id.desc()).limit(4).all()
@@ -950,7 +960,7 @@ SCHOOL_YEAR_ROLLOVER_MONTH = 6
 
 @main_bp.route("/enrolled")
 def enrolled():
-    students = Enrollment.query.order_by(Enrollment.id.desc()).all()
+    students = active(Enrollment).order_by(Enrollment.id.desc()).all()
 
     # Display number of enrollees in terminal for testing
     # print(f"DEBUG: found {len(students)} enrollments")
@@ -959,8 +969,22 @@ def enrolled():
 
 @main_bp.route("/enrolled/<int:student_id>")
 def student_detail(student_id):
-    student = Enrollment.query.get_or_404(student_id)
+    # An archived student's form stays readable from the Archives
+    student = unless_archived(Enrollment.query.get_or_404(student_id))
     return render_template('student.html', student=student)
+
+
+@main_bp.route("/enrolled/<int:student_id>/archive", methods=['POST'])
+def archive_student(student_id):
+    """Move the student to the Archives. Their enrollment form and report cards stay with them, untouched."""
+    student = active(Enrollment).filter_by(id=student_id).first_or_404()
+    cards = active(Grades).filter_by(student_id=student.id).count()
+    student.archived_at = utc_now()
+    log_activity('masterlist', 'DELETE', f'Moved {full_name(student)} to the Archives',
+                 log_changes({**log_snapshot(student, LOG_FIELDS[Enrollment]), 'Report cards': str(cards)}, {}))
+    db.session.commit()
+    flash('Student moved to the Archives.', 'success')
+    return redirect(url_for('main.enrolled'))
 
 
 def student_form_data(student):
@@ -975,7 +999,7 @@ def student_form_data(student):
 
 @main_bp.route("/enrolled/<int:student_id>/edit", methods=['GET', 'POST'])
 def edit_student(student_id):
-    student = Enrollment.query.get_or_404(student_id)
+    student = active(Enrollment).filter_by(id=student_id).first_or_404()
 
     if request.method == 'GET':
         return render_template('student.html', student=student, editing=True, form_data=student_form_data(student))
@@ -1051,7 +1075,7 @@ def grades():
 
 @main_bp.route("/grades/<int:student_id>")
 def student_grades(student_id):
-    student = Enrollment.query.get_or_404(student_id)
+    student = active(Enrollment).filter_by(id=student_id).first_or_404()
 
     reports = {
         level: active(Grades).filter_by(
@@ -1074,7 +1098,7 @@ def student_grades(student_id):
 )
 
 def upload_report_card(student_id, level):
-    student = Enrollment.query.get_or_404(student_id)
+    student = active(Enrollment).filter_by(id=student_id).first_or_404()
 
     if level not in GRADE_LEVELS:
         flash("Invalid grade level.", "danger")
@@ -1155,7 +1179,7 @@ def upload_report_card(student_id, level):
 @main_bp.route("/report-cards/<int:report_id>/view")
 def view_report_card(report_id):
     """Display a report card retrieved from the MySQL BLOB column."""
-    report = unless_archived(Grades.query.get_or_404(report_id))
+    report = report_card(report_id)
 
     if not report.file_data:
         flash(
@@ -1176,7 +1200,7 @@ def view_report_card(report_id):
 @main_bp.route("/report-cards/<int:report_id>/download")
 def download_report_card(report_id):
     """Download a report card retrieved from the MySQL BLOB column."""
-    report = unless_archived(Grades.query.get_or_404(report_id))
+    report = report_card(report_id)
 
     if not report.file_data:
         flash(
@@ -1259,7 +1283,7 @@ def sheet_preview(sheet):
 @main_bp.route("/report-cards/<int:report_id>/preview")
 def preview_report_card(report_id):
     """The report card's visible sheets as tables: a piece of HTML for the Grade Files popup, not a page."""
-    report = unless_archived(Grades.query.get_or_404(report_id))
+    report = report_card(report_id)
     sheets, problem = [], None
     try:
         if not report.file_data:
@@ -1292,7 +1316,7 @@ def delete_report_card(report_id):
     student_id = report.student_id
 
     # Only the name columns: a full student row carries the signature image
-    student = Enrollment.query.with_entities(Enrollment.last_name, Enrollment.first_name).filter_by(id=student_id).one()
+    student = active(Enrollment).with_entities(Enrollment.last_name, Enrollment.first_name).filter_by(id=student_id).first_or_404()
 
     try:
         report.archived_at = utc_now()
@@ -1803,8 +1827,10 @@ def delete_picture(picture_id):
 
 # ARCHIVES
 
-# The kind in an archive URL: (model, name used in messages, activity log area, column that names the item)
+# The kind in an archive URL: (model, name used in messages, activity log area, column that names the item;
+# None for a student, named by their full name)
 ARCHIVE_KINDS = {
+    'students': (Enrollment, 'Student', 'masterlist', None),
     'report-cards': (Grades, 'Report card', 'masterlist', 'original_filename'),
     'events': (CalendarEvent, 'Event', 'calendar', 'description'),
     'links': (LinkItem, 'Link', 'linkage', 'title'),
@@ -1826,7 +1852,16 @@ def archived(model):
 
 def archived_item_name(label, values, name_column):
     """e.g. file "Memo", as log entries name an archived item."""
-    return f'{label.lower()} {named(getattr(values, name_column))}'.strip()     # an event can have no description
+    name = getattr(values, name_column) if name_column else full_name(values)
+    return f'{label.lower()} {named(name)}'.strip()     # an event can have no description
+
+
+def delete_archived_rows(model, rows):
+    """rows.delete(). A student's report cards, archived or not, go first in the same transaction: the foreign key
+    refuses to leave them without their student. Only those of the students rows still matches are touched."""
+    if model is Enrollment:
+        Grades.query.filter(Grades.student_id.in_(rows.with_entities(Enrollment.id))).delete(synchronize_session=False)
+    return rows.delete()
 
 
 def archive_countdown(archived_at):
@@ -1848,7 +1883,7 @@ def purge_expired_archives():
             expired = model.query.filter(model.archived_at <= cutoff).with_entities(
                 model.id, *[getattr(model, column) for column in columns]).all()
             for values in expired:
-                if model.query.filter(model.id == values.id, model.archived_at <= cutoff).delete():
+                if delete_archived_rows(model, model.query.filter(model.id == values.id, model.archived_at <= cutoff)):
                     log_activity(area, 'DELETE',
                                  f'Deleted {archived_item_name(label, values, name_column)} for good after {ARCHIVE_DAYS} days in the Archives',
                                  log_changes(log_snapshot(values, columns), {}), username='System')
@@ -1881,8 +1916,20 @@ def archives():
         Enrollment.last_name, Enrollment.first_name,
     ).all()
 
+    # Each student with the report cards archived with them; ones deleted on their own before are under Report Cards
+    students = archived(Enrollment).with_entities(
+        Enrollment.id, Enrollment.last_name, Enrollment.first_name, Enrollment.lrn_no, Enrollment.grade_level,
+        Enrollment.archived_at,
+    ).all()
+    cards = {}
+    for card in active(Grades).filter(Grades.student_id.in_([s.id for s in students])).with_entities(
+            Grades.id, Grades.student_id, Grades.grade_level, Grades.original_filename).order_by(Grades.id):
+        cards.setdefault(card.student_id, []).append(card)
+    students = [SimpleNamespace(**s._asdict(), name=full_name(s), report_cards=cards.get(s.id, [])) for s in students]
+
     return render_template(
         'archives.html',
+        students=students,
         report_cards=report_cards,
         events=archived(CalendarEvent).all(),
         links=archived(LinkItem).all(),
@@ -1903,7 +1950,7 @@ def change_archived(kind, item_id, restore):
     columns = LOG_FIELDS[model]
     rows = model.query.filter(model.id == item_id, model.archived_at.isnot(None))
     values = rows.with_entities(*[getattr(model, column) for column in columns]).first()
-    changed = values is not None and (rows.update({'archived_at': None}) if restore else rows.delete())
+    changed = values is not None and (rows.update({'archived_at': None}) if restore else delete_archived_rows(model, rows))
 
     # Nothing changed when the item already left the Archives, e.g. a second click or another open tab
     if not changed:

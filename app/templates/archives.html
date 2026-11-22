@@ -73,6 +73,15 @@
 {# Says "Restoring ..." to screen readers while archives.js covers the row #}
 <div id="archivesStatus" class="visually-hidden" role="status"></div>
 
+{% call(s) section('students', 'Students', students, ['Student', 'LRN', 'Grade Level', 'Report Cards'], 'name') %}
+<td><a href="{{ url_for('main.student_detail', student_id=s.id) }}" title="View enrollment form">{{ s.name or '—' }}</a></td>
+<td>{{ s.lrn_no or '—' }}</td>
+<td>{{ s.grade_level.replace('_', ' ') if s.grade_level else '—' }}</td>
+<td>
+    {% for r in s.report_cards %}<a class="d-block" href="{{ url_for('main.download_report_card', report_id=r.id) }}">{{ r.grade_level }}: {{ r.original_filename }}</a>{% else %}—{% endfor %}
+</td>
+{% endcall %}
+
 {% call(r) section('report-cards', 'Report Cards', report_cards, ['Student', 'Grade Level', 'File'], 'original_filename') %}
 <td>{{ [r.last_name, r.first_name] | select | join(', ') or '—' }}</td>
 <td>{{ r.grade_level }}</td>
@@ -119,7 +128,7 @@
                 <p class="archives-confirm-name" id="deleteForeverName"></p>
                 <div class="archives-warning" id="deleteForeverWarning">
                     <svg class="archives-warning-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>
-                    <p><strong>This cannot be undone.</strong> The item is removed from the database for good. It cannot be recovered, not even from the Archives.</p>
+                    <p><strong>This cannot be undone.</strong> The item is removed from the database for good, and a student goes with their enrollment form and report cards. It cannot be recovered, not even from the Archives.</p>
                 </div>
                 <div class="form-check archives-understood">
                     <input class="form-check-input" type="checkbox" id="deleteForeverUnderstood" name="understood" value="yes" required>
